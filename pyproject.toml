@@ -30,15 +30,16 @@ classifiers = [  #! Update me
 ]
 
 
-
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">=3.8"
 importlib_metadata = {version = "^4.5.0", python = "<3.8"}
-torch = ">=2.0.1"
+torch = ">=1.9.0"
 numpy = ">=1.20"
 einops = ">=0.7.0"
-torchvision = ">=0.15.0"
+torchvision = ">=0.13.0"
 scikit-image = ">=0.19.3"
+
+
 [tool.poetry.dev-dependencies]
 bandit = "^1.7.1"
 black = {version = "^21.10b0", allow-prereleases = true}
