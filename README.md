@@ -9,14 +9,13 @@ This repository contains the code of the paper [Trustworthy Super-Resolution of 
 If you use this model in your work, please cite  
 ```tex
 @ARTICLE{10887321,
-  author={Donike, Simon and Aybar, Cesar and Gomez-Chova, Luis and Kalaitzis, Freddie},
+  author={Donike, Simon and Aybar, Cesar and Gómez-Chova, Luis and Kalaitzis, Freddie},
   journal={IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing}, 
-  title={Trustworthy Super-Resolution of Multispectral Sentinel-2 Imagery with Latent Diffusion}, 
+  title={Trustworthy Super-Resolution of Multispectral Sentinel-2 Imagery With Latent Diffusion}, 
   year={2025},
-  volume={},
+  volume={18},
   number={},
-  pages={1-14},
-  keywords={Superresolution;Remote sensing;Training;Diffusion models;Measurement;Spatial resolution;Image reconstruction;Uncertainty;Adaptation models;European Space Agency;Super-Resolution;Remote Sensing;Sentinel-2;Deep Learning;Latent Diffusion;Model Uncertainty},
+  pages={6940-6952},
   doi={10.1109/JSTARS.2025.3542220}}
 ```
 
