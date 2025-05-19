@@ -380,10 +380,26 @@ class SRLatentDiffusion(torch.nn.Module):
         hf_model = str("https://huggingface.co/simon-donike/RS-SR-LTDF/resolve/main/"+str(weights_file))
         
         # download pretrained model
+        """
         if not pathlib.Path(weights_file).exists():
             print("Downloading pretrained weights from: ", hf_model)
             with open(weights_file, "wb") as f:
                 f.write(requests.get(hf_model).content)
+        """
+        # Total size in bytes.
+        if not pathlib.Path(weights_file).exists():
+            print("Downloading pretrained weights from: ", hf_model)
+            response = requests.get(hf_model, stream=True)
+            total_size = int(response.headers.get('content-length', 0))
+            block_size = 1024  # 1 Kibibyte
+            
+            # Open the file to write as binary - write bytes to a file
+            with open(weights_file, "wb") as f:
+                # Setup the progress bar
+                with tqdm(total=total_size, unit='iB', unit_scale=True, desc=weights_file) as bar:
+                    for data in response.iter_content(block_size):
+                        bar.update(len(data))
+                        f.write(data)
 
         weights = torch.load(weights_file, map_location=self.device)["state_dict"]
 

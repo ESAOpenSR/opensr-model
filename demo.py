@@ -19,7 +19,7 @@ assert model_type in ["10m","20m"], "model_type must be either 10m or 20m"
 
 if model_type == "10m": # if 10m, create according model and load ckpt
     model = opensr_model.SRLatentDiffusion(bands=model_type,device=device) # 10m
-    model.load_pretrained("opensr_10m_v4_v2.ckpt") # 10m
+    model.load_pretrained("opensr_10m_v4_v6.ckpt") # 10m
 
 if model_type == "20m": # if 20m, create according model and load ckpt
     model = opensr_model.SRLatentDiffusion(bands=model_type,device=device) # 20m
