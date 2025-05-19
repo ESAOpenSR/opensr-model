@@ -37,6 +37,7 @@ if model_type == "10m": # if 10m, create according model and load ckpt
     model = opensr_model.SRLatentDiffusion(bands=model_type,device=device) # 10m
     model.load_pretrained("opensr_10m_v4_v2.ckpt") # 10m
 
+# Experimental only - this will produce Artifacts
 if model_type == "20m": # if 20m, create according model and load ckpt
     model = opensr_model.SRLatentDiffusion(bands=model_type,device=device) # 20m
     model.load_pretrained("opensr_20m_v1.ckpt") # 20m
