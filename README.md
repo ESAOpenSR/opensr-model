@@ -53,7 +53,7 @@ sr = model(X)
 ```
 
 ## Weights and Checkpoints
-The model should load automatically with the moel.load_pretrained command. Alternatively, the checkpoints can be found on [HuggingFace](https://huggingface.co/simon-donike/RS-SR-LTDF/tree/main)
+The model should load automatically with the model.load_pretrained command. Alternatively, the checkpoints can be found on [HuggingFace](https://huggingface.co/simon-donike/RS-SR-LTDF/tree/main)
 
 ## Description
 This package contains the latent-diffusion model to super-resolute 10 and 20m bands of Sentinel-2. This repository contains the bare model. It can be embedded in the "opensr-utils" package in order to be applied to Sentinel-2 Imagery. 
@@ -65,7 +65,12 @@ Some example Sr scenes can be found as [super-resoluted tiffs](https://drive.goo
 - Kutahya, Türkyie  
 - Catalunya, Spain  
 
+## Examples
+Example on S2NAIP dataset
 ![example](resources/example.png)
+
+Example on S2 image
+![example2](resources/example2.png)
 
 
 
