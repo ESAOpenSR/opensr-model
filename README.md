@@ -3,7 +3,9 @@
 # Latent Diffusion Super-Resolution - Sentinel 2 (LDSR-S2)
 This repository contains the code of the paper [Trustworthy Super-Resolution of Multispectral Sentinel-2 Imagery with Latent Diffusion](https://ieeexplore.ieee.org/abstract/document/10887321).  
 
-**PLEASE NOTE**: In order to embed this model in your workflow, please check out [SuperS2](https://github.com/IPL-UV/supers2) under [Section 4 - Diffusion Model](https://github.com/IPL-UV/supers2?tab=readme-ov-file#4-diffusion-model), which implements many SR models, including this one, and provides supplementary code.
+**PLEASE NOTE**:
+- In order to embed this model in your workflow, please check out [SEN2SR]([https://github.com/IPL-UV/supers2](https://github.com/ESAOpenSR/SEN2SR)) under [Section 4 - Diffusion Model](https://github.com/IPL-UV/supers2?tab=readme-ov-file#4-diffusion-model), which implements many SR models, including this one, and provides supplementary code.
+- This repo only handles 10m SR reliably, the 20m-band super-resolution workflow can be found in the SEN2SR repo as well.
 
 ## Citation
 If you use this model in your work, please cite  
