@@ -71,7 +71,7 @@ Example on S2NAIP dataset
 ![example](resources/example.png)
 
 Example on S2 image
-![example2](resources/example2.png)
+![example2](resources/example3.png)
 
 
 
