@@ -10,6 +10,7 @@ upload_to_drive.py
 client_secret.json
 *.DS_Store
 example_images/
+client_secret.json
 
 *.svg
 old/
