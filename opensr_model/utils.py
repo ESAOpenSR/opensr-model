@@ -2,6 +2,9 @@ import torch
 from einops import rearrange
 
 
+def linear_transform_placeholder(t_input, stage="norm"):
+    return( t_input )
+
 def linear_transform_4b(t_input,stage="norm"):
     assert stage in ["norm","denorm"]
     # get the shape of the tensor
@@ -169,3 +172,35 @@ def revert_padding(tensor,padding):
     unpadded_tensor = tensor[:,:, start_height:end_height, start_width:end_width]
     return unpadded_tensor
 
+
+
+def create_no_data_mask(X,target_size = 512):
+    """
+    Create a mask for no-data values in the input tensor.
+    No-data values are defined as those equal to 0.
+    
+    Args:
+        X (torch.Tensor): Input tensor of shape (B, C, H, W).
+        
+    Returns:
+        torch.Tensor: Mask of shape (B, C, H, W) where no-data values are marked as True.
+    """
+    # Create a mask where no-data values are True
+    interpolated_X = torch.nn.functional.interpolate(X, size=(target_size,target_size), mode='nearest')
+    mask = (interpolated_X == 0).float()
+    return mask
+
+def apply_no_data_mask(X, mask):
+    """
+    Apply a no-data mask to the input tensor.
+    
+    Args:
+        X (torch.Tensor): Input tensor of shape (B, C, H, W).
+        mask (torch.Tensor): Mask of shape (B, C, H, W) where no-data values are marked as True.
+        
+    Returns:
+        torch.Tensor: Tensor with no-data values set to 0.
+    """
+    # Apply the mask to set no-data values to 0
+    X_masked = X * (1 - mask)
+    return X_masked

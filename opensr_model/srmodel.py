@@ -15,16 +15,14 @@ import numpy as np
 from einops import rearrange
 from opensr_model.utils import assert_tensor_validity
 from opensr_model.utils import revert_padding
+from opensr_model.utils import create_no_data_mask
+from opensr_model.utils import apply_no_data_mask
 
 
 
 class SRLatentDiffusion(torch.nn.Module):
-    def __init__(self, bands: str = "10m", device: Union[str, torch.device] = "cpu"):
+    def __init__(self, device: Union[str, torch.device] = "cpu"):
         super().__init__()
-
-        # Set parameters depending on band selection
-        self.band_config = bands
-        assert self.band_config in ["10m", "20m"], "band selection incorrect"
 
         # Set up the model
         first_stage_config, cond_stage_config = self.set_model_settings()
@@ -41,8 +39,6 @@ class SRLatentDiffusion(torch.nn.Module):
             cond_stage_key="LR_image",
         )
 
-        # set up mean/std - TODO: remove in future
-        #self.mean, self.std = self.set_mean_std()
 
         # Set up the model for inference
         self.device = device # set self device
@@ -55,67 +51,41 @@ class SRLatentDiffusion(torch.nn.Module):
 
     def set_model_settings(self):
         # set up model settings
-        if self.band_config == "10m":
-            print("Creating model for 4x 10m bands...")
-            first_stage_config = {
-                "embed_dim":4,
-                "double_z": True,
-                "z_channels": 4,
-                "resolution": 256,
-                "in_channels": 4,
-                "out_ch": 4,
-                "ch": 128,
-                "ch_mult": [1, 2, 4],
-                "num_res_blocks": 2,
-                "attn_resolutions": [],
-                "dropout": 0.0,
-            }
-            cond_stage_config = {
-                "image_size": 64,
-                "in_channels": 8,
-                "model_channels": 160,
-                "out_channels": 4,
-                "num_res_blocks": 2,
-                "attention_resolutions": [16, 8],
-                "channel_mult": [1, 2, 2, 4],
-                "num_head_channels": 32,
-            }
-            # set transform for 10m
-            from opensr_model.utils import linear_transform_4b
-            self.linear_transform = linear_transform_4b
+        print("Creating model for 4x 10m bands...")
+        first_stage_config = {
+            "embed_dim":4,
+            "double_z": True,
+            "z_channels": 4,
+            "resolution": 256,
+            "in_channels": 4,
+            "out_ch": 4,
+            "ch": 128,
+            "ch_mult": [1, 2, 4],
+            "num_res_blocks": 2,
+            "attn_resolutions": [],
+            "dropout": 0.0,
+        }
+        cond_stage_config = {
+            "image_size": 64,
+            "in_channels": 8,
+            "model_channels": 160,
+            "out_channels": 4,
+            "num_res_blocks": 2,
+            "attention_resolutions": [16, 8],
+            "channel_mult": [1, 2, 2, 4],
+            "num_head_channels": 32,
+        }
+        # set transform for 10m
+        from opensr_model.utils import linear_transform_4b
+        self.linear_transform = linear_transform_4b
+        
+        disable_norm = True
+        if disable_norm:
+            from opensr_model.utils import linear_transform_placeholder
+            self.linear_transform = linear_transform_placeholder
+            print("Normalization disabled.")
 
-            return first_stage_config, cond_stage_config
-
-        if self.band_config == "20m":
-            print("Creating model for 6x 20m bands...")
-            first_stage_config = {
-                "embed_dim":6,
-                "double_z": True,
-                "z_channels": 6,
-                "resolution": 512,
-                "in_channels": 6,
-                "out_ch": 6,
-                "ch": 128,
-                "ch_mult": [1, 2, 4],
-                "num_res_blocks": 2,
-                "attn_resolutions": [],
-                "dropout": 0.0,
-            }
-            cond_stage_config = {
-                "image_size": 64,
-                "in_channels": 12,
-                "model_channels": 160,
-                "out_channels": 6,
-                "num_res_blocks": 2,
-                "attention_resolutions": [16, 8],
-                "channel_mult": [1, 2, 2, 4],
-                "num_head_channels": 32,
-            }
-            # set transform for 20m
-            from opensr_model.utils import linear_transform_6b
-            self.linear_transform = linear_transform_6b
-            # return configs
-            return first_stage_config, cond_stage_config
+        return first_stage_config, cond_stage_config
 
         
     def _tensor_encode(self,X: torch.Tensor):
@@ -300,6 +270,9 @@ class SRLatentDiffusion(torch.nn.Module):
         
         # Assert shape, size, dimensionality
         X,padding = assert_tensor_validity(X)
+        
+        # create no_data_mask
+        no_data_mask = create_no_data_mask(X, target_size= X.shape[-1]*4)
 
         # Normalize the image
         X = X.clone()
@@ -334,8 +307,9 @@ class SRLatentDiffusion(torch.nn.Module):
         if save_iterations:
             return save_iters
         
-        sr = self._tensor_decode(latent, spe_cor=histogram_matching)
-        sr = revert_padding(sr,padding)
+        sr = self._tensor_decode(latent, spe_cor=histogram_matching) # decode the latent image
+        sr = apply_no_data_mask(sr, no_data_mask) # apply no data mask as in LR image
+        sr = revert_padding(sr,padding) # remove padding from the SR image if there was any
         return sr
 
 
@@ -410,6 +384,34 @@ class SRLatentDiffusion(torch.nn.Module):
 
         self.model.load_state_dict(weights, strict=True)
         print("Loaded pretrained weights from: ", weights_file)
+        
+        
+    def uncertainty(self, x,n_variations=15):
+        # TODO: verify this for 1-Batch and multi-Batch
+        n_variations = 15 # amount of images to SR
+        rand_seed_list = random.sample(range(1, 9999), n_variations) # list of random seeds
+        variations = [] # empty list to hold variations
+        for i in range(n_variations):
+            # reseed random number generators for each iteration
+            np.random.seed(rand_seed_list[i])
+            torch.manual_seed(rand_seed_list[i])
+            random.seed(rand_seed_list[i])
+            pytorch_lightning.utilities.seed.seed_everything(seed=rand_seed_list[i],workers=True)
+            
+            
+            sr = self.model.forward(x,custom_steps=self.custom_steps)
+            sr = sr.squeeze(0)
+            variations.append(sr.detach().cpu())
+        variations = torch.stack(variations)
+        # Get statistics for xAI
+        srs_mean = variations.mean(dim=0)
+        srs_stdev = variations.std(dim=0)
+        lower_bound = srs_mean-srs_stdev
+        upper_bound = srs_mean+srs_stdev
+        interval_size = srs_stdev*2
+        interval_size = interval_size.mean(dim=0).unsqueeze(0)
+        return interval_size
+
 
 
 # -----------------------------------------------------------------------------
@@ -435,7 +437,6 @@ class SRLatentDiffusionLightning(LightningModule):
         self.custom_steps = custom_steps
         self.temperature = temperature
         self.predict_dataset = None
-        self.mode = "SR" # setting this hardcoded. If we're in xAI, this will get overwritten externally
 
     def forward(self, x,**kwargs):
         #print("Dont call 'forward' on the PL model, instead use 'predict'")
@@ -445,27 +446,26 @@ class SRLatentDiffusionLightning(LightningModule):
         self.model.load_pretrained(weights_file)
         print("PL Model: Model loaded from ", weights_file)
 
+    @torch.no_grad()
     def predict_step(self, x, idx: int = 0,**kwargs):
         # perform SR
         assert self.model.training == False, "Model in Training mode. Abort." # make sure we're in eval
-
-        if self.mode=="SR":
-            p = self.model.forward(x,custom_steps=self.custom_steps,temperature=self.temperature)
-            return(p)
-        if self.mode=="xAI":
-            p = self.xai_step(x, idx)
-            return(p)
+        p = self.model.forward(x,custom_steps=self.custom_steps,temperature=self.temperature)
+        return(p)
     
-    def xai_step(self, x, idx):
-        no_uncertainty = 15 # amount of images to SR
-        rand_seed_list = random.sample(range(1, 9999), no_uncertainty) # list of random seeds
+    
+    def uncertainty(self, x,n_variations=15):
+        # TODO: verify this for 1-Batch and multi-Batch
+        n_variations = 15 # amount of images to SR
+        rand_seed_list = random.sample(range(1, 9999), n_variations) # list of random seeds
         variations = [] # empty list to hold variations
-        for i in range(no_uncertainty):
+        for i in range(n_variations):
             # reseed random number generators for each iteration
             np.random.seed(rand_seed_list[i])
             torch.manual_seed(rand_seed_list[i])
             random.seed(rand_seed_list[i])
             pytorch_lightning.utilities.seed.seed_everything(seed=rand_seed_list[i],workers=True)
+            
             
             sr = self.model.forward(x,custom_steps=self.custom_steps)
             sr = sr.squeeze(0)
@@ -480,86 +480,3 @@ class SRLatentDiffusionLightning(LightningModule):
         interval_size = interval_size.mean(dim=0).unsqueeze(0)
         return interval_size
 
-
-"""
-import torch
-import os
-from pytorch_lightning.callbacks import BasePredictionWriter
-class CustomWriter(BasePredictionWriter):
-    
-    #- Applied after each predict step by the predict() of PL model
-    #- this class needs as input the SR object created by opensr-utils
-    #- it writes the results to a temporary folder
-    #- it writes the results to the placeholder file at the end
-    
-    def __init__(self, sr_obj, write_interval="batch"):
-        super().__init__(write_interval)
-        self.sr_obj = sr_obj # save SR obj in class
-
-        # create folder and info to save temporary results
-        base_path = os.path.dirname(self.sr_obj.info_dict["sr_path"])
-        self.temp_path = os.path.join(base_path,"tmp_sr")
-        os.makedirs(self.temp_path, exist_ok=True)
-
-        # if files exist in folder, remove them
-        files = os.listdir(self.temp_path)
-        for file in files:
-            os.remove(os.path.join(self.temp_path,file))
-
-    def write_on_batch_end(self, trainer,
-                           pl_module, prediction,
-                           batch_indices, batch,
-                           batch_idx, dataloader_idx):
-        try:
-            prediction = prediction.cpu()
-        except:
-            pass
-
-        # iterate over predictions and save them accordingly
-        #for pred,idx in zip(prediction,batch_indices):
-        #    self.sr_obj.sr_obj.fill_SR_overlap(pred,idx,self.sr_obj.info_dict)
-
-        # create filename
-        formatted_number_1 = "{:06}".format(batch_indices[0])
-        formatted_number_2 = "{:04d}".format(len(batch_indices))
-        filename = "batch{}__{}batches.pt".format(formatted_number_1,formatted_number_2)
-        # create dictionary out of results and save to disk
-        results_dict = {"sr":prediction,"batch_indices":batch_indices}
-        torch.save(results_dict,os.path.join(self.temp_path,filename))
-        
-        # return nothing in order not to accumulate results
-        return None
-    
-    #def write_all_to_placeholder(self):
-    def on_predict_end(self, trainer, pl_module):
-        
-        #Custom function to be called after all predictions are done
-        
-        # run this only on one GPU
-        if trainer.global_rank == 0:
-            print("Running weighted Patching on Worker:",str(trainer.global_rank),"...")
-            # read all files in folder
-            files = os.listdir(self.temp_path)
-            files = [file for file in files if file.endswith(".pt")] # keep only .pt files
-
-            # iterate over files and save them to placeholder
-            for file in tqdm(files,desc="Saving to PH"):
-                # load file
-                results_dict = torch.load(os.path.join(self.temp_path,file))
-                # iterate over results and save them
-                for pred,idx in zip(results_dict["sr"],results_dict["batch_indices"]):
-                    self.sr_obj.sr_obj.fill_SR_overlap(pred,idx,self.sr_obj.info_dict)
-            
-            # delete temporary folder and all its contents
-            # Make sure the path exists and is a directory
-            if os.path.isdir(self.temp_path):
-                import time 
-                time.sleep(10)
-                # Remove the folder and all its contents
-                shutil.rmtree(self.temp_path)
-                print(f"Data written to disk, temp folder deleted. Finished.")
-            else:
-                print(f"Data written to disk, temp folder not deleted.")
-            return None
-
-"""
