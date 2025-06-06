@@ -19,7 +19,6 @@ old/*
 *.ckpt
 *.pth
 *.pt
-*.png
 *.ipynb
 *.JSON
 *.json
