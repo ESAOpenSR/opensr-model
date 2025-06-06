@@ -62,5 +62,8 @@ Examples on S2NAIP training dataset
 
 
 ## Status
-This is a work in progress and published explicitly as a research preview. This repository will leave the experimental stage with the publication of v1.0.0. 
+This is a work in progress and published explicitly as a research preview. This repository will leave the experimental stage with the publication of v1.0.0.   
+  
+    
+      
 [![PyPI Downloads](https://static.pepy.tech/badge/opensr-model)](https://pepy.tech/projects/opensr-model)

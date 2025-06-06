@@ -30,5 +30,3 @@ from opensr_model.utils import plot_example,plot_uncertainty
 plot_example(lr,sr,out_file="sr_example.png")
 plot_uncertainty(uncertainty_map,out_file="uncertainty_map.png",normalize=True)
 
-
-
