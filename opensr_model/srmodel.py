@@ -21,72 +21,43 @@ from opensr_model.utils import apply_no_data_mask
 
 
 class SRLatentDiffusion(torch.nn.Module):
-    def __init__(self, device: Union[str, torch.device] = "cpu"):
+    def __init__(self,config, device: Union[str, torch.device] = "cpu"):
         super().__init__()
 
         # Set up the model
-        first_stage_config, cond_stage_config = self.set_model_settings()
+        self.config = config        
         self.model = LatentDiffusion(
-            first_stage_config,
-            cond_stage_config,
-            timesteps=1000,
-            unet_config=cond_stage_config,
-            linear_start=0.0015,
-            linear_end=0.0155,
-            concat_mode=True,
-            cond_stage_trainable=False,
-            first_stage_key="image",
-            cond_stage_key="LR_image",
+            config.first_stage_config,
+            config.cond_stage_config,
+            timesteps=config.denoiser_settings.timesteps,
+            unet_config=config.cond_stage_config,
+            linear_start=config.denoiser_settings.linear_start,
+            linear_end=config.denoiser_settings.linear_end,
+            concat_mode=config.other.concat_mode,
+            cond_stage_trainable=config.other.cond_stage_trainable,
+            first_stage_key=config.other.first_stage_key,
+            cond_stage_key=config.other.cond_stage_key,
         )
 
 
         # Set up the model for inference
+        self.set_normalization() # decide wether to use norm
         self.device = device # set self device
         self.model.device = device # set model device as selected
         self.model = self.model.to(device) # move model to device
         self.model.eval() # set model state
+        self = self.eval() # set main model state
         self._X = None # placeholder for LR image
-        self.encode_conditioning = True # encode LR images before dif?
-        self.sr_type = "SISR" # set wether SISR or MIRS
+        self.encode_conditioning = config.encode_conditioning # encode LR images before dif?
 
-    def set_model_settings(self):
-        # set up model settings
-        print("Creating model for 4x 10m bands...")
-        first_stage_config = {
-            "embed_dim":4,
-            "double_z": True,
-            "z_channels": 4,
-            "resolution": 256,
-            "in_channels": 4,
-            "out_ch": 4,
-            "ch": 128,
-            "ch_mult": [1, 2, 4],
-            "num_res_blocks": 2,
-            "attn_resolutions": [],
-            "dropout": 0.0,
-        }
-        cond_stage_config = {
-            "image_size": 64,
-            "in_channels": 8,
-            "model_channels": 160,
-            "out_channels": 4,
-            "num_res_blocks": 2,
-            "attention_resolutions": [16, 8],
-            "channel_mult": [1, 2, 2, 4],
-            "num_head_channels": 32,
-        }
-        # set transform for 10m
-        from opensr_model.utils import linear_transform_4b
-        self.linear_transform = linear_transform_4b
-        
-        disable_norm = True
-        if disable_norm:
+    def set_normalization(self):
+        if self.config.apply_normalization==True:
+            from opensr_model.utils import linear_transform_4b
+            self.linear_transform = linear_transform_4b
+        else:
             from opensr_model.utils import linear_transform_placeholder
             self.linear_transform = linear_transform_placeholder
             print("Normalization disabled.")
-
-        return first_stage_config, cond_stage_config
-
         
     def _tensor_encode(self,X: torch.Tensor):
         # set copy to model
@@ -94,8 +65,7 @@ class SRLatentDiffusion(torch.nn.Module):
         # normalize image
         X_enc = self.linear_transform(X, stage="norm")
         # encode LR images
-        self.encode_conditioning = True
-        if self.encode_conditioning==True and self.sr_type=="SISR":
+        if self.encode_conditioning==True :
             # try to upsample->encode conditioning
             X_int = torch.nn.functional.interpolate(X, size=(X.shape[-1]*4,X.shape[-1]*4), mode='bilinear', align_corners=False)
             # encode conditioning
