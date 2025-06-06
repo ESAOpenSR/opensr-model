@@ -54,11 +54,12 @@ Some example Sr scenes can be found as [super-resoluted tiffs](https://drive.goo
 - Catalunya, Spain  
 
 ## S2 Examples
-Example on S2NAIP dataset
+Example on real S2 image
+![example2](resources/example3.png)
+
+Examples on S2NAIP training dataset
 ![example](resources/example.png)
 
-Example on S2 image
-![example2](resources/example3.png)
 
 ## Status
 This is a work in progress and published explicitly as a research preview. This repository will leave the experimental stage with the publication of v1.0.0. 
