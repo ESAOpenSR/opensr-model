@@ -1,6 +1,6 @@
 import torch
 from einops import rearrange
-
+from matplotlib import pyplot as plt
 
 def linear_transform_placeholder(t_input, stage="norm"):
     return( t_input )
@@ -204,3 +204,81 @@ def apply_no_data_mask(X, mask):
     # Apply the mask to set no-data values to 0
     X_masked = X * (1 - mask)
     return X_masked
+
+
+def plot_example(lr,sr,out_file="example.png"):
+    # Assumes input is the LR example tensor nad the SR from the demo.py
+    sr = sr.cpu()*3.5
+    sr = sr.clamp(0,1)  # Ensure values are in [0, 1] range
+    lr = lr.cpu()*3.5
+    lr = lr.clamp(0,1)  # Ensure values are in [0, 1] range
+    sr = sr
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    ax[0].imshow(rearrange(lr[0,:3,:,:].cpu()*1.5, 'c h w -> h w c').numpy())
+    ax[0].set_title("LR")
+    ax[1].imshow(rearrange(sr[0,:3,:,:].cpu()*1.5, 'c h w -> h w c').numpy())
+    ax[1].set_title("SR")
+    plt.savefig("example.png")
+    plt.close()
+    
+def plot_uncertainty(uncertainty_map,out_file="uncertainty_map.png",normalize=True,):
+    uncertainty_map = uncertainty_map.cpu()
+    img = rearrange(uncertainty_map[0, :, :, :], 'c h w -> h w c').numpy()
+
+    # Convert to grayscale if single-channel
+    if img.shape[2] == 1:
+        img = img[:, :, 0]
+
+    if normalize:
+        # Stretch to [0, 1]
+        img_min = img.min()
+        img_max = img.max()
+        img = (img - img_min) / (img_max - img_min + 1e-8)
+
+    fig, ax = plt.subplots(figsize=(5, 5))
+    im = ax.imshow(img, cmap='viridis')
+    ax.set_title("Uncertainty Map")
+    label = "Uncertainty (Normalized)" if normalize else "Uncertainty (Absolute)"
+    plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label=label)
+    plt.tight_layout()
+    plt.savefig(out_file)
+    plt.close()
+    
+
+def download_from_HF(file_name="example_lr.pt"):
+    """
+    Downloads an example low-resolution tensor from the Hugging Face Hub.
+    This function uses the `hf_hub_download` function to fetch a sample tensor
+    for testing purposes.
+    
+    Returns:
+        torch.Tensor: The downloaded low-resolution tensor.
+    """
+    from huggingface_hub import hf_hub_download
+    import torch
+
+    # Download the file from your HF model repo
+    file_path = hf_hub_download(
+        repo_id="simon-donike/RS-SR-LTDF",
+        filename="example_lr.pt",
+        repo_type="model"  # or "dataset" if it's in a dataset repo
+    )
+
+    # Load the tensor
+    obj = torch.load(file_path)
+    return(obj)
+
+import contextlib
+import os
+import sys
+@contextlib.contextmanager
+def suppress_stdout():
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        sys.stdout = devnull
+        try:
+            yield
+        finally:
+            sys.stdout = old_stdout
+
+

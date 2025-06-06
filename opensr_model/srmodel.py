@@ -13,6 +13,7 @@ import shutil
 import random
 import numpy as np
 from einops import rearrange
+from opensr_model.utils import suppress_stdout
 from opensr_model.utils import assert_tensor_validity
 from opensr_model.utils import revert_padding
 from opensr_model.utils import create_no_data_mask
@@ -108,105 +109,6 @@ class SRLatentDiffusion(torch.nn.Module):
         
         return ddim, latent, time_range
 
-    def _attribution_methods(
-        self,
-        X: torch.Tensor,
-        grads: torch.Tensor,
-        attribution_method: Literal[
-            "grad_x_input", "max_grad", "mean_grad", "min_grad"            
-        ],
-    ):
-        if attribution_method == "grad_x_input":
-            return torch.norm(grads * X, dim=(0, 1))
-        elif attribution_method == "max_grad":
-            return grads.abs().max(dim=0).max(dim=0)
-        elif attribution_method == "mean_grad":
-            return grads.abs().mean(dim=0).mean(dim=0)
-        elif attribution_method == "min_grad":
-            return grads.abs().min(dim=0).min(dim=0)
-        else:
-            raise ValueError(
-                "The attribution method must be one of: grad_x_input, max_grad, mean_grad, min_grad"
-            )
-    
-    def explainer(
-        self,
-        X: torch.Tensor,
-        mask: torch.Tensor,
-        eta: float = 1.0,
-        temperature: float = 1.0,
-        custom_steps: int = 100,
-        steps_to_consider_for_attributions: list = list(range(100)),
-        attribution_method: Literal[
-            "grad_x_input", "max_grad", "mean_grad", "min_grad"
-        ] = "grad_x_input",      
-        verbose: bool = False,
-        enable_checkpoint = True,
-        histogram_matching=True        
-    ):  
-        # Normalize and encode the LR image
-        X = X.clone()
-        Xnorm = self._tensor_encode(X)
-        
-        # ddim, latent and time_range
-        ddim, latent, time_range = self._prepare_model(
-            X=Xnorm, eta=eta, custom_steps=custom_steps, verbose=verbose
-        )
-                    
-        # Iterate over the timesteps
-        container = []
-        iterator = tqdm(time_range, desc="DDIM Sampler", total=custom_steps,disable=True)
-        for i, step in enumerate(iterator):
-            
-            # Activate or deactivate gradient tracking
-            if i in steps_to_consider_for_attributions:
-                torch.set_grad_enabled(True)
-            else:
-                torch.set_grad_enabled(False)
-            
-            # Compute the latent image
-            if enable_checkpoint:
-                outs = checkpoint.checkpoint(
-                    ddim.p_sample_ddim,
-                    latent,
-                    Xnorm,
-                    step,
-                    custom_steps - i - 1,
-                    temperature,
-                    use_reentrant=False,
-                )
-            else:                
-                outs = ddim.p_sample_ddim(
-                    x=latent,
-                    c=Xnorm,
-                    t=step,
-                    index=custom_steps - i - 1,
-                    temperature=temperature
-                )
-            latent, _ = outs
-            
-            
-            if i not in steps_to_consider_for_attributions:
-                continue
-            
-            # Apply the mask
-            output_graph = (latent*mask).mean()
-            
-            # Compute the gradients
-            grads = torch.autograd.grad(output_graph, Xnorm, retain_graph=True)[0]
-            
-            # Compute the attribution and save it
-            with torch.no_grad():
-                to_save = {
-                    "latent": self._tensor_decode(latent, spe_cor=histogram_matching),
-                    "attribution": self._attribution_methods(
-                        Xnorm, grads, attribution_method
-                    )
-                }
-            container.append(to_save)
-        
-        return container
-
     @torch.no_grad()
     def forward(
         self,
@@ -286,15 +188,24 @@ class SRLatentDiffusion(torch.nn.Module):
     def hq_histogram_matching(
         self, image1: torch.Tensor, image2: torch.Tensor
     ) -> torch.Tensor:
-        """Lazy implementation of histogram matching
+        """
+        Applies histogram matching to align the color distribution of image1 to image2.
+
+        This function adjusts the pixel intensity distribution of `image1` (typically the
+        low-resolution or degraded image) to match that of `image2` (typically the 
+        high-resolution or reference image). The operation is done per channel and 
+        assumes both images are in (C, H, W) format.
 
         Args:
-            image1 (torch.Tensor): The low-resolution image (C, H, W).
-            image2 (torch.Tensor): The super-resolved image (C, H, W).
+            image1 (torch.Tensor): The source image whose histogram will be modified (C, H, W).
+            image2 (torch.Tensor): The reference image whose histogram will be matched (C, H, W).
 
         Returns:
-            torch.Tensor: The super-resolved image with the histogram of
-                the target image.
+            torch.Tensor: A new tensor with the same shape as `image1`, but with pixel 
+                        intensities adjusted to match the histogram of `image2`.
+
+        Raises:
+            ValueError: If input tensors are not 2D or 3D.
         """
 
         # Go to numpy
@@ -315,21 +226,29 @@ class SRLatentDiffusion(torch.nn.Module):
 
     def load_pretrained(self, weights_file: str):
         """
-        Loads the pretrained model from the given path.
+        Loads pretrained model weights from a local file or downloads them from Hugging Face if not present.
+
+        If the specified `weights_file` does not exist locally, it is automatically downloaded from the 
+        Hugging Face model hub under `simon-donike/RS-SR-LTDF`. A progress bar is shown during download.
+
+        After loading, the method removes any perceptual loss-related weights from the state dict and 
+        loads the remaining weights into the model.
+
+        Args:
+            weights_file (str): Path to the local weights file. If the file is not found, it will be downloaded 
+                                using this name from the Hugging Face repository.
+
+        Raises:
+            RuntimeError: If the weights cannot be loaded or parsed correctly.
+
+        Example:
+            self.load_pretrained("model_weights.ckpt")
         """
 
         # download pretrained model
-        #hf_model = "https://huggingface.co/isp-uv-es/opensr-model/resolve/main/sr_checkpoint.ckpt" # original one
         # create download link based on input 
         hf_model = str("https://huggingface.co/simon-donike/RS-SR-LTDF/resolve/main/"+str(weights_file))
         
-        # download pretrained model
-        """
-        if not pathlib.Path(weights_file).exists():
-            print("Downloading pretrained weights from: ", hf_model)
-            with open(weights_file, "wb") as f:
-                f.write(requests.get(hf_model).content)
-        """
         # Total size in bytes.
         if not pathlib.Path(weights_file).exists():
             print("Downloading pretrained weights from: ", hf_model)
@@ -356,31 +275,158 @@ class SRLatentDiffusion(torch.nn.Module):
         print("Loaded pretrained weights from: ", weights_file)
         
         
-    def uncertainty(self, x,n_variations=15):
-        # TODO: verify this for 1-Batch and multi-Batch
-        n_variations = 15 # amount of images to SR
-        rand_seed_list = random.sample(range(1, 9999), n_variations) # list of random seeds
-        variations = [] # empty list to hold variations
-        for i in range(n_variations):
-            # reseed random number generators for each iteration
-            np.random.seed(rand_seed_list[i])
-            torch.manual_seed(rand_seed_list[i])
-            random.seed(rand_seed_list[i])
-            pytorch_lightning.utilities.seed.seed_everything(seed=rand_seed_list[i],workers=True)
+    def uncertainty_map(self, x, n_variations=15, custom_steps=100):
+        """
+        Estimates uncertainty maps for each sample in the input batch using repeated stochastic forward passes.
+
+        For each input sample, the method generates multiple super-resolved outputs by varying the random seed.
+        It then computes the per-pixel standard deviation across these outputs as a proxy for uncertainty.
+        The returned uncertainty map represents the average width of the confidence interval per pixel.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (B, C, H, W), where B is batch size.
+            n_variations (int): Number of stochastic forward passes per input sample.
+            custom_steps (int): Custom inference steps passed to the forward method.
+
+        Returns:
+            torch.Tensor: Uncertainty maps of shape (B, 1, H, W), where each value indicates pixel-wise uncertainty.
+        """
+        assert n_variations>3, "n_variations must be greater than 3 to compute uncertainty."
+        
+        
+        batch_size = x.shape[0]
+        rand_seed_list = random.sample(range(1, 9999), n_variations)
+
+        all_variations = []
+        for b in range(batch_size):
+            variations = []
+            x_b = x[b].unsqueeze(0)  # shape (1, 4, 512, 512)
+            for seed in rand_seed_list:
+                with suppress_stdout():
+                    np.random.seed(seed)
+                    torch.manual_seed(seed)
+                    random.seed(seed)
+                    #pytorch_lightning.utilities.seed.seed_everything(seed=seed, workers=True)
+
+                sr = self.forward(x_b, custom_steps=custom_steps)  # shape (1, C, H, W)
+                variations.append(sr.detach().cpu())
+
+            variations = torch.stack(variations)  # (n_variations, 1, C, H, W)
+            srs_mean = variations.mean(dim=0)
+            srs_stdev = variations.std(dim=0)
+            interval_size = (srs_stdev * 2).mean(dim=1)  # mean over channels
+
+            all_variations.append(interval_size)  # each is (1, H, W)
+
+        result = torch.stack(all_variations)  # (B, 1, H, W)
+        return result
+    
+    
+
+    def _attribution_methods(
+        self,
+        X: torch.Tensor,
+        grads: torch.Tensor,
+        attribution_method: Literal[
+            "grad_x_input", "max_grad", "mean_grad", "min_grad"            
+                        ],
+                    ):
+        """
+        DEPRECIATED; SUBJECT TO REMOVAL
+        """
+        if attribution_method == "grad_x_input":
+            return torch.norm(grads * X, dim=(0, 1))
+        elif attribution_method == "max_grad":
+            return grads.abs().max(dim=0).max(dim=0)
+        elif attribution_method == "mean_grad":
+            return grads.abs().mean(dim=0).mean(dim=0)
+        elif attribution_method == "min_grad":
+            return grads.abs().min(dim=0).min(dim=0)
+        else:
+            raise ValueError(
+                "The attribution method must be one of: grad_x_input, max_grad, mean_grad, min_grad"
+            )
+    
+    def explainer(
+        self,
+        X: torch.Tensor,
+        mask: torch.Tensor,
+        eta: float = 1.0,
+        temperature: float = 1.0,
+        custom_steps: int = 100,
+        steps_to_consider_for_attributions: list = list(range(100)),
+        attribution_method: Literal[
+            "grad_x_input", "max_grad", "mean_grad", "min_grad"
+        ] = "grad_x_input",      
+        verbose: bool = False,
+        enable_checkpoint = True,
+        histogram_matching=True        
+            ):  
+        """
+        DEPRECIATED; SUBJECT TO REMOVAL
+        """
+        # Normalize and encode the LR image
+        X = X.clone()
+        Xnorm = self._tensor_encode(X)
+        
+        # ddim, latent and time_range
+        ddim, latent, time_range = self._prepare_model(
+            X=Xnorm, eta=eta, custom_steps=custom_steps, verbose=verbose
+        )
+                    
+        # Iterate over the timesteps
+        container = []
+        iterator = tqdm(time_range, desc="DDIM Sampler", total=custom_steps,disable=True)
+        for i, step in enumerate(iterator):
+            
+            # Activate or deactivate gradient tracking
+            if i in steps_to_consider_for_attributions:
+                torch.set_grad_enabled(True)
+            else:
+                torch.set_grad_enabled(False)
+            
+            # Compute the latent image
+            if enable_checkpoint:
+                outs = checkpoint.checkpoint(
+                    ddim.p_sample_ddim,
+                    latent,
+                    Xnorm,
+                    step,
+                    custom_steps - i - 1,
+                    temperature,
+                    use_reentrant=False,
+                )
+            else:                
+                outs = ddim.p_sample_ddim(
+                    x=latent,
+                    c=Xnorm,
+                    t=step,
+                    index=custom_steps - i - 1,
+                    temperature=temperature
+                )
+            latent, _ = outs
             
             
-            sr = self.model.forward(x,custom_steps=self.custom_steps)
-            sr = sr.squeeze(0)
-            variations.append(sr.detach().cpu())
-        variations = torch.stack(variations)
-        # Get statistics for xAI
-        srs_mean = variations.mean(dim=0)
-        srs_stdev = variations.std(dim=0)
-        lower_bound = srs_mean-srs_stdev
-        upper_bound = srs_mean+srs_stdev
-        interval_size = srs_stdev*2
-        interval_size = interval_size.mean(dim=0).unsqueeze(0)
-        return interval_size
+            if i not in steps_to_consider_for_attributions:
+                continue
+            
+            # Apply the mask
+            output_graph = (latent*mask).mean()
+            
+            # Compute the gradients
+            grads = torch.autograd.grad(output_graph, Xnorm, retain_graph=True)[0]
+            
+            # Compute the attribution and save it
+            with torch.no_grad():
+                to_save = {
+                    "latent": self._tensor_decode(latent, spe_cor=histogram_matching),
+                    "attribution": self._attribution_methods(
+                        Xnorm, grads, attribution_method
+                    )
+                }
+            container.append(to_save)
+        
+        return container
 
 
 
@@ -397,20 +443,17 @@ class SRLatentDiffusionLightning(LightningModule):
     """
     This Pytorch Lightning Class wraps around the torch model to
     aid in distrubuted GPU processing and optimized dataloaders
-    provided by PL.
+    provided by PL. ToDo: implement demo showcase
     """
-    def __init__(self,bands: str = "10m", device: Union[str, torch.device] = "cpu",
-                 custom_steps: int = 100, temperature: float = 1.0):
+    def __init__(self,config, device: Union[str, torch.device] = "cpu"):
         super().__init__()
-        self.model = SRLatentDiffusion(bands=bands,device=device)
+        self.model = SRLatentDiffusion(config,device=device)
         self.model = self.model.eval()
-        self.custom_steps = custom_steps
-        self.temperature = temperature
-        self.predict_dataset = None
 
+    @torch.no_grad()
     def forward(self, x,**kwargs):
         #print("Dont call 'forward' on the PL model, instead use 'predict'")
-        return self.model(x,custom_steps=self.custom_steps)
+        return self.model(x)
     
     def load_pretrained(self, weights_file: str):
         self.model.load_pretrained(weights_file)
@@ -423,30 +466,8 @@ class SRLatentDiffusionLightning(LightningModule):
         p = self.model.forward(x,custom_steps=self.custom_steps,temperature=self.temperature)
         return(p)
     
-    
-    def uncertainty(self, x,n_variations=15):
-        # TODO: verify this for 1-Batch and multi-Batch
-        n_variations = 15 # amount of images to SR
-        rand_seed_list = random.sample(range(1, 9999), n_variations) # list of random seeds
-        variations = [] # empty list to hold variations
-        for i in range(n_variations):
-            # reseed random number generators for each iteration
-            np.random.seed(rand_seed_list[i])
-            torch.manual_seed(rand_seed_list[i])
-            random.seed(rand_seed_list[i])
-            pytorch_lightning.utilities.seed.seed_everything(seed=rand_seed_list[i],workers=True)
-            
-            
-            sr = self.model.forward(x,custom_steps=self.custom_steps)
-            sr = sr.squeeze(0)
-            variations.append(sr.detach().cpu())
-        variations = torch.stack(variations)
-        # Get statistics for xAI
-        srs_mean = variations.mean(dim=0)
-        srs_stdev = variations.std(dim=0)
-        lower_bound = srs_mean-srs_stdev
-        upper_bound = srs_mean+srs_stdev
-        interval_size = srs_stdev*2
-        interval_size = interval_size.mean(dim=0).unsqueeze(0)
-        return interval_size
+    @torch.no_grad()
+    def uncertainty_map(self, x,n_variations=15,custom_steps=100):
+        uncertainty_map = self.model.uncertainty_map(x,n_variations,custom_steps)
+        return(uncertainty_map)
 
