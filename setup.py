@@ -6,7 +6,7 @@ with open('README.md', encoding='utf-8') as f:
 
 setup(
     name='opensr-model',
-    version='0.2.12',
+    version='0.3.0',
     author = "Simon Donike, Cesar Aybar, Luis Gomez Chova, Freddie Kalaitzis",
     author_email = "accounts@donike.net",
     description = "ESA OpenSR Diffusion model package for Super-Resolution of Senintel-2 Imagery",
@@ -23,6 +23,7 @@ setup(
 	'tqdm',
 	'torch',
 	'scikit-image',
-        'pytorch-lightning',
-    	'requests'],
+    'pytorch-lightning',
+    'requests',
+    'omegaconf',],
 )
