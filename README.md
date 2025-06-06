@@ -55,7 +55,7 @@ Some example Sr scenes can be found as [super-resoluted tiffs](https://drive.goo
 
 ## S2 Examples
 Example on real S2 image
-![example2](resources/example3.png)
+![example2](resources/example2.png)
 
 Examples on S2NAIP training dataset
 ![example](resources/example.png)
