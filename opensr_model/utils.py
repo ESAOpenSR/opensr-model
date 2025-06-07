@@ -256,11 +256,12 @@ def download_from_HF(file_name="example_lr.pt"):
     """
     from huggingface_hub import hf_hub_download
     import torch
+    
 
     # Download the file from your HF model repo
     file_path = hf_hub_download(
         repo_id="simon-donike/RS-SR-LTDF",
-        filename="example_lr.pt",
+        filename=file_name,
         repo_type="model"  # or "dataset" if it's in a dataset repo
     )
 

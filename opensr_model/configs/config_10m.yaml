@@ -5,7 +5,7 @@
 
 # General Settings
 apply_normalization: False
-ckpt_version: "opensr_10m_v4_v6.ckpt"
+ckpt_version: "opensr-ldsrs2_v1_0_0.ckpt"
 encode_conditioning: True
 
 denoiser_settings: # noise settings
