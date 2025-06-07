@@ -1,11 +1,15 @@
-
-
 # Latent Diffusion Super-Resolution - Sentinel 2 (LDSR-S2)
 This repository contains the code of the paper [Trustworthy Super-Resolution of Multispectral Sentinel-2 Imagery with Latent Diffusion](https://ieeexplore.ieee.org/abstract/document/10887321).  
 
 **PLEASE NOTE**:
 - This model is currently research-grade code, more user-friendly adaptations are planned for the future.
 - This repository will leave the experimental stage with v1.0.0.
+
+
+### Google Colab Demo - Interactive Notebook
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1onza61SP5IyiUQM85PtyVLz6JovvQ0TN?usp=drive_link)
+
+
 
 ## Citation
 If you use this model in your work, please cite  
