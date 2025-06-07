@@ -7,8 +7,7 @@ This repository contains the code of the paper [Trustworthy Super-Resolution of 
 
 
 ### Google Colab Demo - Interactive Notebook
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1onza61SP5IyiUQM85PtyVLz6JovvQ0TN?usp=drive_link)
-
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1onza61SP5IyiUQM85PtyVLz6JovvQ0TN?usp=sharing)
 
 ## Citation
 If you use this model in your work, please cite  
