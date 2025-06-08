@@ -218,7 +218,7 @@ def plot_example(lr,sr,out_file="example.png"):
     ax[0].set_title("LR")
     ax[1].imshow(rearrange(sr[0,:3,:,:].cpu()*1.5, 'c h w -> h w c').numpy())
     ax[1].set_title("SR")
-    plt.savefig("example.png")
+    plt.savefig(out_file)
     plt.close()
     
 def plot_uncertainty(uncertainty_map,out_file="uncertainty_map.png",normalize=True,):
