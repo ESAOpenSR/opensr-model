@@ -9,8 +9,8 @@ ckpt_version: "opensr-ldsrs2_v1_0_0.ckpt"
 encode_conditioning: True
 
 denoiser_settings: # noise settings
-  linear_start: 0.0015
-  linear_end: 0.0155
+  linear_start: 0.0001
+  linear_end: 0.01
   timesteps: 1000 # Timesteps from training
 
 
