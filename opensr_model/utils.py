@@ -209,22 +209,22 @@ def apply_no_data_mask(X, mask):
 def plot_example(lr,sr,out_file="example.png"):
     # Assumes input is the LR example tensor nad the SR from the demo.py
     sr = sr.cpu()*3.5
-    sr = sr.clamp(0,1)  # Ensure values are in [0, 1] range
+    sr = sr.clamp(0.001,0.9999)  # Ensure values are in [0, 1] range
     lr = lr.cpu()*3.5
-    lr = lr.clamp(0,1)  # Ensure values are in [0, 1] range
-    sr = sr
+    lr = lr.clamp(0.001,0.9999)  # Ensure values are in [0, 1] range
     fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-    ax[0].imshow(rearrange(lr[0,:3,:,:].cpu()*1.5, 'c h w -> h w c').numpy())
+    ax[0].imshow(rearrange(lr[0,:3,:,:].cpu(), 'c h w -> h w c').numpy())
     ax[0].set_title("LR")
-    ax[1].imshow(rearrange(sr[0,:3,:,:].cpu()*1.5, 'c h w -> h w c').numpy())
+    ax[1].imshow(rearrange(sr[0,:3,:,:].cpu(), 'c h w -> h w c').numpy())
     ax[1].set_title("SR")
+    plt.tight_layout()
     plt.savefig(out_file)
     plt.close()
     
 def plot_uncertainty(uncertainty_map,out_file="uncertainty_map.png",normalize=True,):
     uncertainty_map = uncertainty_map.cpu()
     img = rearrange(uncertainty_map[0, :, :, :], 'c h w -> h w c').numpy()
-
+    
     # Convert to grayscale if single-channel
     if img.shape[2] == 1:
         img = img[:, :, 0]
@@ -235,7 +235,7 @@ def plot_uncertainty(uncertainty_map,out_file="uncertainty_map.png",normalize=Tr
         img_max = img.max()
         img = (img - img_min) / (img_max - img_min + 1e-8)
 
-    fig, ax = plt.subplots(figsize=(5, 5))
+    fig, ax = plt.subplots(figsize=(7, 7))
     im = ax.imshow(img, cmap='viridis')
     ax.set_title("Uncertainty Map")
     label = "Uncertainty (Normalized)" if normalize else "Uncertainty (Absolute)"
