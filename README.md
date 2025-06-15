@@ -1,5 +1,10 @@
+<img src="https://github.com/ESAOpenSR/opensr-model/blob/main/resources/opensr_logo.png?raw=true" width="250"/>
+
 # Latent Diffusion Super-Resolution - Sentinel 2 (LDSR-S2)
 This repository contains the code of the paper [Trustworthy Super-Resolution of Multispectral Sentinel-2 Imagery with Latent Diffusion](https://ieeexplore.ieee.org/abstract/document/10887321).  
+
+  
+<img src="https://github.com/ESAOpenSR/opensr-model/blob/main/resources/ldsr-s2_schema.png?raw=true" width="750"/>
 
 **PLEASE NOTE**:
 - This model is currently research-grade code, more user-friendly adaptations are planned for the future.
@@ -12,7 +17,7 @@ This repository contains the code of the paper [Trustworthy Super-Resolution of 
 ## Citation
 If you use this model in your work, please cite  
 ```tex
-@ARTICLE{10887321,
+@ARTICLE{ldsrs2,
   author={Donike, Simon and Aybar, Cesar and Gómez-Chova, Luis and Kalaitzis, Freddie},
   journal={IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing}, 
   title={Trustworthy Super-Resolution of Multispectral Sentinel-2 Imagery With Latent Diffusion}, 
