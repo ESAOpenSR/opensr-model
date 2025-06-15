@@ -11,8 +11,9 @@ This repository contains the code of the paper [Trustworthy Super-Resolution of 
 - This repository will leave the experimental stage with v1.0.0.
 
 
-### Google Colab Demo - Interactive Notebook  
-Run this model in Google Colab! The notebook now supports the unrestricted selection of your own coordinates and automatic download and SR of S2 imagery.
+## Google Colab Demo - Interactive Notebook  
+Run this model in Google Colab! The notebook now supports the unrestricted selection of your own coordinates and automatic download and SR of S2 imagery.  
+
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1onza61SP5IyiUQM85PtyVLz6JovvQ0TN?usp=sharing)
 
 ## Citation
