@@ -1,6 +1,9 @@
 import torch
 from einops import rearrange
 from matplotlib import pyplot as plt
+import matplotlib
+from scipy.ndimage import gaussian_filter
+
 
 def linear_transform_placeholder(t_input, stage="norm"):
     return( t_input )
@@ -206,22 +209,50 @@ def apply_no_data_mask(X, mask):
     return X_masked
 
 
-def plot_example(lr,sr,out_file="example.png"):
-    # Assumes input is the LR example tensor nad the SR from the demo.py
-    sr = sr.cpu()*3.5
-    sr = sr.clamp(0.001,0.9999)  # Ensure values are in [0, 1] range
-    lr = lr.cpu()*3.5
-    lr = lr.clamp(0.001,0.9999)  # Ensure values are in [0, 1] range
-    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-    ax[0].imshow(rearrange(lr[0,:3,:,:].cpu(), 'c h w -> h w c').numpy())
-    ax[0].set_title("LR")
-    ax[1].imshow(rearrange(sr[0,:3,:,:].cpu(), 'c h w -> h w c').numpy())
-    ax[1].set_title("SR")
+import matplotlib.pyplot as plt
+from einops import rearrange
+
+def plot_example(lr, sr, out_file="example.png"):
+    # Scale and clamp
+    sr = sr.cpu() * 3.5
+    sr = sr.clamp(0.001, 0.9999)
+    lr = lr.cpu() * 3.5
+    lr = lr.clamp(0.001, 0.9999)
+
+    # Convert to HWC NumPy
+    lr_img = rearrange(lr[0, :3, :, :], 'c h w -> h w c').numpy()
+    sr_img = rearrange(sr[0, :3, :, :], 'c h w -> h w c').numpy()
+
+    # Center crop 32x32
+    def center_crop(img, size=32):
+        h, w, _ = img.shape
+        top = (h - size) // 2
+        left = (w - size) // 2
+        return img[top:top+size, left:left+size, :]
+
+    lr_crop = center_crop(lr_img)
+    sr_crop = center_crop(sr_img, size=32*4)
+
+    # Plot 2 rows × 2 columns
+    fig, ax = plt.subplots(2, 2, figsize=(15, 15))
+    ax[0, 0].imshow(lr_img)
+    ax[0, 0].set_title("LR")
+    ax[0, 1].imshow(sr_img)
+    ax[0, 1].set_title("SR")
+    ax[1, 0].imshow(lr_crop)
+    ax[1, 0].set_title("LR Center Crop 32x32")
+    ax[1, 1].imshow(sr_crop)
+    ax[1, 1].set_title("SR Center Crop 32x32")
+
+    for a in ax.flatten():
+        a.axis('off')
+
     plt.tight_layout()
     plt.savefig(out_file)
     plt.close()
     
-def plot_uncertainty(uncertainty_map,out_file="uncertainty_map.png",normalize=True,):
+
+def plot_uncertainty(uncertainty_map,out_file="uncertainty_map.png",normalize=True):
     uncertainty_map = uncertainty_map.cpu()
     img = rearrange(uncertainty_map[0, :, :, :], 'c h w -> h w c').numpy()
     
@@ -234,16 +265,20 @@ def plot_uncertainty(uncertainty_map,out_file="uncertainty_map.png",normalize=Tr
         img_min = img.min()
         img_max = img.max()
         img = (img - img_min) / (img_max - img_min + 1e-8)
+    
+    # apply gaussian to smoothen visualization
+    img = gaussian_filter(img, sigma=1.0)
 
+    # plot image
     fig, ax = plt.subplots(figsize=(7, 7))
-    im = ax.imshow(img, cmap='viridis')
+    im = ax.imshow(img, cmap='RdYlGn_r')
     ax.set_title("Uncertainty Map")
     label = "Uncertainty (Normalized)" if normalize else "Uncertainty (Absolute)"
     plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04, label=label)
     plt.tight_layout()
     plt.savefig(out_file)
     plt.close()
-    
+
 
 def download_from_HF(file_name="example_lr.pt"):
     """
