@@ -6,15 +6,17 @@ This repository contains the code of the paper [Trustworthy Super-Resolution of 
   
 <img src="https://github.com/ESAOpenSR/opensr-model/blob/main/resources/ldsr-s2_schema.png?raw=true" width="750"/>
 
-**PLEASE NOTE**:
-- This model is currently research-grade code, more user-friendly adaptations are planned for the future.
-- This repository will leave the experimental stage with v1.0.0.
-
-
 ## Google Colab Demo - Interactive Notebook  
-Run this model in Google Colab! The notebook now supports the unrestricted selection of your own coordinates and automatic download and SR of S2 imagery.  
+Run this model in Google Colab! The notebook now supports the unrestricted selection of your own coordinates and automated download and SR of S2 imagery.  
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1onza61SP5IyiUQM85PtyVLz6JovvQ0TN?usp=sharing)
+
+
+**PLEASE NOTE**:
+- This has left the experimental stage with v1.0.0
+- If you are interested in applying SR to the **10m and 20m bands**, please check out [SEN2SR](https://github.com/ESAOpenSR/SEN2SR). Open SEN2SR and LDSR-S2 here:  
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1NJuyswsquOLMFc_AP93P_5QcZnbNhGuB?usp=sharing)
+
 
 ## Citation
 If you use this model in your work, please cite  
@@ -30,7 +32,7 @@ If you use this model in your work, please cite
   doi={10.1109/JSTARS.2025.3542220}}
 ```
 
-## Install and Usage
+## Install and Usage - Local
 ```bash
 pip install opensr-model
 ```
@@ -40,8 +42,7 @@ Minimal Example
 import opensr_model # import pachage
 model = opensr_model.SRLatentDiffusion(config, device=device) # create model
 model.load_pretrained(config.ckpt_version) # load checkpoint
-lr = torch.rand(1,4,128,128) # create data
-sr = model.forward(lr, custom_steps=100) # run SR
+sr = model.forward(torch.rand(1,4,128,128), custom_steps=100) # run SR
 ```  
   
 Run the 'demo.py' file to gain an understanding how the package works. It will SR and example tensor and save the according uncertainty map.
@@ -64,7 +65,7 @@ Examples on S2NAIP training dataset
 
 
 ## Status
-This is a work in progress and published explicitly as a research preview. This repository will leave the experimental stage with the publication of v1.0.0.   
+This repository has left the experimental stage with the publication of v1.0.0.   
   
 ## Results Preview
 Some example Sr scenes can be found as [super-resoluted tiffs](https://drive.google.com/drive/folders/1OBgYS6c8Kpe_JuGzWOQwOK6UYwhm-3Vh?usp=drive_link) on Doogle Drive. Scenes available:
