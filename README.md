@@ -14,8 +14,7 @@ Run this model in Google Colab! The notebook now supports the unrestricted selec
 
 **PLEASE NOTE**:
 - This has left the experimental stage with v1.0.0
-- If you are interested in applying SR to the **10m and 20m bands**, please check out [SEN2SR](https://github.com/ESAOpenSR/SEN2SR). Open SEN2SR and LDSR-S2 here:  
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1NJuyswsquOLMFc_AP93P_5QcZnbNhGuB?usp=sharing)
+- If you are interested in applying SR to the **10m and 20m bands**, please check out [SEN2SR](https://github.com/ESAOpenSR/SEN2SR). Use SEN2SR and LDSR-S2 here: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1NJuyswsquOLMFc_AP93P_5QcZnbNhGuB?usp=sharing)
 
 
 ## Citation
