@@ -234,15 +234,15 @@ def plot_example(lr, sr, out_file="example.png"):
     sr_crop = center_crop(sr_img, size=32*4)
 
     # Plot 2 rows × 2 columns
-    fig, ax = plt.subplots(2, 2, figsize=(15, 15))
+    fig, ax = plt.subplots(2, 2, figsize=(10, 10))
     ax[0, 0].imshow(lr_img)
-    ax[0, 0].set_title("LR")
+    ax[0, 0].set_title("LR (RGB) - 4x128x128")
     ax[0, 1].imshow(sr_img)
-    ax[0, 1].set_title("SR")
+    ax[0, 1].set_title("SR (RGB) - 4x512x512")
     ax[1, 0].imshow(lr_crop)
-    ax[1, 0].set_title("LR Center Crop 32x32")
+    ax[1, 0].set_title("LR Detail - 32x32")
     ax[1, 1].imshow(sr_crop)
-    ax[1, 1].set_title("SR Center Crop 32x32")
+    ax[1, 1].set_title("SR Detail - 128x128")
 
     for a in ax.flatten():
         a.axis('off')
