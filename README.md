@@ -66,12 +66,4 @@ Examples on S2NAIP training dataset
 ## Status
 This repository has left the experimental stage with the publication of v1.0.0.   
   
-## Results Preview
-Some example Sr scenes can be found as [super-resoluted tiffs](https://drive.google.com/drive/folders/1OBgYS6c8Kpe_JuGzWOQwOK6UYwhm-3Vh?usp=drive_link) on Doogle Drive. Scenes available:
-- Buenos Aires, Argentina  
-- Blue Mountains, Australia  
-- Louisville, USA  
-- Kutahya, Türkyie  
-- Catalunya, Spain  
-      
 [![PyPI Downloads](https://static.pepy.tech/badge/opensr-model)](https://pepy.tech/projects/opensr-model)
