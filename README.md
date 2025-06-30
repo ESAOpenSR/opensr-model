@@ -6,15 +6,22 @@ This repository contains the code of the paper [Trustworthy Super-Resolution of 
   
 <img src="https://github.com/ESAOpenSR/opensr-model/blob/main/resources/ldsr-s2_schema.png?raw=true" width="750"/>
 
-## Google Colab Demo - Interactive Notebook  
-Run this model in Google Colab! The notebook now supports the unrestricted selection of your own coordinates and automated download and SR of S2 imagery.  
+## 🚀 Google Colab Demos – Interactive Notebooks
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1onza61SP5IyiUQM85PtyVLz6JovvQ0TN?usp=sharing)
+Run LDSR-S2 directly in Google Colab! These notebooks let you fetch Sentinel-2 imagery, apply super-resolution, and save results — with or without writing code.
 
+| Notebook Name                  | Description                                                                                      | Link                                                                 |
+|-------------------------------|--------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
+| **LDSR-S2 No-Code**           | 🔘 No coding required — just input coordinates and download SR results as GeoTIFFs               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1onza61SP5IyiUQM85PtyVLz6JovvQ0TN?usp=sharing) |
+| **LDSR-S2 Demo**              | 🧪 Code-level walkthrough with uncertainty estimation and advanced plotting                       | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1yL3JbFeKFWl7KikSKx1EJGbHdZ7vUVLZ?usp=sharing) |
+| **LDSR-S2 & SEN2SR**          | 🔄 Use LDSR-S2 alongside SEN2SR to compare results on 10m + 20m bands                             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1NJuyswsquOLMFc_AP93P_5QcZnbNhGuB?usp=sharing) |
 
-**PLEASE NOTE**:
-- This has left the experimental stage with v1.0.0
-- If you are interested in applying SR to the **10m and 20m bands**, please check out [SEN2SR](https://github.com/ESAOpenSR/SEN2SR). Use SEN2SR and LDSR-S2 here: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1NJuyswsquOLMFc_AP93P_5QcZnbNhGuB?usp=sharing)
+---
+
+**🧪 Status**: LDSR-S2 has exited the experimental phase as of **v1.0.0**
+
+📌 For super-resolving **20m bands**, check out [`SEN2SR`](https://github.com/ESAOpenSR/SEN2SR), or use it alongside LDSR-S2 in the third notebook.
+
 
 
 ## Citation
