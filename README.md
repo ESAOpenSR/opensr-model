@@ -12,7 +12,7 @@ Run LDSR-S2 directly in Google Colab! These notebooks let you fetch Sentinel-2 i
 
 | Notebook Name                  | Description                                                                                      | Link                                                                 |
 |-------------------------------|--------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
-| **LDSR-S2 No-Code**           | 🔘 No coding required — just chose coordinates on a map and download SR results as GeoTIFFs               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1xhlVjGkHPF1znafSGrWtyZ0wzcogVRCe?usp=sharing) |
+| **LDSR-S2 No-Code**           | 🔘 No coding required — chose point on a map and download SR results as GeoTIFFs               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1xhlVjGkHPF1znafSGrWtyZ0wzcogVRCe?usp=sharing) |
 | **LDSR-S2 Walkthrough**              | 🧪 Code-level walkthrough with uncertainty estimation and advanced plotting                       | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1yL3JbFeKFWl7KikSKx1EJGbHdZ7vUVLZ?usp=sharing) |
 | **LDSR-S2 & SEN2SR**          | 🔄 Use LDSR-S2 alongside SEN2SR to compare results on 10m + 20m bands                             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1NJuyswsquOLMFc_AP93P_5QcZnbNhGuB?usp=sharing) |
 
