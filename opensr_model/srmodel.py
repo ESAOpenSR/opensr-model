@@ -113,9 +113,9 @@ class SRLatentDiffusion(torch.nn.Module):
     def forward(
         self,
         X: torch.Tensor,
-        eta: float = 1.0,
-        custom_steps: int = 100,
-        temperature: float = 1.0,
+        eta: float = None,
+        sampling_steps: int = None,
+        temperature: float = None,
         histogram_matching: bool = True,
         save_iterations: bool = False,
         verbose: bool = False
@@ -127,7 +127,7 @@ class SRLatentDiffusion(torch.nn.Module):
                 in the range [0, 1] and shape CxWxH, the super resolution of the image
                 is returned. If a batch of images with shape BxCxWxH is given, a batch
                 of super resolved images is returned.
-            custom_steps (int, optional): Number of steps to run the denoiser. Defaults
+            sampling_steps (int, optional): Number of steps to run the denoiser. Defaults
                 to 100.
             temperature (float, optional): Temperature to use in the denoiser.
                 Defaults to 1.0. The higher the temperature, the more stochastic
@@ -139,8 +139,15 @@ class SRLatentDiffusion(torch.nn.Module):
             torch.Tensor: The super resolved image or batch of images with a shape of
                 Cx(Wx4)x(Hx4) or BxCx(Wx4)x(Hx4).
         """
+        # fall back on config if args are None
+        if eta is None:
+            eta = self.config.denoiser_settings.sample_eta
+        if temperature is None:
+            temperature = self.config.denoiser_settings.sample_temperature
+        if sampling_steps is None:
+            sampling_steps = self.config.denoiser_settings.sampling_steps
         
-        # Assert shape, size, dimensionality
+        # Assert shape, size, dimensionality. Add padding if necessary
         X,padding = assert_tensor_validity(X)
         
         # create no_data_mask
@@ -152,9 +159,9 @@ class SRLatentDiffusion(torch.nn.Module):
         
         # ddim, latent and time_range
         ddim, latent, time_range = self._prepare_model(
-            X=Xnorm, eta=eta, custom_steps=custom_steps, verbose=verbose
+            X=Xnorm, eta=eta, custom_steps=sampling_steps, verbose=verbose
         )
-        iterator = tqdm(time_range, desc="DDIM Sampler", total=custom_steps,disable=True)
+        iterator = tqdm(time_range, desc="DDIM Sampler", total=sampling_steps,disable=True)
 
         # Iterate over the timesteps
         if save_iterations:
@@ -165,7 +172,7 @@ class SRLatentDiffusion(torch.nn.Module):
                 x=latent,
                 c=Xnorm,
                 t=step,
-                index=custom_steps - i - 1,
+                index=sampling_steps - i - 1,
                 use_original_steps=False,
                 temperature=temperature
             )
@@ -180,6 +187,8 @@ class SRLatentDiffusion(torch.nn.Module):
             return save_iters
         
         sr = self._tensor_decode(latent, spe_cor=histogram_matching) # decode the latent image
+        
+        # Post-processing
         sr = apply_no_data_mask(sr, no_data_mask) # apply no data mask as in LR image
         sr = revert_padding(sr,padding) # remove padding from the SR image if there was any
         return sr
@@ -463,7 +472,7 @@ class SRLatentDiffusionLightning(LightningModule):
     def predict_step(self, x, idx: int = 0,**kwargs):
         # perform SR
         assert self.model.training == False, "Model in Training mode. Abort." # make sure we're in eval
-        p = self.model.forward(x,custom_steps=self.custom_steps,temperature=self.temperature)
+        p = self.model.forward(x)
         return(p)
     
     @torch.no_grad()

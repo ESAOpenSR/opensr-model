@@ -12,8 +12,12 @@ encode_conditioning: True
 
 denoiser_settings: # noise settings
   linear_start: 0.0001
-  linear_end: 0.01
+  linear_end: 0.015
   timesteps: 1000 # Timesteps from training
+  parameterization: "eps" # ["eps" or "x0"]
+  sample_eta: 0.0 # 0-1
+  sample_temperature: 1.0
+  sampling_steps: 100
 
 
 # AE Settings
