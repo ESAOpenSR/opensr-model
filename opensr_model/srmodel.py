@@ -141,9 +141,9 @@ class SRLatentDiffusion(torch.nn.Module):
         """
         # fall back on config if args are None
         if sampling_eta is None:
-            sampling_eta = self.config.denoiser_settings.sample_eta
+            sampling_eta = self.config.denoiser_settings.sampling_eta
         if sampling_temperature is None:
-            sampling_temperature = self.config.denoiser_settings.sample_temperature
+            sampling_temperature = self.config.denoiser_settings.sampling_temperature
         if sampling_steps is None:
             sampling_steps = self.config.denoiser_settings.sampling_steps
         
