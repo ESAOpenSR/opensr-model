@@ -113,9 +113,9 @@ class SRLatentDiffusion(torch.nn.Module):
     def forward(
         self,
         X: torch.Tensor,
-        eta: float = None,
+        sampling_eta: float = None,
         sampling_steps: int = None,
-        temperature: float = None,
+        sampling_temperature: float = None,
         histogram_matching: bool = True,
         save_iterations: bool = False,
         verbose: bool = False
@@ -140,10 +140,10 @@ class SRLatentDiffusion(torch.nn.Module):
                 Cx(Wx4)x(Hx4) or BxCx(Wx4)x(Hx4).
         """
         # fall back on config if args are None
-        if eta is None:
-            eta = self.config.denoiser_settings.sample_eta
-        if temperature is None:
-            temperature = self.config.denoiser_settings.sample_temperature
+        if sampling_eta is None:
+            sampling_eta = self.config.denoiser_settings.sample_eta
+        if sampling_temperature is None:
+            sampling_temperature = self.config.denoiser_settings.sample_temperature
         if sampling_steps is None:
             sampling_steps = self.config.denoiser_settings.sampling_steps
         
@@ -159,7 +159,7 @@ class SRLatentDiffusion(torch.nn.Module):
         
         # ddim, latent and time_range
         ddim, latent, time_range = self._prepare_model(
-            X=Xnorm, eta=eta, custom_steps=sampling_steps, verbose=verbose
+            X=Xnorm, eta=sampling_eta, custom_steps=sampling_steps, verbose=verbose
         )
         iterator = tqdm(time_range, desc="DDIM Sampler", total=sampling_steps,disable=True)
 

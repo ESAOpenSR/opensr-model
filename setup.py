@@ -6,7 +6,7 @@ with open('README.md', encoding='utf-8') as f:
 
 setup(
     name='opensr-model',
-    version='1.0.3',
+    version='1.0.4',
     author = "Simon Donike, Cesar Aybar, Luis Gomez Chova, Freddie Kalaitzis",
     author_email = "accounts@donike.net",
     description = "ESA OpenSR Diffusion model package for Super-Resolution of Senintel-2 Imagery",
