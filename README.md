@@ -48,7 +48,7 @@ Minimal Example
 import opensr_model # import pachage
 model = opensr_model.SRLatentDiffusion(config, device=device) # create model
 model.load_pretrained(config.ckpt_version) # load checkpoint
-sr = model.forward(torch.rand(1,4,128,128), custom_steps=100) # run SR
+sr = model.forward(torch.rand(1,4,128,128), sampling_steps=100) # run SR
 ```  
   
 Run the 'demo.py' file to gain an understanding how the package works. It will SR and example tensor and save the according uncertainty map.
