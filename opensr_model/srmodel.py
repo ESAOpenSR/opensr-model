@@ -174,7 +174,7 @@ class SRLatentDiffusion(torch.nn.Module):
                 t=step,
                 index=sampling_steps - i - 1,
                 use_original_steps=False,
-                temperature=temperature
+                temperature=sampling_temperature
             )
             latent, _ = outs
             
@@ -317,7 +317,7 @@ class SRLatentDiffusion(torch.nn.Module):
                     random.seed(seed)
                     #pytorch_lightning.utilities.seed.seed_everything(seed=seed, workers=True)
 
-                sr = self.forward(x_b, custom_steps=custom_steps)  # shape (1, C, H, W)
+                sr = self.forward(x_b, sampling_steps=custom_steps,sampling_eta=0.0)  # shape (1, C, H, W)
                 variations.append(sr.detach().cpu())
 
             variations = torch.stack(variations)  # (n_variations, 1, C, H, W)
