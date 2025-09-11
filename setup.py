@@ -25,5 +25,6 @@ setup(
 	'scikit-image',
     'pytorch-lightning',
     'requests',
-    'omegaconf',],
+    'omegaconf',
+	'matplotlib'],
 )
