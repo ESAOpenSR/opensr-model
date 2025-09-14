@@ -133,6 +133,9 @@ def assert_tensor_validity(tensor):
     if len(tensor.shape)==3:
         tensor = tensor.unsqueeze(0)
 
+    # Turn NaNs to 0 and Infs to 1
+    tensor = torch.nan_to_num(tensor, nan=0.0, posinf=1.0, neginf=1.0)
+
     # ASSERT BxCxHxW ORDER
     # Check the size of the input tensor
     if tensor.shape[-1]<10:

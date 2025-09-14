@@ -18,7 +18,7 @@ lr = (lr/10_000).to(torch.float32).to(device)
 
 # -------------------------------------------------------------------------------------
 # 1. Run Super-Resolution
-sr = model.forward(lr, custom_steps=100)
+sr = model.forward(lr, sampling_steps=100)
 
 # -------------------------------------------------------------------------------------
 # 2. Run Encertainty Map Generation

@@ -284,7 +284,7 @@ class SRLatentDiffusion(torch.nn.Module):
         print("Loaded pretrained weights from: ", weights_file)
         
         
-    def uncertainty_map(self, x, n_variations=15, custom_steps=100):
+    def uncertainty_map(self, x, n_variations=15, sampling_steps=100):
         """
         Estimates uncertainty maps for each sample in the input batch using repeated stochastic forward passes.
 
@@ -317,7 +317,7 @@ class SRLatentDiffusion(torch.nn.Module):
                     random.seed(seed)
                     #pytorch_lightning.utilities.seed.seed_everything(seed=seed, workers=True)
 
-                sr = self.forward(x_b, sampling_steps=custom_steps,sampling_eta=0.0)  # shape (1, C, H, W)
+                sr = self.forward(x_b, sampling_steps=sampling_steps,sampling_eta=0.0)  # shape (1, C, H, W)
                 variations.append(sr.detach().cpu())
 
             variations = torch.stack(variations)  # (n_variations, 1, C, H, W)
@@ -360,7 +360,7 @@ class SRLatentDiffusion(torch.nn.Module):
         self,
         X: torch.Tensor,
         mask: torch.Tensor,
-        eta: float = 1.0,
+        eta: float = 0.0,
         temperature: float = 1.0,
         custom_steps: int = 100,
         steps_to_consider_for_attributions: list = list(range(100)),
