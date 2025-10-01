@@ -45,6 +45,14 @@ pip install opensr-model
 
 Minimal Example  
 ```python
+# Get Config
+from io import StringIO
+import requests
+config_url = "https://raw.githubusercontent.com/ESAOpenSR/opensr-model/refs/tags/v0.3.1/opensr_model/configs/config_10m.yaml"
+response = requests.get(config_url)
+config = OmegaConf.load(StringIO(response.text))
+
+# Get Model
 import opensr_model # import pachage
 model = opensr_model.SRLatentDiffusion(config, device=device) # create model
 model.load_pretrained(config.ckpt_version) # load checkpoint
