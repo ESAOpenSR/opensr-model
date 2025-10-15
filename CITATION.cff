@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite the following publication."
+title: "Trustworthy Super-Resolution of Multispectral Sentinel-2 Imagery With Latent Diffusion"
+authors:
+  - family-names: Donike
+    given-names: Simon
+    affiliation: "Image Processing Laboratory (IPL), University of Valencia"
+  - family-names: Aybar
+    given-names: Cesar
+    affiliation: "Image Processing Laboratory (IPL), University of Valencia"
+  - family-names: Gómez-Chova
+    given-names: Luis
+    affiliation: "Image Processing Laboratory (IPL), University of Valencia"
+  - family-names: Kalaitzis
+    given-names: Freddie
+    affiliation: "University of Oxford"
+journal: "IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing"
+year: 2025
+volume: 18
+pages: 6940-6952
+doi: 10.1109/JSTARS.2025.3542220
+keywords:
+  - Super-resolution
+  - Remote sensing
+  - Latent diffusion
+  - Model uncertainty
+  - Sentinel-2
+  - Deep learning
+  - European Space Agency
+  - Image reconstruction
+  - Uncertainty estimation
+  - Diffusion models
+type: article
+url: "https://doi.org/10.1109/JSTARS.2025.3542220"
