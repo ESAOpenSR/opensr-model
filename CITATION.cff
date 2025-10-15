@@ -1,6 +1,5 @@
 cff-version: 1.2.0
 message: "If you use this work, please cite the following publication."
-title: "Trustworthy Super-Resolution of Multispectral Sentinel-2 Imagery With Latent Diffusion"
 authors:
 - family-names: "Donike"
   given-names: "Simon"
@@ -14,10 +13,11 @@ authors:
 - family-names: "Kalaitzis"
   given-names: "Freddie"
   affiliation: "University of Oxford"
+title: "Trustworthy Super-Resolution of Multispectral Sentinel-2 Imagery With Latent Diffusion"
+
 journal: "IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing"
 year: 2025
 volume: 18
-pages: "6940-6952"
-doi: "10.1109/JSTARS.2025.3542220"
+doi: 10.1109/JSTARS.2025.3542220
 type: article
 url: "https://doi.org/10.1109/JSTARS.2025.3542220"
