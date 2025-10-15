@@ -19,16 +19,5 @@ year: 2025
 volume: 18
 pages: 6940-6952
 doi: 10.1109/JSTARS.2025.3542220
-keywords:
-  - Super-resolution
-  - Remote sensing
-  - Latent diffusion
-  - Model uncertainty
-  - Sentinel-2
-  - Deep learning
-  - European Space Agency
-  - Image reconstruction
-  - Uncertainty estimation
-  - Diffusion models
 type: article
 url: "https://doi.org/10.1109/JSTARS.2025.3542220"
