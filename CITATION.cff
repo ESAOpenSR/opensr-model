@@ -3,18 +3,13 @@ message: "If you use this work, please cite the following publication."
 authors:
 - family-names: "Donike"
   given-names: "Simon"
-  affiliation: "Image Processing Laboratory (IPL), University of Valencia"
 - family-names: "Aybar"
   given-names: "Cesar"
-  affiliation: "Image Processing Laboratory (IPL), University of Valencia"
 - family-names: "Gómez-Chova"
   given-names: "Luis"
-  affiliation: "Image Processing Laboratory (IPL), University of Valencia"
 - family-names: "Kalaitzis"
   given-names: "Freddie"
-  affiliation: "University of Oxford"
 title: "Trustworthy Super-Resolution of Multispectral Sentinel-2 Imagery With Latent Diffusion"
-
 journal: "IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing"
 year: 2025
 volume: 18
