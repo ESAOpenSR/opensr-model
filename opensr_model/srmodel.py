@@ -146,6 +146,9 @@ class SRLatentDiffusion(torch.nn.Module):
             sampling_temperature = self.config.denoiser_settings.sampling_temperature
         if sampling_steps is None:
             sampling_steps = self.config.denoiser_settings.sampling_steps
+            
+        # Set potentially problematic values to 0 to avoid issues in the model.
+        X = torch.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
         
         # Assert shape, size, dimensionality. Add padding if necessary
         X,padding = assert_tensor_validity(X)
@@ -472,6 +475,7 @@ class SRLatentDiffusionLightning(LightningModule):
     def predict_step(self, x, idx: int = 0,**kwargs):
         # perform SR
         assert self.model.training == False, "Model in Training mode. Abort." # make sure we're in eval
+        x = torch.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0) # replace nans and infs in input with 0s
         p = self.model.forward(x)
         return(p)
     
@@ -479,4 +483,3 @@ class SRLatentDiffusionLightning(LightningModule):
     def uncertainty_map(self, x,n_variations=15,custom_steps=100):
         uncertainty_map = self.model.uncertainty_map(x,n_variations,custom_steps)
         return(uncertainty_map)
-

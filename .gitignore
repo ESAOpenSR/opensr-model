@@ -13,6 +13,7 @@ example_images/
 client_secret.json
 test_slurm.sh
 runs/
+playground/
 
 *.svg
 old/
