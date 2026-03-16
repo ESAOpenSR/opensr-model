@@ -160,14 +160,17 @@ def submit_patch_run(
     return run_id, run_dir, submission
 
 
-def submit_grid_run(
+def _submit_patch_collection(
     *,
+    mode: str,
     config: RuntimeConfig,
     patches: list[Patch],
     start_date: str,
     end_date: str,
     script_path: Path,
     dry_run: bool = False,
+    aoi_path: Path | None = None,
+    aoi_layer: str | None = None,
 ) -> tuple[str, Path, Mapping[str, object]]:
     run_id = new_run_id(config.project_name)
     run_dir = resolve_run_dir(config.output_root, run_id)
@@ -230,7 +233,7 @@ def submit_grid_run(
 
     run_manifest = {
         "run_id": run_id,
-        "mode": "grid",
+        "mode": mode,
         "patch_count": len(tasks),
         "start_date": start_date,
         "end_date": end_date,
@@ -241,6 +244,10 @@ def submit_grid_run(
         ],
         "skipped": skipped,
     }
+    if aoi_path is not None:
+        run_manifest["aoi_path"] = str(aoi_path)
+    if aoi_layer is not None:
+        run_manifest["aoi_layer"] = aoi_layer
     write_yaml(run_dir / "run_manifest.yaml", run_manifest)
 
     if not tasks:
@@ -258,3 +265,47 @@ def submit_grid_run(
     )
     submission = submit_job(spec, run_dir / "submission", dry_run=dry_run)
     return run_id, run_dir, submission
+
+
+def submit_grid_run(
+    *,
+    config: RuntimeConfig,
+    patches: list[Patch],
+    start_date: str,
+    end_date: str,
+    script_path: Path,
+    dry_run: bool = False,
+) -> tuple[str, Path, Mapping[str, object]]:
+    return _submit_patch_collection(
+        mode="grid",
+        config=config,
+        patches=patches,
+        start_date=start_date,
+        end_date=end_date,
+        script_path=script_path,
+        dry_run=dry_run,
+    )
+
+
+def submit_aoi_run(
+    *,
+    config: RuntimeConfig,
+    patches: list[Patch],
+    start_date: str,
+    end_date: str,
+    script_path: Path,
+    aoi_path: Path,
+    aoi_layer: str | None = None,
+    dry_run: bool = False,
+) -> tuple[str, Path, Mapping[str, object]]:
+    return _submit_patch_collection(
+        mode="aoi",
+        config=config,
+        patches=patches,
+        start_date=start_date,
+        end_date=end_date,
+        script_path=script_path,
+        dry_run=dry_run,
+        aoi_path=aoi_path,
+        aoi_layer=aoi_layer,
+    )

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 from deployment.opensr_hpc.checkpoint import resolve_checkpoint_path, sha256sum
@@ -8,6 +9,9 @@ from deployment.opensr_hpc.inference import run_inference
 from deployment.opensr_hpc.manifests import read_yaml, write_json
 from deployment.opensr_hpc.metadata import write_software_metadata
 from deployment.opensr_hpc.raster import raster_validity_stats
+
+
+LOGGER = logging.getLogger("opensr-hpc")
 
 
 def _resolve_patch_manifest(manifest_path: Path, task_index: int | None) -> dict:
@@ -39,9 +43,14 @@ def run_task(manifest_path: Path, task_index: int | None = None) -> Path | None:
     output_dir.mkdir(parents=True, exist_ok=True)
     metadata_dir.mkdir(parents=True, exist_ok=True)
     input_tif = _resolve_manifest_local_path(manifest_path, manifest["paths"]["input_tif"])
+    patch_id = str(manifest.get("patch_id", "unknown"))
+
+    LOGGER.info("starting worker task patch_id=%s manifest=%s", patch_id, manifest_path)
+    LOGGER.info("checking staged raster patch_id=%s input_tif=%s", patch_id, input_tif)
 
     validity = raster_validity_stats(input_tif)
     if validity["valid_pixels"] == 0 or validity["nonzero_pixels"] == 0:
+        LOGGER.info("skipping patch_id=%s because input raster is empty or all-zero stats=%s", patch_id, validity)
         write_json(
             metadata_dir / "result.json",
             {
@@ -65,6 +74,12 @@ def run_task(manifest_path: Path, task_index: int | None = None) -> Path | None:
     )
 
     checkpoint_path = resolve_checkpoint_path(config["model"]["checkpoint_path"])
+    LOGGER.info(
+        "running inference patch_id=%s input_tif=%s checkpoint=%s",
+        patch_id,
+        input_tif,
+        checkpoint_path if checkpoint_path is not None else "<default>",
+    )
     final_output = run_inference(
         input_tif=input_tif,
         output_dir=output_dir,
@@ -88,4 +103,5 @@ def run_task(manifest_path: Path, task_index: int | None = None) -> Path | None:
         },
     )
     write_software_metadata(metadata_dir / "software_env.json")
+    LOGGER.info("completed worker task patch_id=%s output=%s", patch_id, final_output)
     return final_output

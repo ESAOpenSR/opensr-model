@@ -91,9 +91,16 @@ opensr-hpc submit patch \
   --start-date 2025-07-01 \
   --end-date 2025-07-03 \
   --dry-run
+
+opensr-hpc submit aoi \
+  --config deployment/configs/runtime.default.yaml \
+  --aoi-path /data/berlin_aoi \
+  --start-date 2025-07-01 \
+  --end-date 2025-07-03 \
+  --dry-run
 ```
 
-See `deployment/README.md` for the full run layout, config schema, and Slurm entrypoint details.
+See `deployment/README.md` for the full run layout, config schema, AOI settings, and Slurm entrypoint details.
 
 
 # 3. 🖼️ Super-Resolution Examples

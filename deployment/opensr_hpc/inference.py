@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any, cast
 
@@ -9,6 +10,9 @@ from omegaconf import OmegaConf
 from deployment.opensr_hpc.config import InferenceConfig
 from deployment.opensr_hpc.naming import patch_output_name
 from deployment.opensr_hpc.raster import compress_geotiff, compute_centroid_lat_lon
+
+
+LOGGER = logging.getLogger("opensr-hpc")
 
 
 def _build_runner(opensr_utils: Any, inference: InferenceConfig):
@@ -55,6 +59,13 @@ def run_inference(
         ) from exc
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    LOGGER.info(
+        "loading inference model input_tif=%s device=%s window_size=%s batch_size=%s",
+        input_tif,
+        device,
+        inference.window_size,
+        inference.batch_size,
+    )
     cfg = OmegaConf.load(model_config_path)
     if checkpoint_path is not None:
         cfg.ckpt_version = str(checkpoint_path)
@@ -76,6 +87,7 @@ def run_inference(
         save_preview=inference.save_preview,
         debug=False,
     )
+    LOGGER.info("inference finished for input_tif=%s", input_tif)
 
     final_sr_path = getattr(runner, "final_sr_path", None)
     if final_sr_path is None:
@@ -88,6 +100,7 @@ def run_inference(
 
     latitude, longitude = compute_centroid_lat_lon(final_sr_path)
     compressed_path = output_dir / patch_output_name(latitude, longitude)
+    LOGGER.info("compressing SR GeoTIFF input=%s output=%s", final_sr_path, compressed_path)
     compress_geotiff(final_sr_path, compressed_path)
     final_sr_path.unlink(missing_ok=True)
     return compressed_path

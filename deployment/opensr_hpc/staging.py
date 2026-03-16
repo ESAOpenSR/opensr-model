@@ -122,6 +122,14 @@ def stage_cutout(
     output_path: Path,
 ) -> Path:
     ensure_proj_env()
+    LOGGER.info(
+        "staging cubo cutout lat=%s lon=%s start_date=%s end_date=%s output=%s",
+        latitude,
+        longitude,
+        start_date,
+        end_date,
+        output_path,
+    )
     cube = create_cube_with_retry(
         latitude=latitude,
         longitude=longitude,
@@ -132,7 +140,8 @@ def stage_cutout(
     if "time" in cube.dims:
         cube = cube.isel(time=config.image_index)
     cube = cube.transpose("band", "y", "x")
-    ensure_cube_has_valid_data(cube)
+    stats = ensure_cube_has_valid_data(cube)
+    LOGGER.info("validated staged cutout lat=%s lon=%s stats=%s", latitude, longitude, stats)
 
     epsg_text = str(cube.attrs.get("epsg", "") or cube.coords.get("epsg", ""))
     epsg_code = parse_epsg(epsg_text, latitude, longitude)
@@ -151,4 +160,5 @@ def stage_cutout(
         blockysize=512,
         BIGTIFF="YES",
     )
+    LOGGER.info("wrote staged cutout lat=%s lon=%s output=%s", latitude, longitude, output_path)
     return output_path.resolve()

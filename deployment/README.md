@@ -5,7 +5,7 @@ This directory contains an installable Slurm launcher for running `opensr-model`
 ## What it does
 
 - stages Sentinel-2 cutouts with `cubo`
-- submits single-patch or grid runs through `sbatch`
+- submits single-patch, grid, or AOI runs through `sbatch`
 - runs `opensr-model` and `opensr-utils` on worker nodes
 - writes manifests, logs, metadata, and outputs into one run directory
 
@@ -37,12 +37,20 @@ opensr-hpc submit grid \
   --start-date 2025-07-01 \
   --end-date 2025-07-03 \
   --dry-run
+
+opensr-hpc submit aoi \
+  --config deployment/configs/runtime.default.yaml \
+  --aoi-path /data/berlin_aoi \
+  --start-date 2025-07-01 \
+  --end-date 2025-07-03 \
+  --dry-run
 ```
 
 ## Runtime configs
 
 - `deployment/configs/runtime.default.yaml` - baseline config
 - `deployment/configs/runtime.a100.example.yaml` - example GPU-node override
+- set `aoi.path` in the runtime config to define a default shapefile AOI
 
 ## Run layout
 
@@ -65,3 +73,4 @@ runs/<run_id>/
 - the bundled Slurm entrypoint is `deployment/opensr_hpc/slurm/slurm_task_entrypoint.sh`
 - default model config resolves to the packaged `opensr_model/configs/config_10m.yaml`
 - set `model.checkpoint_path` in the runtime config if you want to pin a local checkpoint
+- AOI submission accepts either a `.shp` file or a directory containing exactly one `.shp`; sidecar files like `.shx`, `.dbf`, and `.prj` must sit alongside it
