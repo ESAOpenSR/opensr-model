@@ -68,7 +68,7 @@ class SRLatentDiffusion(torch.nn.Module):
         # encode LR images
         if self.encode_conditioning==True :
             # try to upsample->encode conditioning
-            X_int = torch.nn.functional.interpolate(X, size=(X.shape[-1]*4,X.shape[-1]*4), mode='bilinear', align_corners=False)
+            X_int = torch.nn.functional.interpolate(X, size=(X.shape[-2]*4,X.shape[-1]*4), mode='bilinear', align_corners=False)
             # encode conditioning
             X_enc = self.model.first_stage_model.encode(X_int).sample()
         # move to same device as the model
@@ -146,6 +146,9 @@ class SRLatentDiffusion(torch.nn.Module):
             sampling_temperature = self.config.denoiser_settings.sampling_temperature
         if sampling_steps is None:
             sampling_steps = self.config.denoiser_settings.sampling_steps
+            
+        # Set potentially problematic values to 0 to avoid issues in the model.
+        X = torch.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
         
         # Assert shape, size, dimensionality. Add padding if necessary
         X,padding = assert_tensor_validity(X)
@@ -254,26 +257,35 @@ class SRLatentDiffusion(torch.nn.Module):
             self.load_pretrained("model_weights.ckpt")
         """
 
-        # download pretrained model
-        # create download link based on input 
-        hf_model = str("https://huggingface.co/simon-donike/RS-SR-LTDF/resolve/main/"+str(weights_file))
-        
-        # Total size in bytes.
-        if not pathlib.Path(weights_file).exists():
-            print("Downloading pretrained weights from: ", hf_model)
-            response = requests.get(hf_model, stream=True)
-            total_size = int(response.headers.get('content-length', 0))
-            block_size = 1024  # 1 Kibibyte
-            
-            # Open the file to write as binary - write bytes to a file
-            with open(weights_file, "wb") as f:
-                # Setup the progress bar
-                with tqdm(total=total_size, unit='iB', unit_scale=True, desc=weights_file) as bar:
-                    for data in response.iter_content(block_size):
-                        bar.update(len(data))
-                        f.write(data)
+        weights_path = pathlib.Path(weights_file)
+        hf_model = f"https://huggingface.co/simon-donike/RS-SR-LTDF/resolve/main/{weights_file}"
 
-        weights = torch.load(weights_file, map_location=self.device)["state_dict"]
+        if not weights_path.exists():
+            tmp_path = weights_path.with_name(f"{weights_path.name}.tmp")
+            print("Downloading pretrained weights from: ", hf_model)
+            try:
+                with requests.get(hf_model, stream=True, timeout=30) as response:
+                    response.raise_for_status()
+                    total_size = int(response.headers.get('content-length', 0))
+                    block_size = 1024  # 1 Kibibyte
+
+                    with tmp_path.open("wb") as f:
+                        with tqdm(total=total_size, unit='iB', unit_scale=True, desc=weights_file) as bar:
+                            for data in response.iter_content(block_size):
+                                if not data:
+                                    continue
+                                bar.update(len(data))
+                                f.write(data)
+                tmp_path.replace(weights_path)
+            except Exception as exc:
+                if tmp_path.exists():
+                    tmp_path.unlink()
+                raise RuntimeError(f"Failed to download pretrained weights from {hf_model}") from exc
+
+        try:
+            weights = torch.load(weights_path, map_location=self.device)["state_dict"]
+        except Exception as exc:
+            raise RuntimeError(f"Failed to load pretrained weights from {weights_path}") from exc
 
         # Remote perceptual tensors from weights
         for key in list(weights.keys()):
@@ -295,7 +307,7 @@ class SRLatentDiffusion(torch.nn.Module):
         Args:
             x (torch.Tensor): Input tensor of shape (B, C, H, W), where B is batch size.
             n_variations (int): Number of stochastic forward passes per input sample.
-            custom_steps (int): Custom inference steps passed to the forward method.
+            sampling_steps (int): Sampling steps passed to the forward method.
 
         Returns:
             torch.Tensor: Uncertainty maps of shape (B, 1, H, W), where each value indicates pixel-wise uncertainty.
@@ -321,7 +333,6 @@ class SRLatentDiffusion(torch.nn.Module):
                 variations.append(sr.detach().cpu())
 
             variations = torch.stack(variations)  # (n_variations, 1, C, H, W)
-            srs_mean = variations.mean(dim=0)
             srs_stdev = variations.std(dim=0)
             interval_size = (srs_stdev * 2).mean(dim=1)  # mean over channels
 
@@ -472,11 +483,13 @@ class SRLatentDiffusionLightning(LightningModule):
     def predict_step(self, x, idx: int = 0,**kwargs):
         # perform SR
         assert self.model.training == False, "Model in Training mode. Abort." # make sure we're in eval
+        x = torch.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0) # replace nans and infs in input with 0s
         p = self.model.forward(x)
         return(p)
     
     @torch.no_grad()
-    def uncertainty_map(self, x,n_variations=15,custom_steps=100):
-        uncertainty_map = self.model.uncertainty_map(x,n_variations,custom_steps)
+    def uncertainty_map(self, x, n_variations=15, sampling_steps=100, custom_steps=None):
+        if custom_steps is not None:
+            sampling_steps = custom_steps
+        uncertainty_map = self.model.uncertainty_map(x, n_variations, sampling_steps)
         return(uncertainty_map)
-

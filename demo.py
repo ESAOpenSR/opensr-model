@@ -22,11 +22,10 @@ sr = model.forward(lr, sampling_steps=100)
 
 # -------------------------------------------------------------------------------------
 # 2. Run Encertainty Map Generation
-uncertainty_map = model.uncertainty_map(lr,n_variations=25,custom_steps=100) # create uncertainty map
+uncertainty_map = model.uncertainty_map(lr, n_variations=25, sampling_steps=100) # create uncertainty map
 
 # -------------------------------------------------------------------------------------
 # 3 Plot Examples
 from opensr_model.utils import plot_example,plot_uncertainty
 plot_example(lr,sr,out_file="example.png")
 plot_uncertainty(uncertainty_map,out_file="uncertainty_map.png",normalize=True)
-

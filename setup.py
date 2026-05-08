@@ -45,6 +45,7 @@ setup(
         ],
     },
     package_data={
+        'opensr_model': ['configs/*.yaml'],
         'deployment.opensr_hpc': ['slurm/*.sh'],
     },
 )
