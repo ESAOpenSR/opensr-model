@@ -298,7 +298,7 @@ class SRLatentDiffusion(torch.nn.Module):
         Args:
             x (torch.Tensor): Input tensor of shape (B, C, H, W), where B is batch size.
             n_variations (int): Number of stochastic forward passes per input sample.
-            custom_steps (int): Custom inference steps passed to the forward method.
+            sampling_steps (int): Sampling steps passed to the forward method.
 
         Returns:
             torch.Tensor: Uncertainty maps of shape (B, 1, H, W), where each value indicates pixel-wise uncertainty.
@@ -324,7 +324,6 @@ class SRLatentDiffusion(torch.nn.Module):
                 variations.append(sr.detach().cpu())
 
             variations = torch.stack(variations)  # (n_variations, 1, C, H, W)
-            srs_mean = variations.mean(dim=0)
             srs_stdev = variations.std(dim=0)
             interval_size = (srs_stdev * 2).mean(dim=1)  # mean over channels
 
@@ -480,6 +479,8 @@ class SRLatentDiffusionLightning(LightningModule):
         return(p)
     
     @torch.no_grad()
-    def uncertainty_map(self, x,n_variations=15,custom_steps=100):
-        uncertainty_map = self.model.uncertainty_map(x,n_variations,custom_steps)
+    def uncertainty_map(self, x, n_variations=15, sampling_steps=100, custom_steps=None):
+        if custom_steps is not None:
+            sampling_steps = custom_steps
+        uncertainty_map = self.model.uncertainty_map(x, n_variations, sampling_steps)
         return(uncertainty_map)
