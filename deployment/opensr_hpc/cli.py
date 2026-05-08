@@ -30,6 +30,11 @@ def build_parser() -> argparse.ArgumentParser:
     grid_parser.add_argument("--lat2", type=float, required=True)
     grid_parser.add_argument("--lon2", type=float, required=True)
 
+    aoi_parser = submit_subparsers.add_parser("aoi")
+    _add_submit_common_args(aoi_parser)
+    aoi_parser.add_argument("--aoi-path")
+    aoi_parser.add_argument("--layer")
+
     run_parser = subparsers.add_parser("run")
     run_subparsers = run_parser.add_subparsers(dest="run_command", required=True)
     task_parser = run_subparsers.add_parser("task")
@@ -59,6 +64,18 @@ def _resolve_script_path(script_path: str | None) -> Path:
     if script_path is None:
         return bundled_slurm_entrypoint().resolve()
     return Path(script_path).expanduser().resolve()
+
+
+def _log_multi_cutout_info(logger, patch_count: int, source_name: str) -> None:
+    if patch_count <= 1:
+        return
+    logger.info(
+        "%s uses multiple cubo cutouts (%d); cutouts overlap via staging.overlap_meters, "
+        "but overlapping SR outputs are not reconciled after inference, so downstream mosaics may show seams "
+        "at cutout boundaries",
+        source_name,
+        patch_count,
+    )
 
 
 def _handle_validate(args: argparse.Namespace) -> int:
@@ -117,13 +134,7 @@ def _handle_submit_grid(args: argparse.Namespace) -> int:
         float(config.staging.resolution),
         config.staging.overlap_meters,
     )
-    if len(patches) > 1:
-        logger.info(
-            "grid request uses multiple cubo cutouts (%d); cutouts overlap via staging.overlap_meters, "
-            "but overlapping SR outputs are not reconciled after inference, so downstream mosaics may show seams "
-            "at cutout boundaries",
-            len(patches),
-        )
+    _log_multi_cutout_info(logger, len(patches), "grid request")
     run_id, run_dir, submission = submit_grid_run(
         config=config,
         patches=patches,
@@ -137,9 +148,61 @@ def _handle_submit_grid(args: argparse.Namespace) -> int:
     return 0
 
 
+def _handle_submit_aoi(args: argparse.Namespace) -> int:
+    from deployment.opensr_hpc.aoi import select_aoi_patches
+    from deployment.opensr_hpc.config import load_runtime_config
+    from deployment.opensr_hpc.logging_utils import configure_logging
+    from deployment.opensr_hpc.submit import submit_aoi_run
+
+    logger = configure_logging(verbose=args.verbose)
+    config = load_runtime_config(args.config)
+    aoi_path = args.aoi_path or config.aoi.path
+    if aoi_path is None:
+        raise ValueError("AOI path must be provided via --aoi-path or config.aoi.path")
+    aoi_layer = args.layer if args.layer is not None else config.aoi.layer
+    selection = select_aoi_patches(
+        aoi_path=aoi_path,
+        aoi_layer=aoi_layer,
+        edge_size=config.staging.edge_size,
+        resolution_m=float(config.staging.resolution),
+        overlap_meters=config.staging.overlap_meters,
+    )
+    _log_multi_cutout_info(logger, len(selection.patches), "AOI request")
+    run_id, run_dir, submission = submit_aoi_run(
+        config=config,
+        patches=selection.patches,
+        start_date=args.start_date,
+        end_date=args.end_date,
+        script_path=_resolve_script_path(args.script_path),
+        aoi_path=selection.aoi_path,
+        aoi_layer=selection.aoi_layer,
+        dry_run=args.dry_run,
+    )
+    logger.info(
+        "submitted aoi run_id=%s run_dir=%s patches=%d aoi_path=%s",
+        run_id,
+        run_dir,
+        len(selection.patches),
+        selection.aoi_path,
+    )
+    payload = {
+        "run_id": run_id,
+        "run_dir": str(run_dir),
+        "patches": len(selection.patches),
+        "aoi_path": str(selection.aoi_path),
+        "submission": submission,
+    }
+    if selection.aoi_layer is not None:
+        payload["aoi_layer"] = selection.aoi_layer
+    print(json.dumps(payload, indent=2))
+    return 0
+
+
 def _handle_run_task(args: argparse.Namespace) -> int:
+    from deployment.opensr_hpc.logging_utils import configure_logging
     from deployment.opensr_hpc.run_task import run_task
 
+    configure_logging()
     task_index = args.task_index
     if task_index is None and os.environ.get("SLURM_ARRAY_TASK_ID"):
         task_index = int(os.environ["SLURM_ARRAY_TASK_ID"])
@@ -179,6 +242,8 @@ def main() -> int:
         return _handle_submit_patch(args)
     if args.command == "submit" and args.submit_command == "grid":
         return _handle_submit_grid(args)
+    if args.command == "submit" and args.submit_command == "aoi":
+        return _handle_submit_aoi(args)
     if args.command == "run" and args.run_command == "task":
         return _handle_run_task(args)
     if args.command == "collect":

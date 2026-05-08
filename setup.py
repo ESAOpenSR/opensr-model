@@ -32,7 +32,9 @@ setup(
         'hpc': [
             'PyYAML>=6.0',
             'pyproj>=3.4',
+            'pyshp>=2.3.1',
             'rioxarray>=0.15',
+            'shapely>=2.0.2',
             'cubo>=0.3',
             'opensr-utils>=1.0.0',
         ],

@@ -32,9 +32,19 @@ def parse_epsg(text: str, lat: float, lon: float) -> int:
     return guess_utm_epsg(lat, lon)
 
 
+def _as_scalar(value: object) -> float:
+    if hasattr(value, "compute"):
+        value = value.compute()
+    return float(value)
+
+
 def scale_to_uint16(data: np.ndarray) -> np.ndarray:
-    if data.dtype.kind == "f" and np.nanmax(data) <= 1.1:
-        return np.clip(data * 10000.0, 0, 10000).astype("uint16")
+    if data.dtype.kind == "f":
+        finite_mask = np.isfinite(data)
+        safe_data = np.where(finite_mask, data, 0.0)
+        if _as_scalar(safe_data.max()) <= 1.1:
+            safe_data = safe_data * 10000.0
+        return np.clip(safe_data, 0, 10000).astype("uint16")
     return data.astype("uint16")
 
 

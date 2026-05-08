@@ -10,6 +10,10 @@ model:
   config_path: null
   checkpoint_path: null
 
+aoi:
+  path: null
+  layer: null
+
 staging:
   collection: "sentinel-2-l2a"
   bands: ["B04", "B03", "B02", "B08"]

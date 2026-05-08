@@ -24,6 +24,12 @@ class ModelConfig:
 
 
 @dataclass(slots=True)
+class AoiConfig:
+    path: str | None = None
+    layer: str | None = None
+
+
+@dataclass(slots=True)
 class StagingConfig:
     collection: str = "sentinel-2-l2a"
     bands: list[str] = field(default_factory=lambda: ["B04", "B03", "B02", "B08"])
@@ -71,6 +77,7 @@ class RuntimeConfig:
     output_root: Path = Path("runs")
     environment: EnvironmentConfig = field(default_factory=EnvironmentConfig)
     model: ModelConfig = field(default_factory=ModelConfig)
+    aoi: AoiConfig = field(default_factory=AoiConfig)
     staging: StagingConfig = field(default_factory=StagingConfig)
     inference: InferenceConfig = field(default_factory=InferenceConfig)
     slurm: SlurmConfig = field(default_factory=SlurmConfig)
@@ -104,6 +111,7 @@ def _merge(base: dict[str, Any], overrides: dict[str, Any]) -> dict[str, Any]:
 def _runtime_from_mapping(data: dict[str, Any]) -> RuntimeConfig:
     environment = EnvironmentConfig(**data.get("environment", {}))
     model = ModelConfig(**data.get("model", {}))
+    aoi = AoiConfig(**data.get("aoi", {}))
     staging = StagingConfig(**data.get("staging", {}))
     inference_data = dict(data.get("inference", {}))
     if "window_size" in inference_data:
@@ -116,6 +124,7 @@ def _runtime_from_mapping(data: dict[str, Any]) -> RuntimeConfig:
         output_root=output_root,
         environment=environment,
         model=model,
+        aoi=aoi,
         staging=staging,
         inference=inference,
         slurm=slurm,
@@ -155,6 +164,12 @@ def load_runtime_config(
             checkpoint_path = (base_dir / checkpoint_path).resolve()
         config.model.checkpoint_path = str(checkpoint_path)
 
+    if config.aoi.path is not None:
+        aoi_path = Path(config.aoi.path).expanduser()
+        if not aoi_path.is_absolute():
+            aoi_path = (base_dir / aoi_path).resolve()
+        config.aoi.path = str(aoi_path)
+
     validate_runtime_config(config)
     return config
 
@@ -180,6 +195,8 @@ def validate_runtime_config(config: RuntimeConfig) -> None:
         raise ValueError("slurm.mem_gb must be positive")
     if config.slurm.cpus_per_task <= 0:
         raise ValueError("slurm.cpus_per_task must be positive")
+    if config.aoi.path is not None and not Path(config.aoi.path).exists():
+        raise FileNotFoundError(f"AOI path not found: {config.aoi.path}")
 
     model_config_path = resolve_model_config_path(config)
     if not model_config_path.exists():
