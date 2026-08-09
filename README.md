@@ -154,7 +154,9 @@ Use the notebooks and `demo.py` for quick starts; for full‑tile processing and
 # 5. 📝 Notes
 
 ## 5.1 🎓 Training
-Training is **not supported by default** in this repository due to time and resource constraints. The provided models are implemented as **PyTorch Lightning** modules and ship ready for inference. If you want to train or fine‑tune them, you can extend the module(s) by adding the standard Lightning hooks (e.g., `training_step`, `validation_step`, `configure_optimizers`, and any callbacks or loggers you prefer). If you build a clean, reproducible training pipeline, please consider opening a Pull Request (PR). We’re happy to review community contributions.
+The autoencoder and conditional diffusion model can now be trained independently with the additive PyTorch Lightning pipeline. Training accepts completed TACO `.tortilla` parts only and includes stable train/validation splitting, reflectance normalization, nodata-aware losses, reconstruction and spectral metrics, complete-image logging each epoch, complete Lightning resume checkpoints, and native checkpoints compatible with the current strict inference loader. Stage 1 reproduces the executable checkpoint-era autoencoder objective; stage 2 uses a quality-oriented P2/detail/perceptual objective with EMA inference exports.
+
+See the [training guide](https://github.com/ESAopenSR/opensr-model/blob/main/docs/training.md) and the packaged `train_autoencoder.yaml` / `train_diffusion.yaml` configurations.
 
 ## 5.2 📚 Citation
 If you use this model in your work, please cite  

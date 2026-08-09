@@ -6,6 +6,8 @@ transformers>=4.41.0
 # Geo
 geopandas==0.14.4
 rasterio==1.4.3
+tacoreader>=2.4.0,<3.0
+fsspec>=2024.2.0
 pyproj==3.7.1
 affine>=2.4.0
 shapely>=2.0.2

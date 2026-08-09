@@ -847,7 +847,7 @@ class LitEma(nn.Module):
 
         one_minus_decay = 1.0 - decay
 
-        with True:
+        with torch.no_grad():
             m_param = dict(model.named_parameters())
             shadow_params = dict(self.named_buffers())
 
@@ -899,3 +899,7 @@ class LitEma(nn.Module):
         """
         for c_param, param in zip(self.collected_params, parameters):
             param.data.copy_(c_param.data)
+        # EMA scopes are temporary. Retaining these full parameter clones after
+        # restore wastes another model's worth of accelerator memory and can
+        # briefly double that overhead on the next call to store().
+        self.collected_params.clear()

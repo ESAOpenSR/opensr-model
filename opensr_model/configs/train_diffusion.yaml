@@ -1,0 +1,134 @@
+# Independent stage-2 denoiser training with a frozen first-stage autoencoder.
+stage: diffusion
+seed: 42
+float32_matmul_precision: high
+run_dir: training_runs/diffusion
+resume_checkpoint: null  # only a resume/*.ckpt produced by this pipeline
+
+model:
+  architecture_config: config_10m.yaml
+  # Full released/native checkpoint for denoiser fine-tuning (loads schedule + EMA).
+  pretrained_checkpoint: null
+  # Optional standalone stage-1 output; overrides the AE inside a full checkpoint.
+  autoencoder_checkpoint: null
+  allow_random_first_stage: false
+
+data:
+  # A directory of completed .tortilla parts, one .tortilla, or a list of either.
+  taco_path: /work/data/SISR_worldwide
+  # Asset IDs in the legacy TACO v1 samples. RGB is already stored in RGB order.
+  lr_asset_id: lrharm
+  hr_asset_id: hrharm
+  raw_lr_asset_id: lr
+  rgb_bands: [1, 2, 3]  # one-based
+  nir_band: 8           # one-based B8 in the raw 12-band Sentinel-2 asset
+  # There is no native HR NIR target; use bilinearly enlarged native LR B8.
+  hr_nir_strategy: upsample_lr
+  reflectance_scale: 0.0001  # uint16 reflectance DN -> [0, 1]
+  val_fraction: 0.1
+  split_seed: ${seed}
+  factor: 4
+  train_patch_size: 512
+  value_range: [0.0, 1.0]
+  horizontal_flip_probability: 0.5
+  vertical_flip_probability: 0.5
+  rotate_90: true
+  # Measured safe per-GPU setting for two 24 GiB RTX 3090s at 512 -> 128.
+  batch_size: 4
+  val_batch_size: 1
+  num_workers: 4
+  pin_memory: true
+  persistent_workers: true
+  prefetch_factor: 2
+  drop_last: false
+
+training:
+  optimizer:
+    learning_rate: 0.0001
+    betas: [0.9, 0.999]
+    weight_decay: 0.0
+  # One quality-oriented objective: P2-weighted epsilon prediction plus
+  # low-noise detail losses. Decoded RGB supervision is intentionally sparse
+  # because backpropagating through the frozen 512px decoder is expensive.
+  sharpness:
+    p2_gamma: 1.0
+    p2_k: 1.0
+    latent_detail_weight: 0.05
+    latent_detail_max_timestep_fraction: 0.25
+    decoded_reconstruction_weight: 0.1
+    decoded_detail_weight: 0.1
+    decoded_perceptual_weight: 0.1
+    decoded_max_timestep_fraction: 0.20
+    decoded_every_n_batches: 8
+    decoded_max_batch_size: 1
+    decoded_rgb_only: true
+    perceptual_backbone: vgg
+  scheduler:
+    name: plateau  # plateau or constant
+    factor: 0.5
+    patience: 10
+    min_lr: 0.000001
+  validation:
+    num_samples: 4
+    image_batches: 4
+    every_n_epochs: 1
+    sampling_steps: 100
+    sampling_eta: 0.95  # deliberately stochastic for perceptually richer samples
+    temperature: 1.0
+    seed: ${seed}
+    use_ema: true
+
+trainer:
+  accelerator: auto
+  devices: auto
+  strategy: auto
+  precision: 16-mixed
+  max_epochs: 1000
+  # Two GPUs give effective global batch 8; no extra accumulation is needed.
+  accumulate_grad_batches: 1
+  gradient_clip_val: 1.0
+  gradient_clip_algorithm: norm
+  log_every_n_steps: 20
+  check_val_every_n_epoch: 1
+  num_sanity_val_steps: 0  # avoid an extra DDIM sample before epoch zero
+  deterministic: false
+  enable_checkpointing: true
+
+checkpoint:
+  monitor: val/loss
+  mode: min
+  resume_dir: checkpoints/resume
+  save_top_k: 1
+  save_last: true
+  every_n_epochs: 1
+  native:
+    enabled: true
+    dir: checkpoints/native
+    save_best: true
+    save_last: true
+    every_n_epochs: 1
+    # Inference executes model.* directly, so materialize the EMA shadow values
+    # into those keys while retaining the complete native state-dict contract.
+    weight_source: ema
+    autoencoder_base_checkpoint: null
+  early_stopping:
+    enabled: false
+    patience: 30
+    min_delta: 0.0
+
+logging:
+  type: csv
+  save_dir: logs
+  name: diffusion
+  version: null
+  project: opensr-training
+  log_model: false
+  images:
+    enabled: true
+    output_dir: images
+    max_images: 4
+    every_n_epochs: 1
+    rgb_bands: [0, 1, 2]
+    nir_band: 3
+    value_min: 0.0
+    value_max: 0.3

@@ -14,6 +14,8 @@ client_secret.json
 test_slurm.sh
 runs/
 playground/
+benchmarks
+
 
 *.svg
 old/
@@ -31,6 +33,7 @@ images/*
 images_comparison
 images_comparison/*
 comp_s2_s2naip.py
+TODO.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,7 +1,8 @@
 # INFO
-# For ckpts >= opensr-model version 1.0, disable 'apply_normalization'
-# For ckpts >= opensr-model version 1.0, set linear_start to 0.0001 and linear_end to 0.01
-# For ckpts <  opensr-model version 1.0, set linear_start to and linear_end to 0.0015 and 0.0155 respectively
+# The released opensr-ldsrs2_v1_0_0 checkpoint was trained without input
+# normalization and its persisted schedule buffers use 0.0015 -> 0.0155.
+# Full native checkpoint loading restores those buffers exactly; these values also
+# keep scratch/freshly initialized training on the same schedule.
 
 # WARNING: Some of the settings  are not used in the current version of opensr-model but are kept for backwards compatibility
 
@@ -12,11 +13,11 @@ encode_conditioning: True
 
 # Diffusion and Sampling Settings
 denoiser_settings:
-  linear_start: 0.0001 # noise start
+  linear_start: 0.0015 # noise start
   linear_end: 0.0155 # noise end
   timesteps: 1000 # Timesteps model was trained on - always 1k
   parameterization: "eps" # ["eps" or "x0"]
-  sampling_eta: 0.95 # 0. to 1. -> 1 is more deterministic
+  sampling_eta: 0.95 # 0 is deterministic; values >0 add sampling stochasticity
   sampling_temperature: 1.0 # 0. to 1.
   sampling_steps: 100 # No of DDIM sampling steps
 
@@ -51,4 +52,3 @@ other:
   cond_stage_trainable: False
   first_stage_key: "image"
   cond_stage_key: "LR_image"
-

@@ -1,5 +1,7 @@
+import math
 import pathlib
-from typing import Union
+from collections.abc import Mapping, MutableMapping
+from typing import Any, Union
 import requests
 import torch
 from opensr_model.diffusion.latentdiffusion import LatentDiffusion
@@ -236,6 +238,245 @@ class SRLatentDiffusion(torch.nn.Module):
 
         return image1_hat
 
+    @staticmethod
+    def _checkpoint_inference_config(
+        payload: Mapping[str, Any],
+    ) -> Mapping[str, Any] | None:
+        """Extract inference settings from native or Lightning metadata."""
+        metadata = payload.get("metadata")
+        if isinstance(metadata, Mapping) and "opensr_inference_config" in metadata:
+            inference_config = metadata["opensr_inference_config"]
+        elif "opensr_inference_config" in payload:
+            inference_config = payload["opensr_inference_config"]
+        else:
+            return None
+        if not isinstance(inference_config, Mapping):
+            raise RuntimeError(
+                "Checkpoint opensr_inference_config must be a mapping"
+            )
+        return inference_config
+
+    @staticmethod
+    def _set_config_value(config: Any, key: str, value: Any) -> None:
+        if isinstance(config, MutableMapping):
+            config[key] = value
+        else:
+            setattr(config, key, value)
+
+    @staticmethod
+    def _metadata_bool(mapping: Mapping[str, Any], key: str) -> bool | None:
+        if key not in mapping:
+            return None
+        value = mapping[key]
+        if not isinstance(value, bool):
+            raise RuntimeError(
+                f"Checkpoint inference setting {key!r} must be a bool"
+            )
+        return value
+
+    @staticmethod
+    def _metadata_float(
+        mapping: Mapping[str, Any],
+        key: str,
+        *,
+        positive: bool = False,
+        nonnegative: bool = False,
+    ) -> float | None:
+        if key not in mapping:
+            return None
+        value = mapping[key]
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise RuntimeError(
+                f"Checkpoint inference setting {key!r} must be numeric"
+            )
+        result = float(value)
+        if not math.isfinite(result):
+            raise RuntimeError(
+                f"Checkpoint inference setting {key!r} must be finite"
+            )
+        if positive and result <= 0.0:
+            raise RuntimeError(
+                f"Checkpoint inference setting {key!r} must be positive"
+            )
+        if nonnegative and result < 0.0:
+            raise RuntimeError(
+                f"Checkpoint inference setting {key!r} must be non-negative"
+            )
+        return result
+
+    def _prepare_checkpoint_inference_config(
+        self,
+        inference_config: Mapping[str, Any],
+        state_dict: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        """Validate metadata without mutating the live model or its config."""
+        prepared: dict[str, Any] = {}
+        apply_normalization = self._metadata_bool(
+            inference_config, "apply_normalization"
+        )
+        encode_conditioning = self._metadata_bool(
+            inference_config, "encode_conditioning"
+        )
+        if apply_normalization is not None:
+            prepared["apply_normalization"] = apply_normalization
+        if encode_conditioning is not None:
+            prepared["encode_conditioning"] = encode_conditioning
+
+        if "denoiser_settings" not in inference_config:
+            return prepared
+        denoiser = inference_config["denoiser_settings"]
+        if not isinstance(denoiser, Mapping):
+            raise RuntimeError(
+                "Checkpoint inference setting 'denoiser_settings' must be a mapping"
+            )
+
+        if "timesteps" in denoiser:
+            timesteps_value = denoiser["timesteps"]
+            if (
+                isinstance(timesteps_value, bool)
+                or not isinstance(timesteps_value, int)
+                or timesteps_value <= 0
+            ):
+                raise RuntimeError(
+                    "Checkpoint inference setting 'timesteps' must be a positive int"
+                )
+            prepared["timesteps"] = int(timesteps_value)
+
+        linear_start = self._metadata_float(
+            denoiser, "linear_start", positive=True
+        )
+        linear_end = self._metadata_float(denoiser, "linear_end", positive=True)
+        if linear_start is not None:
+            prepared["linear_start"] = linear_start
+        if linear_end is not None:
+            prepared["linear_end"] = linear_end
+        if linear_start is not None and linear_start >= 1.0:
+            raise RuntimeError(
+                "Checkpoint inference setting 'linear_start' must be below 1"
+            )
+        if linear_end is not None and linear_end >= 1.0:
+            raise RuntimeError(
+                "Checkpoint inference setting 'linear_end' must be below 1"
+            )
+        if (
+            linear_start is not None
+            and linear_end is not None
+            and linear_start > linear_end
+        ):
+            raise RuntimeError(
+                "Checkpoint inference schedule requires linear_start <= linear_end"
+            )
+
+        if "parameterization" in denoiser:
+            parameterization = denoiser["parameterization"]
+            if parameterization != "eps":
+                raise RuntimeError(
+                    "OpenSR inference requires checkpoint parameterization='eps'"
+                )
+            prepared["parameterization"] = parameterization
+
+        sampling_steps = denoiser.get("sampling_steps")
+        if sampling_steps is not None:
+            if (
+                isinstance(sampling_steps, bool)
+                or not isinstance(sampling_steps, int)
+                or sampling_steps <= 0
+            ):
+                raise RuntimeError(
+                    "Checkpoint inference setting 'sampling_steps' must be a positive int"
+                )
+            prepared["sampling_steps"] = int(sampling_steps)
+        sampling_eta = self._metadata_float(
+            denoiser, "sampling_eta", nonnegative=True
+        )
+        sampling_temperature = self._metadata_float(
+            denoiser, "sampling_temperature", nonnegative=True
+        )
+        if sampling_eta is not None:
+            prepared["sampling_eta"] = sampling_eta
+        if sampling_temperature is not None:
+            prepared["sampling_temperature"] = sampling_temperature
+
+        declared_timesteps = prepared.get("timesteps")
+        effective_timesteps = (
+            self.model.num_timesteps
+            if declared_timesteps is None
+            else int(declared_timesteps)
+        )
+        if sampling_steps is not None and sampling_steps >= effective_timesteps:
+            raise RuntimeError(
+                "Checkpoint inference sampling_steps must be smaller than timesteps"
+            )
+        if sampling_steps is not None and effective_timesteps % sampling_steps:
+            raise RuntimeError(
+                "Checkpoint inference sampling_steps must divide timesteps exactly "
+                "for the native uniform DDIM sampler"
+            )
+
+        checkpoint_betas = state_dict.get("betas")
+        if declared_timesteps is not None:
+            if not isinstance(checkpoint_betas, torch.Tensor):
+                raise RuntimeError(
+                    "Checkpoint inference metadata declares timesteps, but the native "
+                    "state_dict has no 'betas' tensor"
+                )
+            checkpoint_timesteps = int(checkpoint_betas.numel())
+            if checkpoint_timesteps != declared_timesteps:
+                raise RuntimeError(
+                    "Checkpoint inference metadata declares "
+                    f"timesteps={declared_timesteps}, but state_dict['betas'] has "
+                    f"{checkpoint_timesteps} values"
+                )
+
+        if isinstance(checkpoint_betas, torch.Tensor) and checkpoint_betas.numel():
+            for setting, index in (("linear_start", 0), ("linear_end", -1)):
+                if setting not in prepared:
+                    continue
+                stored = float(checkpoint_betas.reshape(-1)[index].detach().cpu())
+                if not math.isclose(
+                    prepared[setting], stored, rel_tol=1.0e-6, abs_tol=1.0e-9
+                ):
+                    raise RuntimeError(
+                        f"Checkpoint inference metadata {setting}={prepared[setting]} "
+                        f"does not match state_dict['betas'] ({stored})"
+                    )
+        return prepared
+
+    def _apply_checkpoint_inference_config(self, settings: Mapping[str, Any]) -> None:
+        """Apply settings only after the checkpoint has strict-loaded."""
+        denoiser_config = self.config.denoiser_settings
+        for key in (
+            "timesteps",
+            "linear_start",
+            "linear_end",
+            "parameterization",
+            "sampling_steps",
+            "sampling_eta",
+            "sampling_temperature",
+        ):
+            if key in settings:
+                self._set_config_value(denoiser_config, key, settings[key])
+
+        if "timesteps" in settings:
+            self.model.num_timesteps = int(settings["timesteps"])
+        if "linear_start" in settings:
+            self.model.linear_start = float(settings["linear_start"])
+        if "linear_end" in settings:
+            self.model.linear_end = float(settings["linear_end"])
+        if "parameterization" in settings:
+            self.model.parameterization = str(settings["parameterization"])
+
+        if "apply_normalization" in settings:
+            self._set_config_value(
+                self.config, "apply_normalization", settings["apply_normalization"]
+            )
+            self.set_normalization()
+        if "encode_conditioning" in settings:
+            self._set_config_value(
+                self.config, "encode_conditioning", settings["encode_conditioning"]
+            )
+            self.encode_conditioning = bool(settings["encode_conditioning"])
+
     def load_pretrained(self, weights_file: str):
         """
         Loads pretrained model weights from a local file or downloads them from Hugging Face if not present.
@@ -283,16 +524,48 @@ class SRLatentDiffusion(torch.nn.Module):
                 raise RuntimeError(f"Failed to download pretrained weights from {hf_model}") from exc
 
         try:
-            weights = torch.load(weights_path, map_location=self.device)["state_dict"]
+            payload = torch.load(
+                weights_path, map_location=self.device, weights_only=True
+            )
+            if not isinstance(payload, Mapping):
+                raise TypeError("checkpoint payload must be a mapping")
+            weights = payload["state_dict"]
+            if not isinstance(weights, Mapping):
+                raise TypeError("checkpoint state_dict must be a mapping")
+            inference_config = self._checkpoint_inference_config(payload)
         except Exception as exc:
             raise RuntimeError(f"Failed to load pretrained weights from {weights_path}") from exc
 
         # Remote perceptual tensors from weights
-        for key in list(weights.keys()):
-            if "loss" in key:
-                del weights[key]
+        weights = {
+            key: value for key, value in weights.items() if "loss" not in key
+        }
+
+        prepared_settings: dict[str, Any] | None = None
+        if inference_config is not None:
+            prepared_settings = self._prepare_checkpoint_inference_config(
+                inference_config, weights
+            )
+            checkpoint_timesteps = prepared_settings.get("timesteps")
+            if (
+                checkpoint_timesteps is not None
+                and checkpoint_timesteps != self.model.num_timesteps
+            ):
+                if not {"linear_start", "linear_end"} <= prepared_settings.keys():
+                    raise RuntimeError(
+                        "Checkpoint inference metadata must include linear_start and "
+                        "linear_end when timesteps differs from the configured model"
+                    )
+                self.model.register_schedule(
+                    timesteps=int(checkpoint_timesteps),
+                    linear_start=float(prepared_settings["linear_start"]),
+                    linear_end=float(prepared_settings["linear_end"]),
+                )
+                self.model.to(self.device)
 
         self.model.load_state_dict(weights, strict=True)
+        if prepared_settings is not None:
+            self._apply_checkpoint_inference_config(prepared_settings)
         print("Loaded pretrained weights from: ", weights_file)
         
         

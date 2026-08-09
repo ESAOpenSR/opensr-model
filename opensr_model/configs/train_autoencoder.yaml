@@ -1,0 +1,139 @@
+# Independent stage-1 training. Paths are resolved relative to this file.
+stage: autoencoder
+seed: 42
+# Exact checkpoint-era script setting.
+float32_matmul_precision: medium
+run_dir: training_runs/autoencoder
+resume_checkpoint: null  # only a resume/*.ckpt produced by this pipeline
+
+model:
+  architecture_config: config_10m.yaml
+  # A released full checkpoint or a standalone AE/native/Lightning checkpoint.
+  pretrained_checkpoint: null
+
+data:
+  # A directory of completed .tortilla parts, one .tortilla, or a list of either.
+  taco_path: /work/data/SISR_worldwide
+  # Asset IDs in the legacy TACO v1 samples. RGB is already stored in RGB order.
+  lr_asset_id: lrharm
+  hr_asset_id: hrharm
+  raw_lr_asset_id: lr
+  rgb_bands: [1, 2, 3]  # one-based
+  nir_band: 8           # one-based B8 in the raw 12-band Sentinel-2 asset
+  # There is no native HR NIR target; use bilinearly enlarged native LR B8.
+  hr_nir_strategy: upsample_lr
+  reflectance_scale: 0.0001  # uint16 reflectance DN -> [0, 1]
+  val_fraction: 0.1
+  split_seed: ${seed}
+  factor: 4
+  train_patch_size: 512
+  value_range: [0.0, 1.0]
+  horizontal_flip_probability: 0.5
+  vertical_flip_probability: 0.5
+  rotate_90: true
+  # Measured safe per-GPU settings for two 24 GiB RTX 3090s at the required
+  # 512 -> 128 spatial contract. Accumulation below restores global batch 4.
+  batch_size: 1
+  val_batch_size: 1
+  num_workers: 4
+  pin_memory: true
+  persistent_workers: true
+  prefetch_factor: 2
+  drop_last: false
+
+training:
+  # Checkpoint-era executable objective: stochastic KL autoencoder with a random
+  # three-of-four-band summed L1+LPIPS loss and adaptive three-channel PatchGAN.
+  # Faithful PL1.9 optimizer dispatch means two independent stochastic AE forwards
+  # per training batch (one for the generator and one for the discriminator).
+  # Lightning cannot accumulate automatically with a manual two-optimizer GAN;
+  # the module accumulates two microbatches itself. With two GPUs this gives an
+  # effective global batch of 4 without reducing the 512-pixel training size.
+  accumulate_grad_batches: 2
+  loss:
+    kl_weight: 0.0001
+    # Kept fixed because the historical optimizer omitted this loss parameter.
+    logvar_init: 0.0
+    perceptual_weight: 1.0
+    perceptual_backbone: vgg
+    discriminator_factor: 1.0
+    discriminator_weight: 0.5
+    adversarial_kind: hinge
+    discriminator_start: 0
+    discriminator_channels: 64
+    discriminator_layers: 3
+  optimizer:
+    learning_rate: 0.0001
+    betas: [0.5, 0.9]
+    weight_decay: 0.0
+  scheduler:
+    name: plateau
+    monitor: train/total_loss
+    mode: min
+    factor: 0.5
+    patience: 25
+    min_lr: 0.0
+  discriminator_optimizer:
+    learning_rate: 0.0001
+    betas: [0.5, 0.9]
+    weight_decay: 0.0
+  gradient_clip_val: 0.0
+  metrics:
+    value_min: 0.0
+    value_max: 1.0
+
+trainer:
+  accelerator: auto
+  devices: auto
+  strategy: auto
+  precision: 16-mixed
+  # Operational safety cap. The old script used 99,999 and was stopped/resumed
+  # externally; raise this if reproducing that open-ended run cadence.
+  max_epochs: 1000
+  accumulate_grad_batches: 1
+  log_every_n_steps: 20
+  check_val_every_n_epoch: 1
+  num_sanity_val_steps: 1
+  deterministic: false
+  gradient_clip_val: 0.0  # manual GAN optimization clips via training.gradient_clip_val
+  enable_checkpointing: true
+
+checkpoint:
+  monitor: val/total_loss
+  mode: min
+  resume_dir: checkpoints/resume
+  save_top_k: 1
+  save_last: true
+  every_n_epochs: 1
+  native:
+    enabled: true
+    dir: checkpoints/native
+    save_best: true
+    save_last: true
+    every_n_epochs: 1
+    # With a released full checkpoint this produces strict inference-compatible
+    # full checkpoints. Null produces standalone AutoencoderKL component files.
+    # "auto" merges only when model.pretrained_checkpoint is a full diffusion
+    # checkpoint; standalone AE initialization remains a standalone AE export.
+    autoencoder_base_checkpoint: auto
+  early_stopping:
+    enabled: false
+    patience: 20
+    min_delta: 0.0
+
+logging:
+  type: csv  # csv, tensorboard, wandb, or none
+  save_dir: logs
+  name: autoencoder
+  version: null
+  project: opensr-training
+  log_model: false
+  images:
+    enabled: true
+    output_dir: images
+    max_images: 4
+    every_n_epochs: 1
+    rgb_bands: [0, 1, 2]
+    nir_band: 3
+    value_min: 0.0
+    value_max: 0.3
