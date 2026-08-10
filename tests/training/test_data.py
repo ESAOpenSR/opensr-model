@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+
+import numpy as np
 import pytest
 import torch
 from rasterio.transform import from_origin
@@ -33,7 +36,7 @@ def test_directory_discovers_only_visible_complete_tortillas(fake_taco_factory) 
         resolve_taco_paths(csv_path)
 
 
-def test_assets_are_selected_by_id_and_normalized_to_rgb_nir(fake_taco_factory) -> None:
+def test_assets_use_normalized_lr_b8_and_synthetic_hr_nir(fake_taco_factory) -> None:
     bundle = fake_taco_factory(
         include_nodata=False,
         child_order=("hr", "lrharm", "hrharm", "lr"),
@@ -56,7 +59,9 @@ def test_assets_are_selected_by_id_and_normalized_to_rgb_nir(fake_taco_factory) 
         sample["LR_image"][:, 2, 2], torch.tensor([0.1, 0.2, 0.3, 0.4])
     )
     assert torch.allclose(
-        sample["image"][:, 8, 8], torch.tensor([0.11, 0.21, 0.31, 0.4])
+        sample["image"][:, 8, 8],
+        torch.tensor([0.11, 0.21, 0.31, 0.4]),
+        atol=1e-3,
     )
     assert sample["LR_image"][3, -1, -1] == 0
     assert sample["valid_mask"][0, -1, -1] == 1
@@ -83,14 +88,14 @@ def test_sen2naipv2_crosssensor_taco_reads_direct_rgb_nir_pair(
     assert sample["clipped_fraction"] == 0
 
 
-def test_nodata_is_zero_filled_with_conservative_hr_nir_mask(fake_taco_factory) -> None:
+def test_nodata_is_zero_filled_with_conservative_pair_mask(fake_taco_factory) -> None:
     bundle = fake_taco_factory(include_nodata=True)
     sample = TacoPairedDataset(bundle.root, training=False)[0]
 
     assert torch.all(sample["LR_image"][:, 0, 0] == 0)
     assert sample["valid_mask"][0, 0, 0] == 0
     assert torch.all(sample["image"][:, 0, 0] == 0)
-    # Direct HR RGB nodata is combined with the upsampled LR validity.
+    # Direct HR RGB nodata is combined with conservative LR support.
     assert sample["valid_mask"][0, 4, 4] == 0
     assert torch.all(sample["image"][:, 4, 4] == 0)
     # A digital number of zero is data, not nodata.
@@ -219,5 +224,78 @@ def test_reader_is_cached_lazily_within_a_process(fake_taco_factory) -> None:
 
 def test_unsupported_hr_nir_strategy_is_rejected(fake_taco_factory) -> None:
     bundle = fake_taco_factory()
-    with pytest.raises(ValueError, match="upsample_lr"):
+    with pytest.raises(ValueError, match="synthetic_sidecar"):
         TacoPairedDataset(bundle.root, hr_nir_strategy="invent_hr")
+
+
+def test_incomplete_synthetic_nir_generation_is_rejected(fake_taco_factory) -> None:
+    bundle = fake_taco_factory(include_nodata=False)
+    assert bundle.synthetic_hr_nir_dir is not None
+    manifest_path = bundle.synthetic_hr_nir_dir / "inference_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["status"] = "running"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    module = OpenSRDataModule(bundle.root, num_workers=0, pin_memory=False)
+    with pytest.raises(RuntimeError, match="not complete"):
+        module.setup("fit")
+
+
+def test_missing_synthetic_nir_sidecar_is_rejected_before_fit(
+    fake_taco_factory,
+) -> None:
+    bundle = fake_taco_factory(include_nodata=False)
+    assert bundle.synthetic_hr_nir_dir is not None
+    (bundle.synthetic_hr_nir_dir / "tile_000_bing.npz").unlink()
+
+    module = OpenSRDataModule(bundle.root, num_workers=0, pin_memory=False)
+    with pytest.raises(FileNotFoundError, match="Missing synthetic HR NIR sidecars"):
+        module.setup("fit")
+
+
+def test_malformed_synthetic_nir_is_rejected_lazily(fake_taco_factory) -> None:
+    bundle = fake_taco_factory(include_nodata=False)
+    assert bundle.synthetic_hr_nir_dir is not None
+    np.savez_compressed(
+        bundle.synthetic_hr_nir_dir / "tile_000_bing.npz",
+        nir=np.zeros((1, 16, 16), dtype=np.float32),
+    )
+
+    dataset = TacoPairedDataset(bundle.root, training=False)
+    with pytest.raises(ValueError, match="must have shape"):
+        dataset[0]
+
+
+def test_synthetic_nir_histogram_matches_upsampled_native_b8(
+    fake_taco_factory,
+) -> None:
+    bundle = fake_taco_factory(include_nodata=False)
+    assert bundle.synthetic_hr_nir_dir is not None
+    lr_values = np.linspace(1000, 8000, 8 * 8, dtype=np.uint16).reshape(8, 8)
+    import rasterio
+
+    with rasterio.open(bundle.raster_paths["lr"], "r+") as dataset:
+        dataset.write(lr_values, indexes=8)
+    synthetic = np.linspace(0.0, 1.0, 32 * 32, dtype=np.float32).reshape(1, 32, 32)
+    synthetic = np.square(synthetic).astype(np.float16)
+    np.savez_compressed(
+        bundle.synthetic_hr_nir_dir / "tile_000_bing.npz", nir=synthetic
+    )
+
+    sample = TacoPairedDataset(bundle.root, training=False)[0]
+    reference = torch.nn.functional.interpolate(
+        sample["LR_image"][3:4].unsqueeze(0),
+        size=(32, 32),
+        mode="bilinear",
+        align_corners=False,
+    ).squeeze(0)
+    quantiles = torch.tensor([0.1, 0.25, 0.5, 0.75, 0.9])
+
+    assert torch.allclose(
+        torch.quantile(sample["image"][3], quantiles),
+        torch.quantile(reference[0], quantiles),
+        atol=2e-3,
+    )
+    assert not torch.allclose(
+        sample["image"][3], torch.from_numpy(synthetic[0].astype(np.float32))
+    )

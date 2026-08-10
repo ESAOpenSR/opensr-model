@@ -22,8 +22,10 @@ data:
   raw_lr_asset_id: lr
   rgb_bands: [1, 2, 3]  # one-based
   nir_band: 8           # one-based B8 in the raw 12-band Sentinel-2 asset
-  # There is no native HR NIR target; use bilinearly enlarged native LR B8.
-  hr_nir_strategy: upsample_lr
+  # Required synthetic 512px NIR target, keyed by the outer TACO sample ID and
+  # histogram-matched to bilinearly upsampled native LR B8 in the loader.
+  hr_nir_strategy: synthetic_sidecar
+  synthetic_hr_nir_dir: /work/data/SISR_worldwide/synth_nirs
   reflectance_scale: 0.0001  # uint16 reflectance DN -> [0, 1]
   val_fraction: 0.1
   split_seed: ${seed}
@@ -36,6 +38,8 @@ data:
   # Measured safe per-GPU setting for two 24 GiB RTX 3090s at 512 -> 128.
   batch_size: 4
   val_batch_size: 1
+  # Deliberately resample the small validation subset every epoch.
+  val_shuffle: true
   num_workers: 4
   pin_memory: true
   persistent_workers: true
@@ -69,8 +73,10 @@ training:
     patience: 10
     min_lr: 0.000001
   validation:
-    num_samples: 4
-    image_batches: 4
+    # The validation loader is capped at 25 batches below. Generate a complete
+    # 512px DDIM reconstruction for exactly the first five shuffled batches.
+    num_samples: 1
+    image_batches: 5
     every_n_epochs: 1
     sampling_steps: 100
     sampling_eta: 0.95  # deliberately stochastic for perceptually richer samples
@@ -90,6 +96,7 @@ trainer:
   gradient_clip_algorithm: norm
   log_every_n_steps: 20
   check_val_every_n_epoch: 1
+  limit_val_batches: 25
   num_sanity_val_steps: 0  # avoid an extra DDIM sample before epoch zero
   deterministic: false
   enable_checkpointing: true
@@ -126,7 +133,7 @@ logging:
   images:
     enabled: true
     output_dir: images
-    max_images: 4
+    max_images: 5
     every_n_epochs: 1
     rgb_bands: [0, 1, 2]
     nir_band: 3

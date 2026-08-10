@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -38,6 +39,7 @@ class FakeTacoBundle:
     root: Path
     taco_paths: tuple[Path, ...]
     raster_paths: dict[str, Path]
+    synthetic_hr_nir_dir: Path | None
     load_calls: list[Path]
 
 
@@ -201,7 +203,43 @@ def fake_taco_factory(tmp_path, monkeypatch):
                 part_reads.append(children)
             catalogs[path.resolve()] = _FakeTacoTable(part_rows, part_reads)
             taco_paths.append(path)
-        return FakeTacoBundle(root, tuple(taco_paths), raster_paths, load_calls)
+
+        synthetic_hr_nir_dir: Path | None = None
+        if schema == "worldwide":
+            synthetic_hr_nir_dir = root / "synth_nirs"
+            synthetic_hr_nir_dir.mkdir()
+            for index, sample_id in enumerate(sample_ids):
+                nir = np.full(
+                    (1, hr_size, hr_size), 0.45 + index * 0.001, dtype=np.float16
+                )
+                if include_nodata:
+                    nir[:, 4, 4] = 0.0
+                np.savez_compressed(synthetic_hr_nir_dir / f"{sample_id}.npz", nir=nir)
+            manifest = {
+                "status": "complete",
+                "output_dir": str(synthetic_hr_nir_dir.resolve()),
+                "archives": [
+                    {"path": str(path.resolve()), "size": path.stat().st_size}
+                    for path in taco_paths
+                ],
+                "catalog_samples": len(sample_ids),
+                "completed": len(sample_ids),
+                "skipped_existing": 0,
+                "normalization": {
+                    "output_dtype": "float16",
+                    "valid_range": [0.0, 1.0],
+                },
+            }
+            (synthetic_hr_nir_dir / "inference_manifest.json").write_text(
+                json.dumps(manifest), encoding="utf-8"
+            )
+        return FakeTacoBundle(
+            root,
+            tuple(taco_paths),
+            raster_paths,
+            synthetic_hr_nir_dir,
+            load_calls,
+        )
 
     return make_bundle
 

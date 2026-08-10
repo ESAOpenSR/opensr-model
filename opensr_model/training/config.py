@@ -110,6 +110,7 @@ def _resolve_known_paths(config: DictConfig, base_dir: Path) -> None:
         "model.pretrained_checkpoint",
         "model.autoencoder_checkpoint",
         "checkpoint.native.autoencoder_base_checkpoint",
+        "data.synthetic_hr_nir_dir",
     )
     for dotted in path_fields:
         value = OmegaConf.select(config, dotted)
@@ -198,11 +199,13 @@ def _validate_taco_data_config(data: DictConfig) -> None:
 
     if float(data.get("reflectance_scale", 0.0)) <= 0.0:
         raise ValueError("data.reflectance_scale must be positive")
-    if str(data.get("hr_nir_strategy", "")) != "upsample_lr":
+    if str(data.get("hr_nir_strategy", "")) != "synthetic_sidecar":
         raise ValueError(
-            "data.hr_nir_strategy must be 'upsample_lr'; this TACO dataset has no "
-            "native HR NIR target"
+            "data.hr_nir_strategy must be 'synthetic_sidecar'; interpolated LR NIR "
+            "is not an allowed HR target"
         )
+    if not str(data.get("synthetic_hr_nir_dir", "")).strip():
+        raise ValueError("data.synthetic_hr_nir_dir is required")
     val_fraction = float(data.get("val_fraction", 0.0))
     if not 0.0 < val_fraction < 1.0:
         raise ValueError("data.val_fraction must be strictly between 0 and 1")

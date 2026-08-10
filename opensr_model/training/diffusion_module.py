@@ -541,6 +541,19 @@ class DiffusionTrainingModule(pl.LightningModule):
             latent = self.diffusion.scale_factor * latent
         return latent.detach()
 
+    @staticmethod
+    def _full_precision_context(tensor: torch.Tensor) -> torch.autocast:
+        """Disable AMP around the numerically sensitive 512px autoencoder."""
+
+        return torch.autocast(device_type=tensor.device.type, enabled=False)
+
+    def _decode_first_stage_float32(self, latent: torch.Tensor) -> torch.Tensor:
+        # The canonical autoencoder applies full 128x128 spatial attention. Its
+        # FP16 attention logits can overflow before softmax, so both frozen
+        # encoding and differentiable auxiliary decoding must execute in FP32.
+        with self._full_precision_context(latent):
+            return self.diffusion.decode_first_stage(latent.float()).float()
+
     @torch.no_grad()
     def _encode_hr(
         self,
@@ -549,13 +562,14 @@ class DiffusionTrainingModule(pl.LightningModule):
         sample: bool = True,
         generator: Optional[torch.Generator] = None,
     ) -> torch.Tensor:
-        posterior = self.diffusion.encode_first_stage(hr)
-        return self._posterior_latent(
-            posterior,
-            sample=sample,
-            generator=generator,
-            apply_scale=True,
-        )
+        with self._full_precision_context(hr):
+            posterior = self.diffusion.encode_first_stage(hr.float())
+            return self._posterior_latent(
+                posterior,
+                sample=sample,
+                generator=generator,
+                apply_scale=True,
+            )
 
     @torch.no_grad()
     def _encode_conditioning(
@@ -570,21 +584,22 @@ class DiffusionTrainingModule(pl.LightningModule):
             # uses encoded conditioning and therefore does not enter it.
             return self.linear_transform(lr.clone(), stage="norm").detach()
 
-        lr_up = F.interpolate(
-            lr,
-            size=(lr.shape[-2] * 4, lr.shape[-1] * 4),
-            mode="bilinear",
-            align_corners=False,
-        )
-        posterior = self.diffusion.first_stage_model.encode(lr_up)
-        # Inference calls ``posterior.sample()`` directly rather than
-        # ``get_first_stage_encoding``.  Keep that behavior exactly.
-        return self._posterior_latent(
-            posterior,
-            sample=sample,
-            generator=generator,
-            apply_scale=False,
-        )
+        with self._full_precision_context(lr):
+            lr_up = F.interpolate(
+                lr.float(),
+                size=(lr.shape[-2] * 4, lr.shape[-1] * 4),
+                mode="bilinear",
+                align_corners=False,
+            )
+            posterior = self.diffusion.first_stage_model.encode(lr_up)
+            # Inference calls ``posterior.sample()`` directly rather than
+            # ``get_first_stage_encoding``.  Keep that behavior exactly.
+            return self._posterior_latent(
+                posterior,
+                sample=sample,
+                generator=generator,
+                apply_scale=False,
+            )
 
     def _prepare_latents(
         self,
@@ -660,9 +675,9 @@ class DiffusionTrainingModule(pl.LightningModule):
             zero = predicted_x0.sum() * 0.0
             return zero, zero, zero, zero.detach()
 
-        decoded = self.diffusion.decode_first_stage(
+        decoded = self._decode_first_stage_float32(
             predicted_x0.index_select(0, indices)
-        ).float()
+        )
         target = target_image.index_select(0, indices).float()
         mask = (
             None
@@ -864,6 +879,29 @@ class DiffusionTrainingModule(pl.LightningModule):
         }
         return loss, stats
 
+    @staticmethod
+    def _require_finite_loss(
+        loss: torch.Tensor,
+        stats: Mapping[str, torch.Tensor],
+        *,
+        stage: str,
+        batch_idx: int,
+    ) -> None:
+        """Abort before backward instead of allowing one bad batch to poison weights."""
+
+        if bool(torch.isfinite(loss.detach()).all()):
+            return
+        nonfinite = sorted(
+            name
+            for name, value in stats.items()
+            if not bool(torch.isfinite(value.detach()).all())
+        )
+        names = ", ".join(nonfinite) if nonfinite else "unknown component"
+        raise FloatingPointError(
+            f"Non-finite {stage} loss at batch {batch_idx}; "
+            f"non-finite components: {names}"
+        )
+
     def forward(
         self,
         hr: torch.Tensor,
@@ -916,6 +954,7 @@ class DiffusionTrainingModule(pl.LightningModule):
             decoded_target=hr if decode_auxiliary else None,
             decode_auxiliary=decode_auxiliary,
         )
+        self._require_finite_loss(loss, stats, stage=stage, batch_idx=batch_idx)
         batch_size = hr.shape[0]
         clipped_fraction = batch_clipped_fraction(batch, hr)
         if clipped_fraction is not None:
@@ -942,7 +981,7 @@ class DiffusionTrainingModule(pl.LightningModule):
             self.log(
                 f"{stage}/{name}",
                 value,
-                on_step=False,
+                on_step=stage == "train",
                 on_epoch=True,
                 sync_dist=True,
                 batch_size=batch_size,
@@ -1097,7 +1136,7 @@ class DiffusionTrainingModule(pl.LightningModule):
                 temperature=sample_temperature,
                 generator=generator,
             )
-        decoded = self.diffusion.decode_first_stage(sampled_latent)
+        decoded = self._decode_first_stage_float32(sampled_latent)
         decoded = self.linear_transform(decoded, stage="denorm")
         return decoded.clamp(0.0, 1.0)
 
@@ -1109,7 +1148,12 @@ class DiffusionTrainingModule(pl.LightningModule):
         if (self.current_epoch + 1) % self.validation_sample_every_n_epochs != 0:
             return False
         trainer = getattr(self, "_trainer", None)
-        return not (trainer is not None and trainer.sanity_checking)
+        if trainer is None:
+            return True
+        # Only rank zero constructs the five expensive full DDIM samples. The
+        # remaining ranks still evaluate their share of the 25 validation
+        # batches, but do not produce duplicate images that are discarded.
+        return trainer.is_global_zero and not trainer.sanity_checking
 
     @torch.no_grad()
     def _validation_images(
@@ -1133,7 +1177,7 @@ class DiffusionTrainingModule(pl.LightningModule):
         # Stable posterior modes make AE reconstruction panels comparable
         # across epochs; diffusion conditioning itself remains a seeded sample.
         hr_latent = self._encode_hr(hr, sample=False)
-        hr_reconstruction = self.diffusion.decode_first_stage(hr_latent)
+        hr_reconstruction = self._decode_first_stage_float32(hr_latent)
         hr_reconstruction = self.linear_transform(
             hr_reconstruction, stage="denorm"
         ).clamp(0.0, 1.0)
@@ -1145,7 +1189,7 @@ class DiffusionTrainingModule(pl.LightningModule):
             align_corners=False,
         )
         condition_latent = self._encode_conditioning(lr, sample=False)
-        condition_reconstruction = self.diffusion.decode_first_stage(condition_latent)
+        condition_reconstruction = self._decode_first_stage_float32(condition_latent)
         condition_reconstruction = self.linear_transform(
             condition_reconstruction, stage="denorm"
         ).clamp(0.0, 1.0)

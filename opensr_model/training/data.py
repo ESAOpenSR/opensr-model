@@ -3,14 +3,16 @@
 Two paired-image schemas are supported and detected from asset IDs:
 
 * the worldwide corpus stores ``lr``, ``hr``, ``lrharm`` and ``hrharm``;
-  harmonized assets supply RGB and band 8 of raw ``lr`` supplies NIR;
+  harmonized assets supply RGB, band 8 of raw ``lr`` supplies LR NIR, and a
+  required per-sample sidecar supplies synthetic HR NIR;
 * SEN2NAIPv2 cross-sensor stores direct four-band RGB-NIR ``lr`` and ``hr``
   assets at 10 m and 2.5 m respectively.
 
 Both legacy ``.tortilla`` and newer ``.taco`` container suffixes are accepted.
-Assets are always resolved by ``tortilla:id`` rather than child position. Since
-worldwide ``hrharm`` has no NIR, its HR NIR is a conservative, mask-normalized
-bilinear upsampling of LR NIR.
+Assets are always resolved by ``tortilla:id`` rather than child position. The
+worldwide synthetic target is resolved by the same outer sample ID and is never
+silently replaced by interpolated LR NIR. Its valid pixels are histogram-matched
+with scikit-image to bilinearly upsampled native LR B8.
 
 Digital numbers are scaled by ``1e-4``. Rare valid reflectance outliers are
 clamped to the configured model range and reported as ``clipped_fraction``.
@@ -20,6 +22,7 @@ Nodata is filled with zero but zero itself remains a valid reflectance value.
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 import os
 import random
@@ -37,6 +40,7 @@ import torch
 import torch.nn.functional as F
 from affine import Affine
 from pytorch_lightning import LightningDataModule
+from skimage.exposure import match_histograms
 from torch import Tensor
 from torch.utils.data import DataLoader, Dataset
 
@@ -48,6 +52,8 @@ EXPECTED_RAW_LR_BANDS = 12
 EXPECTED_ASSET_IDS = frozenset({"lr", "hr", "lrharm", "hrharm"})
 CROSSSENSOR_ASSET_IDS = frozenset({"lr", "hr"})
 CROSSSENSOR_BANDS = (1, 2, 3, 4)
+SYNTHETIC_HR_NIR_KEY = "nir"
+SYNTHETIC_HR_NIR_DTYPE = np.dtype("float16")
 
 TacoPathInput = str | Path | Sequence[str | Path]
 TrainingSample = dict[str, Tensor | str]
@@ -530,6 +536,180 @@ def _upsample_nir(
     return output.masked_fill(~output_valid, 0.0), output_valid
 
 
+def _match_histogram_masked(source: Tensor, reference: Tensor, valid: Tensor) -> Tensor:
+    """Match valid source values to the reference with scikit-image."""
+
+    if source.shape != reference.shape or source.shape != valid.shape:
+        raise ValueError(
+            "Histogram source, reference, and valid mask must have equal shapes"
+        )
+    if source.ndim != 3 or source.shape[0] != 1:
+        raise ValueError("NIR histogram matching expects tensors shaped 1xHxW")
+    selected = valid.bool()
+    if not selected.any():
+        raise ValueError("NIR histogram matching requires at least one valid pixel")
+
+    source_values = source[selected].detach().cpu().numpy()
+    reference_values = reference[selected].detach().cpu().numpy()
+    matched_values = match_histograms(
+        source_values, reference_values, channel_axis=None
+    ).astype(np.float32, copy=False)
+    mapped = torch.from_numpy(matched_values).to(source.device)
+    result = torch.zeros_like(source, dtype=torch.float32)
+    result[selected] = mapped
+    return result
+
+
+def _synthetic_sidecar_path(directory: Path, sample_id: str) -> Path:
+    if Path(sample_id).name != sample_id or sample_id in {".", ".."}:
+        raise ValueError(f"Unsafe TACO sample ID for sidecar lookup: {sample_id!r}")
+    return directory / f"{sample_id}.npz"
+
+
+def _read_synthetic_hr_nir(
+    directory: Path | None, *, sample_id: str, expected_shape: tuple[int, int]
+) -> Tensor:
+    if directory is None:
+        raise ValueError(
+            "Worldwide TACO samples require data.synthetic_hr_nir_dir; "
+            "interpolated LR NIR is not an allowed HR target"
+        )
+    path = _synthetic_sidecar_path(directory, sample_id)
+    try:
+        with np.load(path, allow_pickle=False) as payload:
+            if payload.files != [SYNTHETIC_HR_NIR_KEY]:
+                raise ValueError(
+                    f"Synthetic HR NIR {path} must contain exactly key "
+                    f"{SYNTHETIC_HR_NIR_KEY!r}, found {payload.files}"
+                )
+            array = payload[SYNTHETIC_HR_NIR_KEY]
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(
+            f"Missing synthetic HR NIR for sample {sample_id!r}: {path}"
+        ) from exc
+    except (OSError, ValueError) as exc:
+        if isinstance(exc, ValueError) and str(exc).startswith("Synthetic HR NIR"):
+            raise
+        raise ValueError(
+            f"Cannot read synthetic HR NIR for sample {sample_id!r}: {path}"
+        ) from exc
+
+    expected = (1, *expected_shape)
+    if array.shape != expected:
+        raise ValueError(
+            f"Synthetic HR NIR for sample {sample_id!r} must have shape "
+            f"{expected}, found {array.shape}"
+        )
+    if array.dtype != SYNTHETIC_HR_NIR_DTYPE:
+        raise TypeError(
+            f"Synthetic HR NIR for sample {sample_id!r} must be float16, "
+            f"found {array.dtype}"
+        )
+    if not np.isfinite(array).all():
+        raise ValueError(
+            f"Synthetic HR NIR for sample {sample_id!r} contains non-finite values"
+        )
+    if np.any(array < 0.0) or np.any(array > 1.0):
+        raise ValueError(
+            f"Synthetic HR NIR for sample {sample_id!r} must already be in [0, 1]"
+        )
+    return torch.from_numpy(np.array(array, dtype=np.float32, copy=True))
+
+
+def _validate_synthetic_collection(
+    directory: Path,
+    *,
+    records: Sequence[TacoSampleRecord],
+    taco_paths: Sequence[Path],
+) -> None:
+    """Require a completed, provenance-matched sidecar snapshot."""
+
+    manifest_path = directory / "inference_manifest.json"
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(
+            f"Synthetic HR NIR manifest is missing: {manifest_path}"
+        ) from exc
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(
+            f"Synthetic HR NIR manifest is unreadable: {manifest_path}"
+        ) from exc
+    if not isinstance(manifest, Mapping) or manifest.get("status") != "complete":
+        status = manifest.get("status") if isinstance(manifest, Mapping) else None
+        raise RuntimeError(
+            f"Synthetic HR NIR generation is not complete: status={status!r} in "
+            f"{manifest_path}"
+        )
+    manifest_output = manifest.get("output_dir")
+    if manifest_output is not None and (
+        Path(str(manifest_output)).expanduser().resolve() != directory.resolve()
+    ):
+        raise ValueError(
+            "Synthetic HR NIR manifest output_dir does not match the configured "
+            f"directory: {manifest_output!r} vs {str(directory)!r}"
+        )
+    normalization = manifest.get("normalization")
+    if not isinstance(normalization, Mapping):
+        raise ValueError("Synthetic HR NIR manifest has no normalization contract")
+    if str(normalization.get("output_dtype")) != "float16" or list(
+        normalization.get("valid_range", [])
+    ) != [0.0, 1.0]:
+        raise ValueError(
+            "Synthetic HR NIR manifest must declare float16 outputs in [0, 1]"
+        )
+
+    archives = manifest.get("archives")
+    if not isinstance(archives, list):
+        raise ValueError("Synthetic HR NIR manifest has no archive snapshot")
+    try:
+        observed_archives = {
+            (str(Path(item["path"]).expanduser().resolve()), int(item["size"]))
+            for item in archives
+        }
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError(
+            "Synthetic HR NIR manifest archive snapshot is malformed"
+        ) from exc
+    expected_archives = {
+        (str(path.resolve()), int(path.stat().st_size)) for path in taco_paths
+    }
+    if observed_archives != expected_archives:
+        raise ValueError(
+            "Synthetic HR NIR was generated for a different TACO archive snapshot; "
+            "finish uploads and rerun NIR generation before training"
+        )
+
+    expected_count = len(records)
+    if int(manifest.get("catalog_samples", -1)) != expected_count:
+        raise ValueError(
+            "Synthetic HR NIR manifest sample count does not match the TACO catalog"
+        )
+    completed = int(manifest.get("completed", 0))
+    skipped = int(manifest.get("skipped_existing", 0))
+    if completed + skipped != expected_count:
+        raise ValueError(
+            "Synthetic HR NIR manifest does not account for every TACO sample"
+        )
+
+    available = {
+        path.stem
+        for path in directory.iterdir()
+        if path.is_file()
+        and not path.name.startswith(".")
+        and path.suffix.lower() == ".npz"
+    }
+    missing = [
+        record.sample_id for record in records if record.sample_id not in available
+    ]
+    if missing:
+        preview = ", ".join(repr(sample_id) for sample_id in missing[:5])
+        raise FileNotFoundError(
+            f"Missing synthetic HR NIR sidecars for {len(missing)} TACO samples; "
+            f"first missing: {preview}"
+        )
+
+
 def _clamp_and_count(
     data: Tensor,
     valid: Tensor,
@@ -638,7 +818,8 @@ class TacoPairedDataset(Dataset[TrainingSample]):
         raw_lr_asset_id: str = "lr",
         rgb_bands: Sequence[int] = (1, 2, 3),
         nir_band: int = 8,
-        hr_nir_strategy: Literal["upsample_lr"] = "upsample_lr",
+        hr_nir_strategy: Literal["synthetic_sidecar"] = "synthetic_sidecar",
+        synthetic_hr_nir_dir: str | Path | None = None,
         reflectance_scale: float = 1e-4,
         nodata: int = 65535,
         value_range: Sequence[float] | None = (0.0, 1.0),
@@ -663,9 +844,10 @@ class TacoPairedDataset(Dataset[TrainingSample]):
             )
         if not isinstance(nir_band, int) or not 1 <= nir_band <= EXPECTED_RAW_LR_BANDS:
             raise ValueError("nir_band must be one-based within the 12-band raw LR")
-        if hr_nir_strategy != "upsample_lr":
+        if hr_nir_strategy != "synthetic_sidecar":
             raise ValueError(
-                "Only hr_nir_strategy='upsample_lr' is supported; hrharm has no NIR"
+                "Only hr_nir_strategy='synthetic_sidecar' is supported for the "
+                "worldwide corpus"
             )
         if not math.isfinite(reflectance_scale) or reflectance_scale <= 0:
             raise ValueError("reflectance_scale must be finite and positive")
@@ -699,6 +881,21 @@ class TacoPairedDataset(Dataset[TrainingSample]):
         self.rgb_bands = _coerce_rgb_bands(rgb_bands)
         self.nir_band = nir_band
         self.hr_nir_strategy = hr_nir_strategy
+        if synthetic_hr_nir_dir is None:
+            parents = {path.parent for path in self.taco_paths}
+            inferred = next(iter(parents)) / "synth_nirs" if len(parents) == 1 else None
+            self.synthetic_hr_nir_dir = (
+                inferred.resolve()
+                if inferred is not None and inferred.is_dir()
+                else None
+            )
+        else:
+            candidate = Path(synthetic_hr_nir_dir).expanduser().resolve()
+            if not candidate.is_dir():
+                raise NotADirectoryError(
+                    f"Synthetic HR NIR directory does not exist: {candidate}"
+                )
+            self.synthetic_hr_nir_dir = candidate
         self.reflectance_scale = reflectance_scale
         self.nodata = nodata
         self.value_range = _coerce_range(value_range)
@@ -805,8 +1002,16 @@ class TacoPairedDataset(Dataset[TrainingSample]):
             lr_valid = lr_rgb.valid & raw_lr.valid
             lr = torch.cat((lr_rgb.data, raw_lr.data), dim=0)
             lr = lr.masked_fill(~lr_valid.expand_as(lr), 0.0)
-            hr_nir, hr_nir_valid = _upsample_nir(raw_lr.data, lr_valid, hr_rgb.shape)
-            hr_valid = hr_rgb.valid & hr_nir_valid
+            hr_nir = _read_synthetic_hr_nir(
+                self.synthetic_hr_nir_dir,
+                sample_id=record.sample_id,
+                expected_shape=hr_rgb.shape,
+            )
+            lr_nir_upsampled, lr_support = _upsample_nir(
+                raw_lr.data, lr_valid, hr_rgb.shape
+            )
+            hr_valid = hr_rgb.valid & lr_support
+            hr_nir = _match_histogram_masked(hr_nir, lr_nir_upsampled, hr_valid)
             hr = torch.cat((hr_rgb.data, hr_nir), dim=0)
             hr = hr.masked_fill(~hr_valid.expand_as(hr), 0.0)
         elif asset_ids == CROSSSENSOR_ASSET_IDS:
@@ -912,7 +1117,8 @@ class OpenSRDataModule(LightningDataModule):
         raw_lr_asset_id: str = "lr",
         rgb_bands: Sequence[int] = (1, 2, 3),
         nir_band: int = 8,
-        hr_nir_strategy: Literal["upsample_lr"] = "upsample_lr",
+        hr_nir_strategy: Literal["synthetic_sidecar"] = "synthetic_sidecar",
+        synthetic_hr_nir_dir: str | Path | None = None,
         reflectance_scale: float = 1e-4,
         nodata: int = 65535,
         value_range: Sequence[float] | None = (0.0, 1.0),
@@ -921,6 +1127,7 @@ class OpenSRDataModule(LightningDataModule):
         rotate_90: bool = True,
         batch_size: int = 1,
         val_batch_size: int | None = None,
+        val_shuffle: bool = False,
         num_workers: int = 0,
         pin_memory: bool = True,
         persistent_workers: bool = False,
@@ -954,6 +1161,21 @@ class OpenSRDataModule(LightningDataModule):
         self.rgb_bands = tuple(rgb_bands)
         self.nir_band = nir_band
         self.hr_nir_strategy = hr_nir_strategy
+        if synthetic_hr_nir_dir is None:
+            parents = {path.parent for path in self.taco_paths}
+            inferred = next(iter(parents)) / "synth_nirs" if len(parents) == 1 else None
+            self.synthetic_hr_nir_dir = (
+                inferred.resolve()
+                if inferred is not None and inferred.is_dir()
+                else None
+            )
+        else:
+            candidate = Path(synthetic_hr_nir_dir).expanduser().resolve()
+            if not candidate.is_dir():
+                raise NotADirectoryError(
+                    f"Synthetic HR NIR directory does not exist: {candidate}"
+                )
+            self.synthetic_hr_nir_dir = candidate
         self.reflectance_scale = reflectance_scale
         self.nodata = nodata
         self.value_range = None if value_range is None else tuple(value_range)
@@ -962,6 +1184,7 @@ class OpenSRDataModule(LightningDataModule):
         self.rotate_90 = rotate_90
         self.batch_size = batch_size
         self.val_batch_size = batch_size if val_batch_size is None else val_batch_size
+        self.val_shuffle = bool(val_shuffle)
         self.num_workers = num_workers
         self.pin_memory = pin_memory
         self.persistent_workers = persistent_workers
@@ -989,6 +1212,12 @@ class OpenSRDataModule(LightningDataModule):
         if self.train_dataset is not None and self.val_dataset is not None:
             return
         self.sample_records = scan_taco_catalog(self.taco_paths)
+        if self.synthetic_hr_nir_dir is not None:
+            _validate_synthetic_collection(
+                self.synthetic_hr_nir_dir,
+                records=self.sample_records,
+                taco_paths=self.taco_paths,
+            )
         train, val = split_taco_records(
             self.sample_records, val_fraction=self.val_fraction, seed=self.split_seed
         )
@@ -1002,6 +1231,7 @@ class OpenSRDataModule(LightningDataModule):
             "rgb_bands": self.rgb_bands,
             "nir_band": self.nir_band,
             "hr_nir_strategy": self.hr_nir_strategy,
+            "synthetic_hr_nir_dir": self.synthetic_hr_nir_dir,
             "reflectance_scale": self.reflectance_scale,
             "nodata": self.nodata,
             "value_range": self.value_range,
@@ -1070,7 +1300,7 @@ class OpenSRDataModule(LightningDataModule):
         return self._loader(
             self.val_dataset,
             batch_size=self.val_batch_size,
-            shuffle=False,
+            shuffle=self.val_shuffle,
             drop_last=False,
         )
 
