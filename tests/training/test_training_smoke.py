@@ -67,7 +67,11 @@ def test_autoencoder_fit_logs_images_and_both_checkpoint_formats(
     native_path = tmp_path / "native" / "last-autoencoder.ckpt"
     assert resume_path.exists()
     assert native_path.exists()
-    assert (tmp_path / "images" / "epoch_0000" / "reconstructions_rgb.png").exists()
+    assert list(
+        (tmp_path / "images" / "epoch_0000").glob(
+            "validation_01_step_*/reconstructions_rgb.png"
+        )
+    )
     assert "optimizer_states" in torch.load(
         resume_path, map_location="cpu", weights_only=True
     )
@@ -105,7 +109,16 @@ def test_diffusion_fit_exports_strict_native_checkpoint(
 
     native_path = tmp_path / "native" / "last-inference.ckpt"
     assert native_path.exists()
-    assert (tmp_path / "images" / "epoch_0000" / "reconstructions_rgb.png").exists()
+    assert list(
+        (tmp_path / "images" / "epoch_0000").glob(
+            "validation_01_step_*/reconstructions_rgb.png"
+        )
+    )
+    assert list(
+        (tmp_path / "images" / "epoch_0000").glob(
+            "validation_01_step_*/details_rgb.png"
+        )
+    )
     payload = load_checkpoint_payload(native_path)
     assert payload["metadata"]["inference_unet_weight_source"] == "ema"
     assert payload["metadata"]["opensr_inference_config"] == (
@@ -129,6 +142,50 @@ def test_diffusion_fit_exports_strict_native_checkpoint(
         not parameter.requires_grad
         for parameter in restored.first_stage_model.parameters()
     )
+
+
+def test_repeated_validation_keeps_images_and_steps_plateau_once(
+    tmp_path,
+    tiny_model_config,
+    fake_taco_factory,
+) -> None:
+    module = DiffusionTrainingModule(
+        tiny_model_config,
+        scheduler_patience=0,
+        validation_num_samples=1,
+        validation_image_batches=1,
+        validation_sampling_steps=5,
+        validation_seed=7,
+    )
+    images = ReconstructionImageLogger(max_images=1, output_dir="images")
+    trainer = pl.Trainer(
+        accelerator="cpu",
+        devices=1,
+        default_root_dir=tmp_path,
+        logger=False,
+        callbacks=[images],
+        max_epochs=1,
+        limit_train_batches=5,
+        limit_val_batches=1,
+        val_check_interval=0.4,
+        num_sanity_val_steps=1,
+        enable_checkpointing=False,
+        enable_model_summary=False,
+        log_every_n_steps=1,
+    )
+    trainer.fit(module, datamodule=_data(fake_taco_factory))
+
+    validation_dirs = sorted((tmp_path / "images" / "epoch_0000").iterdir())
+    assert [path.name.split("_step_")[0] for path in validation_dirs] == [
+        "validation_01",
+        "validation_02",
+    ]
+    assert all((path / "reconstructions_rgb.png").exists() for path in validation_dirs)
+    assert (tmp_path / "images" / "sanity" / "reconstructions_rgb.png").exists()
+    assert (tmp_path / "images" / "sanity" / "reconstructions_nir.png").exists()
+    scheduler = trainer.lr_scheduler_configs[0].scheduler
+    assert scheduler.last_epoch == 1
+    assert torch.isfinite(trainer.callback_metrics["val/loss"])
 
 
 def test_manual_gan_accumulation_runs_and_steps_on_partial_cycle(

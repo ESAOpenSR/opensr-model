@@ -19,7 +19,11 @@ from pytorch_lightning.callbacks import (
 from pytorch_lightning.loggers import CSVLogger
 
 from .autoencoder_module import AutoencoderTrainingModule
-from .callbacks import NativeCheckpointCallback, ReconstructionImageLogger
+from .callbacks import (
+    NativeCheckpointCallback,
+    NvidiaPowerCostLogger,
+    ReconstructionImageLogger,
+)
 from .checkpoints import load_checkpoint_payload
 from .config import (
     as_plain_dict,
@@ -143,6 +147,7 @@ def _build_module(
         validation_sampling_temperature=float(validation.get("temperature", 1.0)),
         validation_seed=int(validation.get("seed", int(config.seed))),
         validation_use_ema=bool(validation.get("use_ema", True)),
+        validation_detail_crop_size=int(validation.get("detail_crop_size", 64)),
     )
 
 
@@ -268,8 +273,47 @@ def _build_callbacks(
                 auto_insert_metric_name=False,
             )
         )
+        rolling = checkpoint.get("rolling", {})
+        if bool(rolling.get("enabled", True)):
+            rolling_dir = _under_run_dir(
+                run_dir, rolling.get("dir", "checkpoints/rolling")
+            )
+            rolling_dir.mkdir(parents=True, exist_ok=True)
+            callbacks.append(
+                ModelCheckpoint(
+                    dirpath=str(rolling_dir),
+                    filename="step={step:08d}",
+                    monitor=None,
+                    save_top_k=int(rolling.get("save_top_k", 1)),
+                    save_last=False,
+                    every_n_train_steps=int(rolling.get("every_n_train_steps", 10_000)),
+                    save_on_train_epoch_end=False,
+                    save_weights_only=False,
+                    auto_insert_metric_name=False,
+                )
+            )
     if has_logger:
         callbacks.append(LoggingRateMonitorSafe(logging_interval="step"))
+
+    cost = config.logging.get("cost", {})
+    if (
+        has_logger
+        and str(config.logging.get("type", "csv")).lower() == "wandb"
+        and bool(cost.get("enabled", True))
+    ):
+        callbacks.append(
+            NvidiaPowerCostLogger(
+                electricity_eur_per_kwh=float(
+                    cost.get("electricity_eur_per_kwh", 0.30)
+                ),
+                overhead_watts=float(cost.get("overhead_watts", 200.0)),
+                every_n_steps=int(
+                    cost.get(
+                        "every_n_steps", config.trainer.get("log_every_n_steps", 20)
+                    )
+                ),
+            )
+        )
 
     images = config.logging.get("images", {})
     if bool(images.get("enabled", True)):

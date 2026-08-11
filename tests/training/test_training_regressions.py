@@ -5,7 +5,9 @@ from types import SimpleNamespace
 
 import pytest
 import torch
+import torch.nn.functional as F
 
+import opensr_model.training.diffusion_module as diffusion_module_helpers
 from opensr_model.diffusion.utils import LitEma
 from opensr_model.training.autoencoder_module import AutoencoderTrainingModule
 from opensr_model.training.cli import _prepare_trainer_kwargs
@@ -54,6 +56,97 @@ def test_diffusion_validation_randomness_is_locally_reproducible(
     assert torch.equal(first_condition, second_condition)
     assert torch.equal(first_loss, second_loss)
     assert torch.equal(first_stats["x0_mse"], second_stats["x0_mse"])
+
+
+def test_validation_images_compare_ema_and_raw_with_aligned_detail_crop(
+    monkeypatch, tiny_model_config
+) -> None:
+    module = DiffusionTrainingModule(
+        tiny_model_config,
+        scheduler_patience=None,
+        validation_num_samples=1,
+        validation_sampling_steps=5,
+        validation_seed=19,
+        validation_detail_crop_size=16,
+    )
+    lr = torch.rand(1, 4, 8, 8)
+    hr = F.interpolate(lr, scale_factor=4, mode="nearest")
+    calls: list[bool] = []
+
+    def sample(input_lr, *, use_ema, **kwargs):
+        calls.append(use_ema)
+        upsampled = F.interpolate(input_lr, scale_factor=4, mode="nearest")
+        return upsampled if use_ema else (upsampled + 0.01).clamp(0.0, 1.0)
+
+    monkeypatch.setattr(module, "sample_super_resolution", sample)
+    monkeypatch.setattr(module, "_encode_hr", lambda value, **_: value)
+    monkeypatch.setattr(module, "_decode_first_stage_float32", lambda value: value)
+    display_values = iter((0.25, 0.75))
+    monkeypatch.setattr(
+        module,
+        "_histogram_align_for_display",
+        lambda sr, _: torch.full_like(sr, next(display_values)),
+    )
+
+    images, details, sample_ids, metrics = module._validation_images(
+        {"sample_id": ["tile"]}, hr, lr, batch_idx=2
+    )
+
+    assert calls == [True, False]
+    assert tuple(images) == (
+        "low_resolution",
+        "target",
+        "autoencoder_reconstruction",
+        "super_resolution_standard",
+        "super_resolution_ema",
+        "absolute_error_standard",
+        "absolute_error_ema",
+    )
+    assert sample_ids == ["tile"]
+    assert details["target"].shape[-2:] == (16, 16)
+    assert details["low_resolution"].shape[-2:] == (4, 4)
+    assert torch.equal(
+        details["target"],
+        F.interpolate(details["low_resolution"], scale_factor=4, mode="nearest"),
+    )
+    assert "super_resolution_standard" in details
+    assert "super_resolution_ema" in details
+    assert torch.all(images["super_resolution_ema"] == 0.25)
+    assert torch.all(images["super_resolution_standard"] == 0.75)
+    assert "ema_psnr" in metrics
+    assert "raw_psnr" in metrics
+    assert metrics["psnr"] == metrics["ema_psnr"]
+    assert metrics["ema_mae"].item() == pytest.approx(0.0)
+
+
+def test_display_histogram_alignment_uses_bilinearly_interpolated_lr(
+    monkeypatch,
+) -> None:
+    lr = torch.arange(16, dtype=torch.float32).reshape(1, 4, 2, 2) / 16
+    sr = torch.flip(
+        F.interpolate(lr, scale_factor=4, mode="nearest"),
+        dims=(-1,),
+    )
+    references = []
+
+    def capture_reference(source, reference, *, channel_axis):
+        assert channel_axis == 0
+        references.append(torch.from_numpy(reference.copy()))
+        return source
+
+    monkeypatch.setattr(diffusion_module_helpers, "match_histograms", capture_reference)
+    aligned = DiffusionTrainingModule._histogram_align_for_display(sr, lr)
+
+    expected = F.interpolate(
+        lr,
+        size=sr.shape[-2:],
+        mode="bilinear",
+        align_corners=False,
+    )
+    assert len(references) == 4
+    for channel, reference in enumerate(references):
+        assert torch.equal(reference, expected[:, channel])
+    assert torch.equal(aligned, sr)
 
 
 def test_inference_incompatible_parameterization_is_rejected(

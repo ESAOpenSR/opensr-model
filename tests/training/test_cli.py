@@ -64,6 +64,7 @@ def test_diffusion_cli_fallbacks_use_quality_sampling_defaults(
     assert module.validation_sampling_eta == pytest.approx(0.95)
     assert module.validation_sampling_temperature == pytest.approx(1.0)
     assert module.validation_use_ema is True
+    assert module.validation_detail_crop_size == 64
 
 
 def test_diffusion_native_export_defaults_to_ema_and_allows_raw(
@@ -127,6 +128,35 @@ def test_disabling_lightning_checkpointing_omits_model_checkpoint(tmp_path) -> N
         "autoencoder", config, tmp_path.resolve(), has_logger=False
     )
     assert not any(isinstance(callback, ModelCheckpoint) for callback in callbacks)
+
+
+def test_diffusion_checkpointing_selects_ema_quality_and_rolls_every_10k_steps(
+    tmp_path,
+) -> None:
+    config = load_training_config(
+        "opensr_model/configs/train_diffusion.yaml",
+        overrides=["logging.images.enabled=false"],
+        expected_stage="diffusion",
+    )
+    callbacks = _build_callbacks(
+        "diffusion", config, tmp_path.resolve(), has_logger=False
+    )
+    best = next(
+        callback
+        for callback in callbacks
+        if isinstance(callback, ModelCheckpoint) and callback.monitor is not None
+    )
+    rolling = next(
+        callback
+        for callback in callbacks
+        if isinstance(callback, ModelCheckpoint) and callback.monitor is None
+    )
+    assert best.monitor == "val/sr_ema_psnr"
+    assert best.mode == "max"
+    assert rolling.dirpath == str(tmp_path / "checkpoints" / "rolling")
+    assert rolling._every_n_train_steps == 10_000
+    assert rolling.save_top_k == 1
+    assert rolling.save_weights_only is False
 
 
 def test_missing_nested_architecture_path_does_not_fall_back_by_basename() -> None:

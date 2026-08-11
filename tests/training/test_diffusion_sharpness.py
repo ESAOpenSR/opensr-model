@@ -125,6 +125,37 @@ def test_decoded_rgb_auxiliary_is_bounded_gated_and_backpropagates(
     assert module._should_compute_decoded_auxiliary(3)
 
 
+def test_decoded_reconstruction_and_detail_supervise_nir_when_enabled(
+    monkeypatch, tiny_model_config
+) -> None:
+    module = _module(
+        tiny_model_config,
+        decoded_reconstruction_weight=1.0,
+        decoded_detail_weight=1.0,
+        decoded_perceptual_weight=0.0,
+        decoded_rgb_only=False,
+    )
+    decoded = torch.zeros(1, 4, 16, 16, requires_grad=True)
+    target = torch.zeros_like(decoded)
+    target[:, 3, 4:12, 4:12] = 1.0
+    monkeypatch.setattr(module, "_decode_first_stage_float32", lambda _: decoded)
+
+    reconstruction, detail, perceptual, active = module._decoded_auxiliary_losses(
+        torch.zeros(1, 2, 8, 8),
+        target,
+        torch.tensor([0]),
+        valid_mask=None,
+    )
+
+    assert reconstruction.item() > 0
+    assert detail.item() > 0
+    assert perceptual.item() == pytest.approx(0.0)
+    assert active.item() == pytest.approx(1.0)
+    (reconstruction + detail).backward()
+    assert decoded.grad is not None
+    assert decoded.grad[:, 3].abs().sum().item() > 0
+
+
 def test_sharpness_does_not_change_native_keys_and_metadata_is_weights_only_safe(
     tmp_path, tiny_model_config
 ) -> None:

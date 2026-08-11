@@ -19,6 +19,7 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
+from skimage.exposure import match_histograms
 
 from opensr_model.diffusion.latentdiffusion import LatentDiffusion
 from opensr_model.diffusion.utils import DDIMSampler
@@ -51,7 +52,7 @@ _SHARPNESS_DEFAULTS: dict[str, Any] = {
     "decoded_max_timestep_fraction": 0.20,
     "decoded_every_n_batches": 8,
     "decoded_max_batch_size": 1,
-    "decoded_rgb_only": True,
+    "decoded_rgb_only": False,
     "perceptual_backbone": "vgg",
 }
 
@@ -208,6 +209,7 @@ class DiffusionTrainingModule(pl.LightningModule):
         validation_sampling_temperature: float = 1.0,
         validation_seed: int = 0,
         validation_use_ema: bool = True,
+        validation_detail_crop_size: int = 64,
     ) -> None:
         super().__init__()
 
@@ -229,6 +231,10 @@ class DiffusionTrainingModule(pl.LightningModule):
             raise ValueError("validation_sampling_eta must be non-negative")
         if validation_sampling_temperature < 0:
             raise ValueError("validation_sampling_temperature must be non-negative")
+        if validation_detail_crop_size <= 0 or validation_detail_crop_size % 4:
+            raise ValueError(
+                "validation_detail_crop_size must be positive and divisible by four"
+            )
 
         self.model_config = config
         self.learning_rate = float(learning_rate)
@@ -270,6 +276,7 @@ class DiffusionTrainingModule(pl.LightningModule):
         self.validation_sampling_temperature = float(validation_sampling_temperature)
         self.validation_seed = int(validation_seed)
         self.validation_use_ema = bool(validation_use_ema)
+        self.validation_detail_crop_size = int(validation_detail_crop_size)
 
         self.decoded_perceptual_loss: Optional[torch.nn.Module] = None
         if self.sharpness_config["decoded_perceptual_weight"] > 0:
@@ -362,6 +369,7 @@ class DiffusionTrainingModule(pl.LightningModule):
                 "validation_sampling_temperature": self.validation_sampling_temperature,
                 "validation_seed": self.validation_seed,
                 "validation_use_ema": self.validation_use_ema,
+                "validation_detail_crop_size": self.validation_detail_crop_size,
                 "pretrained_checkpoint": (
                     None
                     if pretrained_checkpoint is None
@@ -663,7 +671,12 @@ class DiffusionTrainingModule(pl.LightningModule):
         timesteps: torch.Tensor,
         valid_mask: Optional[torch.Tensor],
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Decode a bounded low-timestep subset and compare it in RGB space."""
+        """Decode a bounded low-timestep subset and compare it in image space.
+
+        L1 and Laplacian terms use every channel unless ``decoded_rgb_only`` is
+        explicitly enabled. LPIPS always uses RGB because its pretrained image
+        backbone is three-channel.
+        """
 
         eligible = self._timestep_gate(
             timesteps,
@@ -1140,12 +1153,17 @@ class DiffusionTrainingModule(pl.LightningModule):
         decoded = self.linear_transform(decoded, stage="denorm")
         return decoded.clamp(0.0, 1.0)
 
-    def _should_sample_validation(self, batch_idx: int) -> bool:
+    def _should_score_sampled_validation(self, batch_idx: int) -> bool:
         if self.validation_num_samples == 0:
             return False
         if batch_idx >= self.validation_image_batches:
             return False
         if (self.current_epoch + 1) % self.validation_sample_every_n_epochs != 0:
+            return False
+        return True
+
+    def _should_sample_validation(self, batch_idx: int) -> bool:
+        if not self._should_score_sampled_validation(batch_idx):
             return False
         trainer = getattr(self, "_trainer", None)
         if trainer is None:
@@ -1153,7 +1171,7 @@ class DiffusionTrainingModule(pl.LightningModule):
         # Only rank zero constructs the five expensive full DDIM samples. The
         # remaining ranks still evaluate their share of the 25 validation
         # batches, but do not produce duplicate images that are discarded.
-        return trainer.is_global_zero and not trainer.sanity_checking
+        return trainer.is_global_zero
 
     @torch.no_grad()
     def _validation_images(
@@ -1165,6 +1183,7 @@ class DiffusionTrainingModule(pl.LightningModule):
         batch_idx: int,
     ) -> tuple[
         OrderedDict[str, torch.Tensor],
+        OrderedDict[str, torch.Tensor],
         list[str],
         dict[str, torch.Tensor],
     ]:
@@ -1172,7 +1191,15 @@ class DiffusionTrainingModule(pl.LightningModule):
         hr = hr[:count]
         lr = lr[:count]
         seed = self.validation_seed + batch_idx
-        sr = self.sample_super_resolution(lr, seed=seed)
+        # Both passes receive identical conditioning and DDIM random draws. The
+        # only difference is whether the denoiser uses EMA shadow parameters.
+        sr_ema = self.sample_super_resolution(lr, seed=seed, use_ema=True)
+        sr_raw = self.sample_super_resolution(lr, seed=seed, use_ema=False)
+        # Production inference histogram-aligns decoded SR to bilinearly
+        # interpolated LR. Apply that post-processing only to visualization
+        # tensors; all validation metrics below use the unmodified predictions.
+        sr_ema_display = self._histogram_align_for_display(sr_ema, lr)
+        sr_raw_display = self._histogram_align_for_display(sr_raw, lr)
 
         # Stable posterior modes make AE reconstruction panels comparable
         # across epochs; diffusion conditioning itself remains a seeded sample.
@@ -1182,41 +1209,178 @@ class DiffusionTrainingModule(pl.LightningModule):
             hr_reconstruction, stage="denorm"
         ).clamp(0.0, 1.0)
 
-        lr_up = F.interpolate(
-            lr,
-            size=(lr.shape[-2] * 4, lr.shape[-1] * 4),
-            mode="bilinear",
-            align_corners=False,
-        )
-        condition_latent = self._encode_conditioning(lr, sample=False)
-        condition_reconstruction = self._decode_first_stage_float32(condition_latent)
-        condition_reconstruction = self.linear_transform(
-            condition_reconstruction, stage="denorm"
-        ).clamp(0.0, 1.0)
-
         images = OrderedDict(
-            low_resolution=lr.detach().clamp(0.0, 1.0).cpu(),
-            low_resolution_upsampled=lr_up.detach().clamp(0.0, 1.0).cpu(),
-            conditioning_reconstruction=condition_reconstruction.detach().cpu(),
-            target=hr.detach().clamp(0.0, 1.0).cpu(),
-            autoencoder_reconstruction=hr_reconstruction.detach().cpu(),
-            super_resolution=sr.detach().cpu(),
-            absolute_error=(sr - hr).abs().mean(dim=1, keepdim=True).detach().cpu(),
+            low_resolution=lr.detach().clamp(0.0, 1.0),
+            target=hr.detach().clamp(0.0, 1.0),
+            autoencoder_reconstruction=hr_reconstruction.detach(),
+            super_resolution_standard=sr_raw_display.detach(),
+            super_resolution_ema=sr_ema_display.detach(),
+            absolute_error_standard=(sr_raw_display - hr)
+            .abs()
+            .mean(dim=1, keepdim=True)
+            .detach(),
+            absolute_error_ema=(sr_ema_display - hr)
+            .abs()
+            .mean(dim=1, keepdim=True)
+            .detach(),
         )
+        details = self._aligned_detail_crops(images, batch_idx=batch_idx)
+        images = OrderedDict((name, tensor.cpu()) for name, tensor in images.items())
         raw_ids = batch.get("sample_id")
         if raw_ids is None:
             sample_ids = [f"validation_{batch_idx}_{index}" for index in range(count)]
         else:
             sample_ids = [str(value) for value in list(raw_ids)[:count]]
-        valid_mask = None
-        if "valid_mask" in batch:
-            raw_mask = batch["valid_mask"]
-            mask_batch = {
-                "valid_mask": (
-                    raw_mask[:count] if isinstance(raw_mask, torch.Tensor) else raw_mask
+        valid_mask = self._validation_valid_mask(batch, hr, count)
+        ema_metrics = self._super_resolution_metrics(sr_ema, hr, lr, valid_mask)
+        raw_metrics = self._super_resolution_metrics(sr_raw, hr, lr, valid_mask)
+        primary_metrics = ema_metrics if self.validation_use_ema else raw_metrics
+        image_metrics = dict(primary_metrics)
+        image_metrics.update(
+            {f"ema_{name}": value for name, value in ema_metrics.items()}
+        )
+        image_metrics.update(
+            {f"raw_{name}": value for name, value in raw_metrics.items()}
+        )
+        return images, details, sample_ids, image_metrics
+
+    def _validation_valid_mask(
+        self,
+        batch: Mapping[str, Any],
+        hr: torch.Tensor,
+        count: int,
+    ) -> Optional[torch.Tensor]:
+        if "valid_mask" not in batch:
+            return None
+        raw_mask = batch["valid_mask"]
+        mask_batch = {
+            "valid_mask": (
+                raw_mask[:count] if isinstance(raw_mask, torch.Tensor) else raw_mask
+            )
+        }
+        return self._valid_mask(mask_batch, hr[:count])
+
+    @torch.no_grad()
+    def _ema_psnr_for_checkpoint(
+        self,
+        batch: Mapping[str, Any],
+        hr: torch.Tensor,
+        lr: torch.Tensor,
+        *,
+        batch_idx: int,
+    ) -> torch.Tensor:
+        """Evaluate unprocessed EMA output for distributed model selection."""
+
+        count = min(self.validation_num_samples, hr.shape[0])
+        hr = hr[:count]
+        lr = lr[:count]
+        sr_ema = self.sample_super_resolution(
+            lr,
+            seed=self.validation_seed + batch_idx,
+            use_ema=True,
+        )
+        valid_mask = self._validation_valid_mask(batch, hr, count)
+        return compute_reconstruction_metrics(
+            sr_ema,
+            hr,
+            valid_mask,
+            value_min=0.0,
+            value_max=1.0,
+        )["psnr"]
+
+    @staticmethod
+    def _histogram_align_for_display(
+        sr: torch.Tensor, lr: torch.Tensor
+    ) -> torch.Tensor:
+        """Match each SR band to bilinearly interpolated LR for display only."""
+
+        reference = F.interpolate(
+            lr.float(),
+            size=sr.shape[-2:],
+            mode="bilinear",
+            align_corners=False,
+        )
+        aligned_channels: list[torch.Tensor] = []
+        for channel in range(sr.shape[1]):
+            source_np = sr[:, channel].detach().float().cpu().numpy()
+            reference_np = reference[:, channel].detach().float().cpu().numpy()
+            aligned_np = match_histograms(
+                source_np,
+                reference_np,
+                channel_axis=0,
+            )
+            aligned_channels.append(torch.from_numpy(np.asarray(aligned_np)))
+        aligned = torch.stack(aligned_channels, dim=1).to(
+            device=sr.device, dtype=sr.dtype
+        )
+        return aligned.clamp(0.0, 1.0)
+
+    def _aligned_detail_crops(
+        self,
+        images: Mapping[str, torch.Tensor],
+        *,
+        batch_idx: int,
+    ) -> OrderedDict[str, torch.Tensor]:
+        """Crop the same random ground footprint from LR and every HR panel."""
+
+        lr = images["low_resolution"]
+        factor = 4
+        hr_height = min(
+            tensor.shape[-2]
+            for name, tensor in images.items()
+            if name != "low_resolution"
+        )
+        hr_width = min(
+            tensor.shape[-1]
+            for name, tensor in images.items()
+            if name != "low_resolution"
+        )
+        hr_size = min(self.validation_detail_crop_size, hr_height, hr_width)
+        hr_size -= hr_size % factor
+        if hr_size < factor:
+            raise ValueError(
+                "Validation images are too small for an aligned detail crop"
+            )
+        lr_size = hr_size // factor
+        if lr.shape[-2] < lr_size or lr.shape[-1] < lr_size:
+            raise ValueError("LR validation image is too small for the detail crop")
+
+        generator = torch.Generator(device="cpu")
+        generator.manual_seed(self.validation_seed + 10_000 + batch_idx)
+        crop_parts: dict[str, list[torch.Tensor]] = {name: [] for name in images}
+        max_lr_top = lr.shape[-2] - lr_size
+        max_lr_left = lr.shape[-1] - lr_size
+        for sample_index in range(lr.shape[0]):
+            lr_top = int(torch.randint(max_lr_top + 1, (), generator=generator).item())
+            lr_left = int(
+                torch.randint(max_lr_left + 1, (), generator=generator).item()
+            )
+            hr_top = lr_top * factor
+            hr_left = lr_left * factor
+            for name, tensor in images.items():
+                if name == "low_resolution":
+                    top, left, size = lr_top, lr_left, lr_size
+                else:
+                    top, left, size = hr_top, hr_left, hr_size
+                crop_parts[name].append(
+                    tensor[
+                        sample_index : sample_index + 1,
+                        :,
+                        top : top + size,
+                        left : left + size,
+                    ]
                 )
-            }
-            valid_mask = self._valid_mask(mask_batch, hr)
+        return OrderedDict(
+            (name, torch.cat(parts, dim=0).cpu()) for name, parts in crop_parts.items()
+        )
+
+    @staticmethod
+    def _super_resolution_metrics(
+        sr: torch.Tensor,
+        hr: torch.Tensor,
+        lr: torch.Tensor,
+        valid_mask: Optional[torch.Tensor],
+    ) -> dict[str, torch.Tensor]:
         image_metrics = compute_reconstruction_metrics(
             sr,
             hr,
@@ -1255,28 +1419,59 @@ class DiffusionTrainingModule(pl.LightningModule):
                     valid_mask, nir_channels, total_channels=total_channels
                 ),
             )
-        return images, sample_ids, image_metrics
+        return image_metrics
 
     def validation_step(
         self, batch: Mapping[str, Any], batch_idx: int
     ) -> dict[str, Any]:
         _, _, hr, lr, _, _ = self._shared_step(batch, stage="val", batch_idx=batch_idx)
-        output: dict[str, Any] = {"images": OrderedDict(), "sample_ids": []}
+        output: dict[str, Any] = {
+            "images": OrderedDict(),
+            "details": OrderedDict(),
+            "sample_ids": [],
+        }
+        ema_checkpoint_psnr: Optional[torch.Tensor] = None
         if self._should_sample_validation(batch_idx):
-            images, sample_ids, image_metrics = self._validation_images(
+            images, details, sample_ids, image_metrics = self._validation_images(
                 batch, hr, lr, batch_idx=batch_idx
             )
             output["images"] = images
+            output["details"] = details
             output["sample_ids"] = sample_ids
             for name, value in image_metrics.items():
+                if name == "ema_psnr":
+                    ema_checkpoint_psnr = value
+                    continue
                 self.log(
                     f"val/sr_{name}",
                     value,
                     on_step=False,
                     on_epoch=True,
-                    sync_dist=True,
+                    # Full DDIM validation samples are deliberately generated
+                    # only on rank zero. A distributed reduction here would
+                    # enqueue an unmatched collective and deadlock DDP.
+                    sync_dist=False,
                     batch_size=len(sample_ids),
+                    rank_zero_only=True,
                 )
+        if self._should_score_sampled_validation(batch_idx):
+            if ema_checkpoint_psnr is None:
+                ema_checkpoint_psnr = self._ema_psnr_for_checkpoint(
+                    batch,
+                    hr,
+                    lr,
+                    batch_idx=batch_idx,
+                )
+            self.log(
+                "val/sr_ema_psnr",
+                ema_checkpoint_psnr,
+                on_step=False,
+                on_epoch=True,
+                # Every DDP rank scores its local fixed sample; model-selection
+                # quality is their globally reduced mean.
+                sync_dist=True,
+                batch_size=min(self.validation_num_samples, hr.shape[0]),
+            )
         return output
 
     def on_train_epoch_end(self) -> None:

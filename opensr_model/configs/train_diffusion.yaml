@@ -31,6 +31,8 @@ data:
   split_seed: ${seed}
   factor: 4
   train_patch_size: 512
+  # Null preserves complete-image validation; set for deterministic center crops.
+  validation_patch_size: null
   value_range: [0.0, 1.0]
   horizontal_flip_probability: 0.5
   vertical_flip_probability: 0.5
@@ -65,7 +67,9 @@ training:
     decoded_max_timestep_fraction: 0.20
     decoded_every_n_batches: 8
     decoded_max_batch_size: 1
-    decoded_rgb_only: true
+    # L1 and Laplacian decoded supervision cover RGB+NIR jointly. LPIPS remains
+    # RGB-only because its pretrained VGG backbone accepts three channels.
+    decoded_rgb_only: false
     perceptual_backbone: vgg
   scheduler:
     name: plateau  # plateau or constant
@@ -83,6 +87,8 @@ training:
     temperature: 1.0
     seed: ${seed}
     use_ema: true
+    # Reproducible aligned detail: 64x64 HR pixels and the matching 16x16 LR area.
+    detail_crop_size: 64
 
 trainer:
   accelerator: auto
@@ -96,18 +102,29 @@ trainer:
   gradient_clip_algorithm: norm
   log_every_n_steps: 20
   check_val_every_n_epoch: 1
+  # Validate at 20%, 40%, 60%, 80%, and approximately 100% of every epoch.
+  val_check_interval: 0.2
   limit_val_batches: 25
-  num_sanity_val_steps: 0  # avoid an extra DDIM sample before epoch zero
+  # Preview five complete shuffled validation tiles in W&B before training.
+  # Lightning discards sanity metrics before model selection and scheduling.
+  num_sanity_val_steps: 5
   deterministic: false
   enable_checkpointing: true
 
 checkpoint:
-  monitor: val/loss
-  mode: min
+  # Select by decoded EMA super-resolution quality instead of denoising loss.
+  monitor: val/sr_ema_psnr
+  mode: max
   resume_dir: checkpoints/resume
   save_top_k: 1
   save_last: true
   every_n_epochs: 1
+  rolling:
+    enabled: true
+    # Keep the newest complete resume checkpoint written every 10k optimizer steps.
+    dir: checkpoints/rolling
+    every_n_train_steps: 10000
+    save_top_k: 1
   native:
     enabled: true
     dir: checkpoints/native
@@ -124,12 +141,18 @@ checkpoint:
     min_delta: 0.0
 
 logging:
-  type: csv
+  type: wandb
   save_dir: logs
   name: diffusion
   version: null
   project: opensr-training
   log_model: false
+  cost:
+    enabled: true
+    electricity_eur_per_kwh: 0.30
+    # Ryzen 7600X host + board/RAM/storage + dual-GPU water loop + PSU losses.
+    overhead_watts: 200
+    every_n_steps: 20
   images:
     enabled: true
     output_dir: images

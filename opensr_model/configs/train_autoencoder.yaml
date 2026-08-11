@@ -107,6 +107,12 @@ checkpoint:
   save_top_k: 1
   save_last: true
   every_n_epochs: 1
+  rolling:
+    enabled: true
+    # Keep the newest complete resume checkpoint written every 10k optimizer steps.
+    dir: checkpoints/rolling
+    every_n_train_steps: 10000
+    save_top_k: 1
   native:
     enabled: true
     dir: checkpoints/native
@@ -124,12 +130,18 @@ checkpoint:
     min_delta: 0.0
 
 logging:
-  type: csv  # csv, tensorboard, wandb, or none
+  type: wandb  # csv, tensorboard, wandb, or none
   save_dir: logs
   name: autoencoder
   version: null
   project: opensr-training
   log_model: false
+  cost:
+    enabled: true
+    electricity_eur_per_kwh: 0.30
+    # Ryzen 7600X host + board/RAM/storage + dual-GPU water loop + PSU losses.
+    overhead_watts: 200
+    every_n_steps: 20
   images:
     enabled: true
     output_dir: images

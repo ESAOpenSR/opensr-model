@@ -221,6 +221,14 @@ def _validate_taco_data_config(data: DictConfig) -> None:
         raise ValueError(
             "data.train_patch_size must be positive and divisible by data.factor"
         )
+    validation_patch_size = data.get("validation_patch_size")
+    if validation_patch_size is not None and (
+        int(validation_patch_size) <= 0 or int(validation_patch_size) % factor != 0
+    ):
+        raise ValueError(
+            "data.validation_patch_size must be positive and divisible by data.factor"
+        )
+
     value_range = list(data.get("value_range", []))
     if len(value_range) != 2 or float(value_range[0]) >= float(value_range[1]):
         raise ValueError(

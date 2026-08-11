@@ -742,6 +742,7 @@ def _aligned_crop(
     *,
     patch: tuple[int, int] | None,
     factor: int,
+    random: bool = True,
 ) -> tuple[Tensor, Tensor, Tensor]:
     if patch is None:
         return hr, lr, mask
@@ -756,9 +757,16 @@ def _aligned_crop(
     max_left = lr.shape[-1] - lr_patch_w
     top = left = 0
     found = False
-    for _ in range(10):
-        candidate_top = int(torch.randint(max_top + 1, ()).item()) if max_top else 0
-        candidate_left = int(torch.randint(max_left + 1, ()).item()) if max_left else 0
+    attempts = 10 if random else 1
+    for _ in range(attempts):
+        if random:
+            candidate_top = int(torch.randint(max_top + 1, ()).item()) if max_top else 0
+            candidate_left = (
+                int(torch.randint(max_left + 1, ()).item()) if max_left else 0
+            )
+        else:
+            candidate_top = max_top // 2
+            candidate_left = max_left // 2
         y, x = candidate_top * factor, candidate_left * factor
         if mask[:, y : y + patch_h, x : x + patch_w].any():
             top, left, found = candidate_top, candidate_left, True
@@ -812,6 +820,7 @@ class TacoPairedDataset(Dataset[TrainingSample]):
         *,
         training: bool = False,
         train_patch_size: int | Sequence[int] | None = 512,
+        crop: bool | None = None,
         factor: int = 4,
         lr_asset_id: str = "lrharm",
         hr_asset_id: str = "hrharm",
@@ -874,6 +883,7 @@ class TacoPairedDataset(Dataset[TrainingSample]):
             raise ValueError("TacoPairedDataset requires at least one sample")
         self.training = training
         self.train_patch_size = _coerce_patch(train_patch_size)
+        self.crop = training if crop is None else bool(crop)
         self.factor = factor
         self.lr_asset_id = lr_asset_id
         self.hr_asset_id = hr_asset_id
@@ -1069,10 +1079,16 @@ class TacoPairedDataset(Dataset[TrainingSample]):
 
     def __getitem__(self, index: int) -> TrainingSample:
         hr, lr, mask, sample_id, clipped_fraction = self._load_full(index)
-        if self.training:
+        if self.crop:
             hr, lr, mask = _aligned_crop(
-                hr, lr, mask, patch=self.train_patch_size, factor=self.factor
+                hr,
+                lr,
+                mask,
+                patch=self.train_patch_size,
+                factor=self.factor,
+                random=self.training,
             )
+        if self.training:
             hr, lr, mask = _augment(
                 hr,
                 lr,
@@ -1100,8 +1116,8 @@ class OpenSRDataModule(LightningDataModule):
     """Lightning data module for supported paired-image TACO corpora.
 
     The default training crop is the complete 512x512 HR tile. Validation is
-    never cropped or augmented, so validation image logging reconstructs whole
-    scenes on every epoch.
+    uncropped unless ``validation_patch_size`` is configured and is never
+    augmented.
     """
 
     def __init__(
@@ -1112,6 +1128,7 @@ class OpenSRDataModule(LightningDataModule):
         split_seed: int = 42,
         factor: int = 4,
         train_patch_size: int | Sequence[int] | None = 512,
+        validation_patch_size: int | Sequence[int] | None = None,
         lr_asset_id: str = "lrharm",
         hr_asset_id: str = "hrharm",
         raw_lr_asset_id: str = "lr",
@@ -1155,6 +1172,7 @@ class OpenSRDataModule(LightningDataModule):
         self.split_seed = split_seed
         self.factor = factor
         self.train_patch_size = train_patch_size
+        self.validation_patch_size = validation_patch_size
         self.lr_asset_id = lr_asset_id
         self.hr_asset_id = hr_asset_id
         self.raw_lr_asset_id = raw_lr_asset_id
@@ -1247,11 +1265,12 @@ class OpenSRDataModule(LightningDataModule):
         )
         self.val_dataset = TacoPairedDataset(
             training=False,
+            crop=self.validation_patch_size is not None,
             horizontal_flip_probability=0.0,
             vertical_flip_probability=0.0,
             rotate_90=False,
             _records=val,
-            **common,
+            **(common | {"train_patch_size": self.validation_patch_size}),
         )
         # Representative eager reads catch schema/normalization mistakes before
         # the optimizer starts. Remaining samples are validated lazily on use.

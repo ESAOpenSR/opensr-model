@@ -197,6 +197,34 @@ def test_datamodule_crops_training_but_validates_complete_images(
     assert val_batch["clipped_fraction"].shape[0] == len(val_batch["sample_id"])
 
 
+def test_datamodule_can_validate_deterministic_aligned_crops(
+    fake_taco_factory,
+) -> None:
+    bundle = fake_taco_factory(include_nodata=False, parts=2)
+    module = OpenSRDataModule(
+        bundle.root,
+        val_fraction=0.35,
+        split_seed=11,
+        train_patch_size=16,
+        validation_patch_size=16,
+        horizontal_flip_probability=0.0,
+        vertical_flip_probability=0.0,
+        rotate_90=False,
+        batch_size=2,
+        num_workers=0,
+        pin_memory=False,
+    )
+
+    module.setup("fit")
+    first = module.val_dataset[0]
+    second = module.val_dataset[0]
+
+    assert first["image"].shape == (4, 16, 16)
+    assert first["LR_image"].shape == (4, 4, 4)
+    assert torch.equal(first["image"], second["image"])
+    assert torch.equal(first["LR_image"], second["LR_image"])
+
+
 def test_misaligned_transform_is_rejected(fake_taco_factory) -> None:
     bundle = fake_taco_factory(include_nodata=False)
     import rasterio
