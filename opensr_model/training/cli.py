@@ -326,6 +326,9 @@ def _build_callbacks(
                 nir_band=images.get("nir_band", 3),
                 value_min=float(images.get("value_min", 0.0)),
                 value_max=float(images.get("value_max", 0.3)),
+                stretch_percentiles=tuple(
+                    images.get("stretch_percentiles", (2.0, 98.0))
+                ),
             )
         )
 

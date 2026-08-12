@@ -69,15 +69,13 @@ The native `uint16` reflectance digital numbers are converted to `float32` with 
 The `hrharm` asset contains RGB only. Its fourth training channel now comes from
 `synth_nirs/<sample_id>.npz`, generated from HR RGB by the SharpNIR model. Every
 sidecar must contain exactly `nir: float16[1,512,512]` with finite values already
-normalized to `[0,1]`; it is not scaled by `1e-4` again. Native LR B8 remains the
-fourth conditioning channel at 128×128.
+normalized to `[0,1]`; it is not scaled by `1e-4` again. The loader bilinearly
+resizes this synthetic NIR to 128×128 and applies a light 3×3 Gaussian blur to
+produce the fourth conditioning channel. Native LR B8 is not used.
 
-For each sample, the loader bilinearly enlarges native LR B8 to 512×512 with
-`align_corners=False`, then uses `skimage.exposure.match_histograms` to match the
-synthetic NIR's valid-pixel histogram to that enlarged reference. Only pixels in
-the joint HR/LR validity mask participate, so nodata does not affect either
-empirical distribution. Histogram matching changes radiometry monotonically
-while retaining the synthetic image's spatial detail ordering.
+The synthetic 512×512 NIR remains the HR target without histogram matching to
+sensor B8. The conservative intersection of LR RGB interpolation support and
+direct HR RGB validity still defines valid HR pixels.
 
 Training refuses to fall back to interpolated LR B8. Before fitting, it requires
 `synth_nirs/inference_manifest.json` to have status `complete`, match the exact
@@ -236,7 +234,7 @@ metadata retain the caller's configuration, preserving backward compatibility.
 
 Scalar logging includes total/component losses, MAE, MSE, RMSE, PSNR, SSIM, spectral angle (radians), output range violations, valid and input-clipped fractions, latent statistics, timestep statistics, and learning rate. Reconstruction metrics retain their four-channel compatibility names and are also reported separately for RGB and NIR. Worldwide NIR values measure fidelity to synthetic SharpNIR pseudo-targets, not independently observed HR NIR. Diffusion sampling likewise reports overall, RGB, and NIR LR consistency.
 
-Every configured validation epoch saves the same number of complete validation tensors—without detail crops—as RGB grids, NIR grids, and individual RGB PNGs. Autoencoder panels contain target, reconstruction, and absolute error. Diffusion panels contain native LR, enlarged LR, conditioning reconstruction, target, AE reconstruction, sampled SR, and absolute error. PNGs are always local; TensorBoard and W&B figures are added when those loggers are selected.
+Every configured validation epoch saves the same number of complete validation tensors—without detail crops—as RGB grids, NIR grids, and individual RGB PNGs. Autoencoder panels contain target, reconstruction, and absolute error. Diffusion panels contain native LR, enlarged LR, conditioning reconstruction, target, AE reconstruction, sampled SR, and absolute error. RGB rendering uses one shared 2nd-to-98th-percentile contrast stretch across every full, detail, and individual panel in the validation run, preserving fair visual comparisons while making colors more legible. PNGs are always local; TensorBoard and W&B figures are added when those loggers are selected.
 
 ## Practical notes
 

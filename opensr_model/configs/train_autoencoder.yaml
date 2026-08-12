@@ -19,9 +19,10 @@ data:
   hr_asset_id: hrharm
   raw_lr_asset_id: lr
   rgb_bands: [1, 2, 3]  # one-based
-  nir_band: 8           # one-based B8 in the raw 12-band Sentinel-2 asset
+  # Retained for TACO schema compatibility; worldwide NIR uses the sidecar.
+  nir_band: 8
   # Required synthetic 512px NIR target, keyed by the outer TACO sample ID and
-  # histogram-matched to bilinearly upsampled native LR B8 in the loader.
+  # The loader downsamples this target to LR and applies a light 3x3 blur.
   hr_nir_strategy: synthetic_sidecar
   synthetic_hr_nir_dir: /work/data/SISR_worldwide/synth_nirs
   reflectance_scale: 0.0001  # uint16 reflectance DN -> [0, 1]
@@ -151,3 +152,4 @@ logging:
     nir_band: 3
     value_min: 0.0
     value_max: 0.3
+    stretch_percentiles: [2.0, 98.0]

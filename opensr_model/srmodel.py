@@ -22,13 +22,12 @@ from opensr_model.utils import create_no_data_mask
 from opensr_model.utils import apply_no_data_mask
 
 
-
 class SRLatentDiffusion(torch.nn.Module):
-    def __init__(self,config, device: Union[str, torch.device] = "cpu"):
+    def __init__(self, config, device: Union[str, torch.device] = "cpu"):
         super().__init__()
 
         # Set up the model
-        self.config = config        
+        self.config = config
         self.model = LatentDiffusion(
             config.first_stage_config,
             config.cond_stage_config,
@@ -42,42 +41,50 @@ class SRLatentDiffusion(torch.nn.Module):
             cond_stage_key=config.other.cond_stage_key,
         )
 
-
         # Set up the model for inference
-        self.set_normalization() # decide wether to use norm
-        self.device = device # set self device
-        self.model.device = device # set model device as selected
-        self.model = self.model.to(device) # move model to device
-        self.model.eval() # set model state
-        self = self.eval() # set main model state
-        self._X = None # placeholder for LR image
-        self.encode_conditioning = config.encode_conditioning # encode LR images before dif?
+        self.set_normalization()  # decide wether to use norm
+        self.device = device  # set self device
+        self.model.device = device  # set model device as selected
+        self.model = self.model.to(device)  # move model to device
+        self.model.eval()  # set model state
+        self = self.eval()  # set main model state
+        self._X = None  # placeholder for LR image
+        self.encode_conditioning = (
+            config.encode_conditioning
+        )  # encode LR images before dif?
 
     def set_normalization(self):
-        if self.config.apply_normalization==True:
+        if self.config.apply_normalization == True:
             from opensr_model.utils import linear_transform_4b
+
             self.linear_transform = linear_transform_4b
         else:
             from opensr_model.utils import linear_transform_placeholder
+
             self.linear_transform = linear_transform_placeholder
             print("Normalization disabled.")
-        
-    def _tensor_encode(self,X: torch.Tensor):
+
+    def _tensor_encode(self, X: torch.Tensor):
         # set copy to model
         self._X = X.clone()
         # normalize image
         X_enc = self.linear_transform(X, stage="norm")
         # encode LR images
-        if self.encode_conditioning==True :
+        if self.encode_conditioning == True:
             # try to upsample->encode conditioning
-            X_int = torch.nn.functional.interpolate(X, size=(X.shape[-2]*4,X.shape[-1]*4), mode='bilinear', align_corners=False)
+            X_int = torch.nn.functional.interpolate(
+                X,
+                size=(X.shape[-2] * 4, X.shape[-1] * 4),
+                mode="bilinear",
+                align_corners=False,
+            )
             # encode conditioning
             X_enc = self.model.first_stage_model.encode(X_int).sample()
         # move to same device as the model
         X_enc = X_enc.to(self.device)
         return X_enc
 
-    def _tensor_decode(self, X_enc: torch.Tensor, spe_cor: bool = True):       
+    def _tensor_decode(self, X_enc: torch.Tensor, spe_cor: bool = True):
         # Decode
         X_dec = self.model.decode_first_stage(X_enc)
         X_dec = self.linear_transform(X_dec, stage="denorm")
@@ -86,29 +93,54 @@ class SRLatentDiffusion(torch.nn.Module):
             for i in range(X_dec.shape[1]):
                 X_dec[:, i] = self.hq_histogram_matching(X_dec[:, i], self._X[:, i])
         # If the value is negative, set it to 0
-        X_dec[X_dec < 0] = 0    
+        X_dec[X_dec < 0] = 0
         return X_dec
-    
+
+    def _match_output_histograms(
+        self, output: torch.Tensor, reference: torch.Tensor
+    ) -> torch.Tensor:
+        """Match every output band to its corresponding LR input band."""
+
+        if output.ndim != 4 or reference.ndim != 4:
+            raise ValueError("Histogram matching expects batched BCHW tensors")
+        if output.shape[:2] != reference.shape[:2]:
+            raise ValueError(
+                "Histogram matching requires equal batch and channel dimensions"
+            )
+        return torch.stack(
+            [
+                torch.stack(
+                    [
+                        self.hq_histogram_matching(
+                            output[batch, channel], reference[batch, channel]
+                        )
+                        for channel in range(output.shape[1])
+                    ]
+                )
+                for batch in range(output.shape[0])
+            ]
+        )
+
     def _prepare_model(
         self,
         X: torch.Tensor,
         eta: float = 1.0,
         custom_steps: int = 100,
-        verbose: bool = False 
+        verbose: bool = False,
     ):
         # Create the DDIM sampler
         ddim = DDIMSampler(self.model)
-        
+
         # make schedule to compute alphas and sigmas
         ddim.make_schedule(ddim_num_steps=custom_steps, ddim_eta=eta, verbose=verbose)
-        
+
         # Create the HR latent image
         latent = torch.randn(X.shape, device=X.device)
-                
+
         # Create the vector with the timesteps
         timesteps = ddim.ddim_timesteps
         time_range = np.flip(timesteps)
-        
+
         return ddim, latent, time_range
 
     @torch.no_grad()
@@ -120,7 +152,7 @@ class SRLatentDiffusion(torch.nn.Module):
         sampling_temperature: float = None,
         histogram_matching: bool = True,
         save_iterations: bool = False,
-        verbose: bool = False
+        verbose: bool = False,
     ):
         """Obtain the super resolution of the given image.
 
@@ -148,30 +180,40 @@ class SRLatentDiffusion(torch.nn.Module):
             sampling_temperature = self.config.denoiser_settings.sampling_temperature
         if sampling_steps is None:
             sampling_steps = self.config.denoiser_settings.sampling_steps
-            
+
         # Set potentially problematic values to 0 to avoid issues in the model.
         X = torch.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
-        
+
         # Assert shape, size, dimensionality. Add padding if necessary
-        X,padding = assert_tensor_validity(X)
-        
+        X, padding = assert_tensor_validity(X)
+        left, right, top, bottom = padding
+        input_height, input_width = X.shape[-2:]
+        lr_reference = X[
+            :,
+            :,
+            top : input_height - bottom if bottom else input_height,
+            left : input_width - right if right else input_width,
+        ]
+
         # create no_data_mask
-        no_data_mask = create_no_data_mask(X, target_size= X.shape[-1]*4)
+        no_data_mask = create_no_data_mask(X, target_size=X.shape[-1] * 4)
 
         # Normalize the image
         X = X.clone()
         Xnorm = self._tensor_encode(X)
-        
+
         # ddim, latent and time_range
         ddim, latent, time_range = self._prepare_model(
             X=Xnorm, eta=sampling_eta, custom_steps=sampling_steps, verbose=verbose
         )
-        iterator = tqdm(time_range, desc="DDIM Sampler", total=sampling_steps,disable=True)
+        iterator = tqdm(
+            time_range, desc="DDIM Sampler", total=sampling_steps, disable=True
+        )
 
         # Iterate over the timesteps
         if save_iterations:
             save_iters = []
-            
+
         for i, step in enumerate(iterator):
             outs = ddim.p_sample_ddim(
                 x=latent,
@@ -179,47 +221,52 @@ class SRLatentDiffusion(torch.nn.Module):
                 t=step,
                 index=sampling_steps - i - 1,
                 use_original_steps=False,
-                temperature=sampling_temperature
+                temperature=sampling_temperature,
             )
             latent, _ = outs
-            
-            if save_iterations:
-                save_iters.append(
-                    self._tensor_decode(latent, spe_cor=histogram_matching)
-                )
-        
-        if save_iterations:
-            return save_iters
-        
-        sr = self._tensor_decode(latent, spe_cor=histogram_matching) # decode the latent image
-        
-        # Post-processing
-        sr = apply_no_data_mask(sr, no_data_mask) # apply no data mask as in LR image
-        sr = revert_padding(sr,padding) # remove padding from the SR image if there was any
-        return sr
 
+            if save_iterations:
+                save_iters.append(self._tensor_decode(latent, spe_cor=False))
+
+        if save_iterations:
+            if histogram_matching:
+                save_iters = [
+                    self._match_output_histograms(iteration, X)
+                    for iteration in save_iters
+                ]
+            return save_iters
+
+        sr = self._tensor_decode(latent, spe_cor=False)  # decode the latent image
+
+        # Post-processing
+        sr = apply_no_data_mask(sr, no_data_mask)  # apply no data mask as in LR image
+        sr = revert_padding(
+            sr, padding
+        )  # remove padding from the SR image if there was any
+        if histogram_matching:
+            sr = self._match_output_histograms(sr, lr_reference)
+        return sr
 
     def hq_histogram_matching(
         self, image1: torch.Tensor, image2: torch.Tensor
     ) -> torch.Tensor:
-        """
-        Applies histogram matching to align the color distribution of image1 to image2.
+        """Match an SR output's distribution to its LR input reference.
 
-        This function adjusts the pixel intensity distribution of `image1` (typically the
-        low-resolution or degraded image) to match that of `image2` (typically the 
-        high-resolution or reference image). The operation is done per channel and 
-        assumes both images are in (C, H, W) format.
+        The first tensor is the super-resolved source whose values are adjusted.
+        The second tensor is the corresponding low-resolution reference whose
+        spectral distribution is preserved. Spatial sizes may differ because
+        histogram matching compares value distributions rather than pixel locations.
 
         Args:
-            image1 (torch.Tensor): The source image whose histogram will be modified (C, H, W).
-            image2 (torch.Tensor): The reference image whose histogram will be matched (C, H, W).
+            image1: SR source to adjust, shaped HxW or CxHxW.
+            image2: LR spectral reference, shaped HxW or CxHxW.
 
         Returns:
-            torch.Tensor: A new tensor with the same shape as `image1`, but with pixel 
-                        intensities adjusted to match the histogram of `image2`.
+            A tensor with the source shape and its histogram matched to the LR
+            reference.
 
         Raises:
-            ValueError: If input tensors are not 2D or 3D.
+            ValueError: If the source is not two- or three-dimensional.
         """
 
         # Go to numpy
@@ -251,9 +298,7 @@ class SRLatentDiffusion(torch.nn.Module):
         else:
             return None
         if not isinstance(inference_config, Mapping):
-            raise RuntimeError(
-                "Checkpoint opensr_inference_config must be a mapping"
-            )
+            raise RuntimeError("Checkpoint opensr_inference_config must be a mapping")
         return inference_config
 
     @staticmethod
@@ -269,9 +314,7 @@ class SRLatentDiffusion(torch.nn.Module):
             return None
         value = mapping[key]
         if not isinstance(value, bool):
-            raise RuntimeError(
-                f"Checkpoint inference setting {key!r} must be a bool"
-            )
+            raise RuntimeError(f"Checkpoint inference setting {key!r} must be a bool")
         return value
 
     @staticmethod
@@ -286,18 +329,12 @@ class SRLatentDiffusion(torch.nn.Module):
             return None
         value = mapping[key]
         if isinstance(value, bool) or not isinstance(value, (int, float)):
-            raise RuntimeError(
-                f"Checkpoint inference setting {key!r} must be numeric"
-            )
+            raise RuntimeError(f"Checkpoint inference setting {key!r} must be numeric")
         result = float(value)
         if not math.isfinite(result):
-            raise RuntimeError(
-                f"Checkpoint inference setting {key!r} must be finite"
-            )
+            raise RuntimeError(f"Checkpoint inference setting {key!r} must be finite")
         if positive and result <= 0.0:
-            raise RuntimeError(
-                f"Checkpoint inference setting {key!r} must be positive"
-            )
+            raise RuntimeError(f"Checkpoint inference setting {key!r} must be positive")
         if nonnegative and result < 0.0:
             raise RuntimeError(
                 f"Checkpoint inference setting {key!r} must be non-negative"
@@ -342,9 +379,7 @@ class SRLatentDiffusion(torch.nn.Module):
                 )
             prepared["timesteps"] = int(timesteps_value)
 
-        linear_start = self._metadata_float(
-            denoiser, "linear_start", positive=True
-        )
+        linear_start = self._metadata_float(denoiser, "linear_start", positive=True)
         linear_end = self._metadata_float(denoiser, "linear_end", positive=True)
         if linear_start is not None:
             prepared["linear_start"] = linear_start
@@ -386,9 +421,7 @@ class SRLatentDiffusion(torch.nn.Module):
                     "Checkpoint inference setting 'sampling_steps' must be a positive int"
                 )
             prepared["sampling_steps"] = int(sampling_steps)
-        sampling_eta = self._metadata_float(
-            denoiser, "sampling_eta", nonnegative=True
-        )
+        sampling_eta = self._metadata_float(denoiser, "sampling_eta", nonnegative=True)
         sampling_temperature = self._metadata_float(
             denoiser, "sampling_temperature", nonnegative=True
         )
@@ -481,14 +514,14 @@ class SRLatentDiffusion(torch.nn.Module):
         """
         Loads pretrained model weights from a local file or downloads them from Hugging Face if not present.
 
-        If the specified `weights_file` does not exist locally, it is automatically downloaded from the 
+        If the specified `weights_file` does not exist locally, it is automatically downloaded from the
         Hugging Face model hub under `simon-donike/RS-SR-LTDF`. A progress bar is shown during download.
 
-        After loading, the method removes any perceptual loss-related weights from the state dict and 
+        After loading, the method removes any perceptual loss-related weights from the state dict and
         loads the remaining weights into the model.
 
         Args:
-            weights_file (str): Path to the local weights file. If the file is not found, it will be downloaded 
+            weights_file (str): Path to the local weights file. If the file is not found, it will be downloaded
                                 using this name from the Hugging Face repository.
 
         Raises:
@@ -507,11 +540,16 @@ class SRLatentDiffusion(torch.nn.Module):
             try:
                 with requests.get(hf_model, stream=True, timeout=30) as response:
                     response.raise_for_status()
-                    total_size = int(response.headers.get('content-length', 0))
+                    total_size = int(response.headers.get("content-length", 0))
                     block_size = 1024  # 1 Kibibyte
 
                     with tmp_path.open("wb") as f:
-                        with tqdm(total=total_size, unit='iB', unit_scale=True, desc=weights_file) as bar:
+                        with tqdm(
+                            total=total_size,
+                            unit="iB",
+                            unit_scale=True,
+                            desc=weights_file,
+                        ) as bar:
                             for data in response.iter_content(block_size):
                                 if not data:
                                     continue
@@ -521,7 +559,9 @@ class SRLatentDiffusion(torch.nn.Module):
             except Exception as exc:
                 if tmp_path.exists():
                     tmp_path.unlink()
-                raise RuntimeError(f"Failed to download pretrained weights from {hf_model}") from exc
+                raise RuntimeError(
+                    f"Failed to download pretrained weights from {hf_model}"
+                ) from exc
 
         try:
             payload = torch.load(
@@ -534,12 +574,12 @@ class SRLatentDiffusion(torch.nn.Module):
                 raise TypeError("checkpoint state_dict must be a mapping")
             inference_config = self._checkpoint_inference_config(payload)
         except Exception as exc:
-            raise RuntimeError(f"Failed to load pretrained weights from {weights_path}") from exc
+            raise RuntimeError(
+                f"Failed to load pretrained weights from {weights_path}"
+            ) from exc
 
         # Remote perceptual tensors from weights
-        weights = {
-            key: value for key, value in weights.items() if "loss" not in key
-        }
+        weights = {key: value for key, value in weights.items() if "loss" not in key}
 
         prepared_settings: dict[str, Any] | None = None
         if inference_config is not None:
@@ -567,8 +607,7 @@ class SRLatentDiffusion(torch.nn.Module):
         if prepared_settings is not None:
             self._apply_checkpoint_inference_config(prepared_settings)
         print("Loaded pretrained weights from: ", weights_file)
-        
-        
+
     def uncertainty_map(self, x, n_variations=15, sampling_steps=100):
         """
         Estimates uncertainty maps for each sample in the input batch using repeated stochastic forward passes.
@@ -585,9 +624,10 @@ class SRLatentDiffusion(torch.nn.Module):
         Returns:
             torch.Tensor: Uncertainty maps of shape (B, 1, H, W), where each value indicates pixel-wise uncertainty.
         """
-        assert n_variations>3, "n_variations must be greater than 3 to compute uncertainty."
-        
-        
+        assert (
+            n_variations > 3
+        ), "n_variations must be greater than 3 to compute uncertainty."
+
         batch_size = x.shape[0]
         rand_seed_list = random.sample(range(1, 9999), n_variations)
 
@@ -600,9 +640,11 @@ class SRLatentDiffusion(torch.nn.Module):
                     np.random.seed(seed)
                     torch.manual_seed(seed)
                     random.seed(seed)
-                    #pytorch_lightning.utilities.seed.seed_everything(seed=seed, workers=True)
+                    # pytorch_lightning.utilities.seed.seed_everything(seed=seed, workers=True)
 
-                sr = self.forward(x_b, sampling_steps=sampling_steps,sampling_eta=0.0)  # shape (1, C, H, W)
+                sr = self.forward(
+                    x_b, sampling_steps=sampling_steps, sampling_eta=0.0
+                )  # shape (1, C, H, W)
                 variations.append(sr.detach().cpu())
 
             variations = torch.stack(variations)  # (n_variations, 1, C, H, W)
@@ -613,17 +655,15 @@ class SRLatentDiffusion(torch.nn.Module):
 
         result = torch.stack(all_variations)  # (B, 1, H, W)
         return result
-    
-    
 
     def _attribution_methods(
         self,
         X: torch.Tensor,
         grads: torch.Tensor,
         attribution_method: Literal[
-            "grad_x_input", "max_grad", "mean_grad", "min_grad"            
-                        ],
-                    ):
+            "grad_x_input", "max_grad", "mean_grad", "min_grad"
+        ],
+    ):
         """
         DEPRECIATED; SUBJECT TO REMOVAL
         """
@@ -639,7 +679,7 @@ class SRLatentDiffusion(torch.nn.Module):
             raise ValueError(
                 "The attribution method must be one of: grad_x_input, max_grad, mean_grad, min_grad"
             )
-    
+
     def explainer(
         self,
         X: torch.Tensor,
@@ -650,34 +690,36 @@ class SRLatentDiffusion(torch.nn.Module):
         steps_to_consider_for_attributions: list = list(range(100)),
         attribution_method: Literal[
             "grad_x_input", "max_grad", "mean_grad", "min_grad"
-        ] = "grad_x_input",      
+        ] = "grad_x_input",
         verbose: bool = False,
-        enable_checkpoint = True,
-        histogram_matching=True        
-            ):  
+        enable_checkpoint=True,
+        histogram_matching=True,
+    ):
         """
         DEPRECIATED; SUBJECT TO REMOVAL
         """
         # Normalize and encode the LR image
         X = X.clone()
         Xnorm = self._tensor_encode(X)
-        
+
         # ddim, latent and time_range
         ddim, latent, time_range = self._prepare_model(
             X=Xnorm, eta=eta, custom_steps=custom_steps, verbose=verbose
         )
-                    
+
         # Iterate over the timesteps
         container = []
-        iterator = tqdm(time_range, desc="DDIM Sampler", total=custom_steps,disable=True)
+        iterator = tqdm(
+            time_range, desc="DDIM Sampler", total=custom_steps, disable=True
+        )
         for i, step in enumerate(iterator):
-            
+
             # Activate or deactivate gradient tracking
             if i in steps_to_consider_for_attributions:
                 torch.set_grad_enabled(True)
             else:
                 torch.set_grad_enabled(False)
-            
+
             # Compute the latent image
             if enable_checkpoint:
                 outs = checkpoint.checkpoint(
@@ -689,38 +731,36 @@ class SRLatentDiffusion(torch.nn.Module):
                     temperature,
                     use_reentrant=False,
                 )
-            else:                
+            else:
                 outs = ddim.p_sample_ddim(
                     x=latent,
                     c=Xnorm,
                     t=step,
                     index=custom_steps - i - 1,
-                    temperature=temperature
+                    temperature=temperature,
                 )
             latent, _ = outs
-            
-            
+
             if i not in steps_to_consider_for_attributions:
                 continue
-            
+
             # Apply the mask
-            output_graph = (latent*mask).mean()
-            
+            output_graph = (latent * mask).mean()
+
             # Compute the gradients
             grads = torch.autograd.grad(output_graph, Xnorm, retain_graph=True)[0]
-            
+
             # Compute the attribution and save it
             with torch.no_grad():
                 to_save = {
                     "latent": self._tensor_decode(latent, spe_cor=histogram_matching),
                     "attribution": self._attribution_methods(
                         Xnorm, grads, attribution_method
-                    )
+                    ),
                 }
             container.append(to_save)
-        
-        return container
 
+        return container
 
 
 # -----------------------------------------------------------------------------
@@ -732,37 +772,45 @@ import torch
 import pytorch_lightning
 from pytorch_lightning import LightningModule
 
+
 class SRLatentDiffusionLightning(LightningModule):
     """
     This Pytorch Lightning Class wraps around the torch model to
     aid in distrubuted GPU processing and optimized dataloaders
     provided by PL. ToDo: implement demo showcase
     """
-    def __init__(self,config, device: Union[str, torch.device] = "cpu"):
+
+    def __init__(self, config, device: Union[str, torch.device] = "cpu"):
         super().__init__()
-        self.model = SRLatentDiffusion(config,device=device)
+        self.model = SRLatentDiffusion(config, device=device)
         self.model = self.model.eval()
 
     @torch.no_grad()
-    def forward(self, x,**kwargs):
-        #print("Dont call 'forward' on the PL model, instead use 'predict'")
+    def forward(self, x, **kwargs):
+        # print("Dont call 'forward' on the PL model, instead use 'predict'")
         return self.model(x)
-    
+
     def load_pretrained(self, weights_file: str):
         self.model.load_pretrained(weights_file)
         print("PL Model: Model loaded from ", weights_file)
 
     @torch.no_grad()
-    def predict_step(self, x, idx: int = 0,**kwargs):
+    def predict_step(self, x, idx: int = 0, **kwargs):
         # perform SR
-        assert self.model.training == False, "Model in Training mode. Abort." # make sure we're in eval
-        x = torch.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0) # replace nans and infs in input with 0s
+        assert (
+            self.model.training == False
+        ), "Model in Training mode. Abort."  # make sure we're in eval
+        x = torch.nan_to_num(
+            x, nan=0.0, posinf=0.0, neginf=0.0
+        )  # replace nans and infs in input with 0s
         p = self.model.forward(x)
-        return(p)
-    
+        return p
+
     @torch.no_grad()
-    def uncertainty_map(self, x, n_variations=15, sampling_steps=100, custom_steps=None):
+    def uncertainty_map(
+        self, x, n_variations=15, sampling_steps=100, custom_steps=None
+    ):
         if custom_steps is not None:
             sampling_steps = custom_steps
         uncertainty_map = self.model.uncertainty_map(x, n_variations, sampling_steps)
-        return(uncertainty_map)
+        return uncertainty_map

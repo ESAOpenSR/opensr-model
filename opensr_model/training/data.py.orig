@@ -1167,17 +1167,6 @@ class OpenSRDataModule(LightningDataModule):
         train, val = split_taco_records(
             self.sample_records, val_fraction=self.val_fraction, seed=self.split_seed
         )
-        # Keep validation metrics comparable across checks while avoiding a
-        # geographically/order-biased prefix when the Trainer caps batches.
-        # The dataset itself is permuted once; the validation loader can then
-        # remain unshuffled and revisit the exact same random records each time.
-        validation_generator = torch.Generator().manual_seed(
-            self.split_seed + 2_000_003
-        )
-        validation_order = torch.randperm(
-            len(val), generator=validation_generator
-        ).tolist()
-        val = tuple(val[index] for index in validation_order)
         common: dict[str, Any] = {
             "taco_path": self.taco_paths,
             "train_patch_size": self.train_patch_size,

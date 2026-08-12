@@ -21,9 +21,10 @@ data:
   hr_asset_id: hrharm
   raw_lr_asset_id: lr
   rgb_bands: [1, 2, 3]  # one-based
-  nir_band: 8           # one-based B8 in the raw 12-band Sentinel-2 asset
+  # Retained for TACO schema compatibility; worldwide NIR uses the sidecar.
+  nir_band: 8
   # Required synthetic 512px NIR target, keyed by the outer TACO sample ID and
-  # histogram-matched to bilinearly upsampled native LR B8 in the loader.
+  # The loader downsamples this target to LR and applies a light 3x3 blur.
   hr_nir_strategy: synthetic_sidecar
   synthetic_hr_nir_dir: /work/data/SISR_worldwide/synth_nirs
   reflectance_scale: 0.0001  # uint16 reflectance DN -> [0, 1]
@@ -41,7 +42,7 @@ data:
   batch_size: 4
   val_batch_size: 1
   # Deliberately resample the small validation subset every epoch.
-  val_shuffle: true
+  val_shuffle: false
   num_workers: 4
   pin_memory: true
   persistent_workers: true
@@ -65,8 +66,8 @@ training:
     decoded_detail_weight: 0.1
     decoded_perceptual_weight: 0.1
     decoded_max_timestep_fraction: 0.20
-    decoded_every_n_batches: 8
-    decoded_max_batch_size: 1
+    decoded_every_n_batches: 4
+    decoded_max_batch_size: 2
     # L1 and Laplacian decoded supervision cover RGB+NIR jointly. LPIPS remains
     # RGB-only because its pretrained VGG backbone accepts three channels.
     decoded_rgb_only: false
@@ -77,8 +78,8 @@ training:
     patience: 10
     min_lr: 0.000001
   validation:
-    # The validation loader is capped at 25 batches below. Generate a complete
-    # 512px DDIM reconstruction for exactly the first five shuffled batches.
+    # The validation loader is capped at 100 fixed randomized batches below. Score complete
+    # 512px DDIM samples on the first five fixed batches; log one separate random tile.
     num_samples: 1
     image_batches: 5
     every_n_epochs: 1
@@ -104,7 +105,7 @@ trainer:
   check_val_every_n_epoch: 1
   # Validate at 20%, 40%, 60%, 80%, and approximately 100% of every epoch.
   val_check_interval: 0.2
-  limit_val_batches: 25
+  limit_val_batches: 100
   # Preview five complete shuffled validation tiles in W&B before training.
   # Lightning discards sanity metrics before model selection and scheduling.
   num_sanity_val_steps: 5
@@ -162,3 +163,4 @@ logging:
     nir_band: 3
     value_min: 0.0
     value_max: 0.3
+    stretch_percentiles: [2.0, 98.0]

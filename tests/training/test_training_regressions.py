@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import opensr_model.training.diffusion_module as diffusion_module_helpers
 from opensr_model.diffusion.utils import LitEma
 from opensr_model.training.autoencoder_module import AutoencoderTrainingModule
+from opensr_model.training.callbacks import ReconstructionImageLogger
 from opensr_model.training.cli import _prepare_trainer_kwargs
 from opensr_model.training.diffusion_module import DiffusionTrainingModule
 from opensr_model.training.losses import (
@@ -56,6 +57,34 @@ def test_diffusion_validation_randomness_is_locally_reproducible(
     assert torch.equal(first_condition, second_condition)
     assert torch.equal(first_loss, second_loss)
     assert torch.equal(first_stats["x0_mse"], second_stats["x0_mse"])
+
+
+def test_validation_rgb_stretch_uses_one_range_for_every_panel() -> None:
+    logger = ReconstructionImageLogger(
+        value_min=0.0,
+        value_max=1.0,
+        stretch_percentiles=(25.0, 75.0),
+    )
+    dark = torch.tensor([0.0, 0.1, 0.2, 0.3]).reshape(1, 1, 2, 2).repeat(1, 3, 1, 1)
+    bright = torch.tensor([0.7, 0.8, 0.9, 1.0]).reshape(1, 1, 2, 2).repeat(1, 3, 1, 1)
+
+    bounds = logger._shared_rgb_stretch([dark, bright])
+    figure = logger._make_figure(
+        {"dark": dark, "bright": bright},
+        ["tile"],
+        mode="rgb",
+        rgb_bounds=bounds,
+    )
+
+    combined = torch.cat((dark.flatten(), bright.flatten()))
+    expected = torch.quantile(combined, torch.tensor([0.25, 0.75]))
+    assert bounds == pytest.approx(tuple(expected.tolist()))
+    dark_rendered = figure.axes[0].images[0].get_array()
+    bright_rendered = figure.axes[1].images[0].get_array()
+    assert dark_rendered.max() < bright_rendered.min()
+    assert figure.axes[0].get_title() == "tile\ndark\n2×2 px"
+    assert figure.axes[1].get_title() == "bright\n2×2 px"
+    assert all(axis.images[0].get_interpolation() == "nearest" for axis in figure.axes)
 
 
 def test_validation_images_compare_ema_and_raw_with_aligned_detail_crop(
@@ -429,3 +458,41 @@ def test_legacy_autoencoder_optimizer_excludes_fixed_logvar_and_uses_plateau(
         for entry in schedulers
     )
     assert all(entry["monitor"] == "train/total_loss" for entry in schedulers)
+
+
+def test_validation_previews_are_random_nonrepeating_and_resume_cursor(
+    tiny_model_config,
+) -> None:
+    module = DiffusionTrainingModule(
+        tiny_model_config,
+        scheduler_patience=None,
+        validation_num_samples=1,
+        validation_sampling_steps=5,
+        validation_seed=29,
+    )
+    samples = [
+        {
+            "image": torch.full((4, 16, 16), float(index)),
+            "LR_image": torch.full((4, 4, 4), float(index)),
+            "valid_mask": torch.ones(1, 16, 16),
+            "sample_id": f"tile_{index}",
+            "clipped_fraction": torch.tensor(0.0),
+        }
+        for index in range(6)
+    ]
+    module._trainer = SimpleNamespace(datamodule=SimpleNamespace(val_dataset=samples))
+
+    first = module._next_random_validation_preview_batch()
+    second = module._next_random_validation_preview_batch()
+    assert first is not None and second is not None
+    assert first["sample_id"] != second["sample_id"]
+
+    checkpoint: dict[str, object] = {}
+    module.on_save_checkpoint(checkpoint)
+    expected_next = module._next_random_validation_preview_batch()
+    module._validation_preview_cursor = 0
+    module.on_load_checkpoint(checkpoint)
+    resumed_next = module._next_random_validation_preview_batch()
+
+    assert expected_next is not None and resumed_next is not None
+    assert expected_next["sample_id"] == resumed_next["sample_id"]

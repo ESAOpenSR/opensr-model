@@ -36,7 +36,7 @@ def test_directory_discovers_only_visible_complete_tortillas(fake_taco_factory) 
         resolve_taco_paths(csv_path)
 
 
-def test_assets_use_normalized_lr_b8_and_synthetic_hr_nir(fake_taco_factory) -> None:
+def test_assets_use_synthetic_nir_for_both_lr_and_hr(fake_taco_factory) -> None:
     bundle = fake_taco_factory(
         include_nodata=False,
         child_order=("hr", "lrharm", "hrharm", "lr"),
@@ -56,14 +56,16 @@ def test_assets_use_normalized_lr_b8_and_synthetic_hr_nir(fake_taco_factory) -> 
     assert sample["LR_image"].shape == (4, 8, 8)
     assert sample["valid_mask"].shape == (1, 32, 32)
     assert torch.allclose(
-        sample["LR_image"][:, 2, 2], torch.tensor([0.1, 0.2, 0.3, 0.4])
+        sample["LR_image"][:, 2, 2],
+        torch.tensor([0.1, 0.2, 0.3, 0.45]),
+        atol=1e-3,
     )
     assert torch.allclose(
         sample["image"][:, 8, 8],
-        torch.tensor([0.11, 0.21, 0.31, 0.4]),
+        torch.tensor([0.11, 0.21, 0.31, 0.45]),
         atol=1e-3,
     )
-    assert sample["LR_image"][3, -1, -1] == 0
+    assert sample["LR_image"][3, -1, -1] == pytest.approx(0.45, abs=1e-3)
     assert sample["valid_mask"][0, -1, -1] == 1
     assert sample["clipped_fraction"] == 0
 
@@ -98,8 +100,7 @@ def test_nodata_is_zero_filled_with_conservative_pair_mask(fake_taco_factory) ->
     # Direct HR RGB nodata is combined with conservative LR support.
     assert sample["valid_mask"][0, 4, 4] == 0
     assert torch.all(sample["image"][:, 4, 4] == 0)
-    # A digital number of zero is data, not nodata.
-    assert sample["LR_image"][3, -1, -1] == 0
+    assert sample["LR_image"][3, -1, -1] == pytest.approx(0.45, abs=1e-3)
     assert sample["valid_mask"][0, -1, -1] == 1
 
 
@@ -294,7 +295,7 @@ def test_malformed_synthetic_nir_is_rejected_lazily(fake_taco_factory) -> None:
         dataset[0]
 
 
-def test_synthetic_nir_histogram_matches_upsampled_native_b8(
+def test_synthetic_nir_is_downsampled_and_blurred_without_using_native_b8(
     fake_taco_factory,
 ) -> None:
     bundle = fake_taco_factory(include_nodata=False)
@@ -311,19 +312,51 @@ def test_synthetic_nir_histogram_matches_upsampled_native_b8(
     )
 
     sample = TacoPairedDataset(bundle.root, training=False)[0]
-    reference = torch.nn.functional.interpolate(
-        sample["LR_image"][3:4].unsqueeze(0),
-        size=(32, 32),
+    synthetic_tensor = torch.from_numpy(synthetic.astype(np.float32))
+    resized = torch.nn.functional.interpolate(
+        synthetic_tensor.unsqueeze(0),
+        size=(8, 8),
         mode="bilinear",
         align_corners=False,
+    )
+    kernel = torch.tensor([[1.0, 2.0, 1.0], [2.0, 4.0, 2.0], [1.0, 2.0, 1.0]]).div(16.0)
+    expected_lr = torch.nn.functional.conv2d(
+        torch.nn.functional.pad(resized, (1, 1, 1, 1), mode="replicate"),
+        kernel.view(1, 1, 3, 3),
     ).squeeze(0)
-    quantiles = torch.tensor([0.1, 0.25, 0.5, 0.75, 0.9])
 
-    assert torch.allclose(
-        torch.quantile(sample["image"][3], quantiles),
-        torch.quantile(reference[0], quantiles),
-        atol=2e-3,
+    assert torch.equal(sample["image"][3], synthetic_tensor[0])
+    assert torch.allclose(sample["LR_image"][3:4], expected_lr)
+    native_b8 = torch.from_numpy(lr_values.astype(np.float32)).div(1e4)
+    assert not torch.allclose(sample["LR_image"][3], native_b8)
+
+
+def test_validation_loader_uses_one_fixed_randomized_record_order(
+    fake_taco_factory,
+) -> None:
+    bundle = fake_taco_factory(include_nodata=False, parts=3)
+    split_seed = 23
+    module = OpenSRDataModule(
+        bundle.root,
+        val_fraction=0.5,
+        split_seed=split_seed,
+        val_shuffle=False,
+        num_workers=0,
+        pin_memory=False,
     )
-    assert not torch.allclose(
-        sample["image"][3], torch.from_numpy(synthetic[0].astype(np.float32))
+    module.setup("validate")
+
+    assert module.sample_records is not None
+    assert module.val_dataset is not None
+    _, original_validation = split_taco_records(
+        module.sample_records, val_fraction=0.5, seed=split_seed
     )
+    generator = torch.Generator().manual_seed(split_seed + 2_000_003)
+    order = torch.randperm(len(original_validation), generator=generator).tolist()
+    expected = [original_validation[index].sample_id for index in order]
+    actual = [record.sample_id for record in module.val_dataset.records]
+
+    assert actual == expected
+    first_pass = [batch["sample_id"] for batch in module.val_dataloader()]
+    second_pass = [batch["sample_id"] for batch in module.val_dataloader()]
+    assert first_pass == second_pass

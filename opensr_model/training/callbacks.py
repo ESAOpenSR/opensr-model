@@ -202,6 +202,7 @@ class ReconstructionImageLogger(Callback):
         nir_band: Optional[int] = 3,
         value_min: float = 0.0,
         value_max: float = 0.3,
+        stretch_percentiles: tuple[float, float] = (2.0, 98.0),
         dpi: int = 140,
     ) -> None:
         super().__init__()
@@ -211,6 +212,13 @@ class ReconstructionImageLogger(Callback):
             raise ValueError("every_n_epochs must be positive")
         if value_max <= value_min:
             raise ValueError("value_max must be greater than value_min")
+        if not (
+            len(stretch_percentiles) == 2
+            and 0.0 <= stretch_percentiles[0] < stretch_percentiles[1] <= 100.0
+        ):
+            raise ValueError(
+                "stretch_percentiles must be increasing values between 0 and 100"
+            )
         self.max_images = max_images
         self.every_n_epochs = every_n_epochs
         self.output_dir = output_dir
@@ -218,6 +226,7 @@ class ReconstructionImageLogger(Callback):
         self.nir_band = nir_band
         self.value_min = float(value_min)
         self.value_max = float(value_max)
+        self.stretch_percentiles = tuple(float(value) for value in stretch_percentiles)
         self.dpi = dpi
         self._images: OrderedDict[str, list[torch.Tensor]] = OrderedDict()
         self._details: OrderedDict[str, list[torch.Tensor]] = OrderedDict()
@@ -326,7 +335,10 @@ class ReconstructionImageLogger(Callback):
         validation_dir.mkdir(parents=True, exist_ok=True)
 
         figures: OrderedDict[str, plt.Figure] = OrderedDict()
-        rgb_figure = self._make_figure(images, sample_ids, mode="rgb")
+        rgb_bounds = self._shared_rgb_stretch([*images.values(), *details.values()])
+        rgb_figure = self._make_figure(
+            images, sample_ids, mode="rgb", rgb_bounds=rgb_bounds
+        )
         rgb_figure.savefig(
             validation_dir / "reconstructions_rgb.png",
             dpi=self.dpi,
@@ -346,7 +358,9 @@ class ReconstructionImageLogger(Callback):
             figures[f"{tag_prefix}/reconstructions_nir"] = nir_figure
 
         if details:
-            detail_rgb_figure = self._make_figure(details, sample_ids, mode="rgb")
+            detail_rgb_figure = self._make_figure(
+                details, sample_ids, mode="rgb", rgb_bounds=rgb_bounds
+            )
             detail_rgb_figure.savefig(
                 validation_dir / "details_rgb.png",
                 dpi=self.dpi,
@@ -374,7 +388,9 @@ class ReconstructionImageLogger(Callback):
             single = OrderedDict(
                 (name, tensor[index : index + 1]) for name, tensor in images.items()
             )
-            figure = self._make_figure(single, [sample_id], mode="rgb")
+            figure = self._make_figure(
+                single, [sample_id], mode="rgb", rgb_bounds=rgb_bounds
+            )
             safe_id = _safe_name(sample_id)
             figure.savefig(
                 validation_dir / f"{index:02d}_{safe_id}_rgb.png",
@@ -387,7 +403,9 @@ class ReconstructionImageLogger(Callback):
                     (name, tensor[index : index + 1])
                     for name, tensor in details.items()
                 )
-                detail_figure = self._make_figure(detail, [sample_id], mode="rgb")
+                detail_figure = self._make_figure(
+                    detail, [sample_id], mode="rgb", rgb_bounds=rgb_bounds
+                )
                 detail_figure.savefig(
                     validation_dir / f"{index:02d}_{safe_id}_detail_rgb.png",
                     dpi=self.dpi,
@@ -411,7 +429,10 @@ class ReconstructionImageLogger(Callback):
         sample_ids: list[str],
         *,
         mode: str,
+        rgb_bounds: tuple[float, float] | None = None,
     ) -> plt.Figure:
+        if mode == "rgb" and rgb_bounds is None:
+            rgb_bounds = self._shared_rgb_stretch(list(images.values()))
         rows = max(1, len(sample_ids))
         columns = len(images)
         figure, axes = plt.subplots(
@@ -434,22 +455,46 @@ class ReconstructionImageLogger(Callback):
                         cmap="gray",
                         vmin=self.value_min,
                         vmax=self.value_max,
+                        interpolation="nearest",
                     )
                 elif panel.shape[0] >= 3 and max(self.rgb_bands) < panel.shape[0]:
                     rgb = panel[list(self.rgb_bands)].permute(1, 2, 0).numpy()
+                    lower, upper = rgb_bounds or (self.value_min, self.value_max)
                     rgb = np.clip(
-                        (rgb - self.value_min) / (self.value_max - self.value_min),
+                        (rgb - lower) / (upper - lower),
                         0.0,
                         1.0,
                     )
-                    axis.imshow(rgb)
+                    axis.imshow(rgb, interpolation="nearest")
                 else:
                     data = panel.abs().mean(dim=0).numpy()
-                    axis.imshow(data, cmap="magma", vmin=0.0)
-                axis.set_title(f"{sample_id}\n{name}" if column == 0 else name)
+                    axis.imshow(data, cmap="magma", vmin=0.0, interpolation="nearest")
+                dimensions = f"{panel.shape[-2]}×{panel.shape[-1]} px"
+                title = f"{name}\n{dimensions}"
+                axis.set_title(f"{sample_id}\n{title}" if column == 0 else title)
                 axis.axis("off")
         figure.tight_layout()
         return figure
+
+    def _shared_rgb_stretch(self, tensors: list[torch.Tensor]) -> tuple[float, float]:
+        """Return one robust contrast range shared by every RGB panel."""
+
+        values = []
+        for tensor in tensors:
+            if tensor.ndim != 4 or max(self.rgb_bands) >= tensor.shape[1]:
+                continue
+            rgb = tensor[:, list(self.rgb_bands)]
+            finite = rgb[torch.isfinite(rgb)]
+            if finite.numel():
+                values.append(finite.clamp(self.value_min, self.value_max).flatten())
+        if not values:
+            return self.value_min, self.value_max
+        combined = torch.cat(values)
+        quantiles = combined.new_tensor(self.stretch_percentiles).div_(100.0)
+        lower, upper = torch.quantile(combined, quantiles).tolist()
+        if upper - lower <= torch.finfo(combined.dtype).eps:
+            return self.value_min, self.value_max
+        return float(lower), float(upper)
 
     def _log_figures(self, trainer: Trainer, figures: Mapping[str, plt.Figure]) -> None:
         for logger in trainer.loggers:

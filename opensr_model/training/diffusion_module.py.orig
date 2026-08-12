@@ -443,7 +443,9 @@ class DiffusionTrainingModule(pl.LightningModule):
 
     def on_save_checkpoint(self, checkpoint: dict[str, Any]) -> None:
         checkpoint["opensr_inference_config"] = self.opensr_inference_config()
-        checkpoint["validation_preview_cursor"] = int(self._validation_preview_cursor)
+        checkpoint["validation_preview_cursor"] = int(
+            self._validation_preview_cursor
+        )
 
     def on_load_checkpoint(self, checkpoint: dict[str, Any]) -> None:
         self._validation_preview_cursor = int(
@@ -1176,8 +1178,8 @@ class DiffusionTrainingModule(pl.LightningModule):
         trainer = getattr(self, "_trainer", None)
         if trainer is None:
             return True
-        # Only rank zero constructs the expensive full DDIM samples. The
-        # remaining ranks still evaluate their share of the fixed validation
+        # Only rank zero constructs the five expensive full DDIM samples. The
+        # remaining ranks still evaluate their share of the 25 validation
         # batches, but do not produce duplicate images that are discarded.
         return trainer.is_global_zero
 
@@ -1472,22 +1474,9 @@ class DiffusionTrainingModule(pl.LightningModule):
             images, details, sample_ids, image_metrics = self._validation_images(
                 batch, hr, lr, batch_idx=batch_idx
             )
-            # Fixed batches above provide comparable sampled metrics. Only the
-            # first batch emits figures, using an independent random example
-            # from the complete validation dataset whenever one is available.
-            if batch_idx == 0:
-                preview_batch = self._next_random_validation_preview_batch()
-                if preview_batch is not None:
-                    preview_hr, preview_lr = self._paired_images(preview_batch)
-                    images, details, sample_ids, _ = self._validation_images(
-                        preview_batch,
-                        preview_hr,
-                        preview_lr,
-                        batch_idx=self._validation_preview_cursor,
-                    )
-                output["images"] = images
-                output["details"] = details
-                output["sample_ids"] = sample_ids
+            output["images"] = images
+            output["details"] = details
+            output["sample_ids"] = sample_ids
             for name, value in image_metrics.items():
                 if name == "ema_psnr":
                     ema_checkpoint_psnr = value
