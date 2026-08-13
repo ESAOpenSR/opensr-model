@@ -35,6 +35,8 @@ images_comparison/*
 comp_s2_s2naip.py
 TODO.md
 training_runs
+opensr_model/ablations/outputs
+opensr_model/ablations/samples
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

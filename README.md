@@ -1,5 +1,5 @@
 # Training Codebase Disclaimer
-This training implementation is not the exact same as the paper, but instead a continued-development codebase built upon LDSR-S2. The main branch will continue to hold the inference codebase and checkpoints, producing the results described in the paper..
+This training implementation is not the exact same as the paper describes, but instead a continued-development codebase built upon LDSR-S2. The main branch will continue to hold the inference codebase and checkpoints, producing the results described in the publication.
 
 <img src="https://github.com/ESAOpenSR/opensr-model/blob/main/resources/opensr_logo.png?raw=true" width="250"/>
 
