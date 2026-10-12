@@ -23,6 +23,7 @@ setup(
         "rasterio>=1.4.0",
         "tqdm>=4.66.0",
         "torch>=2.2.0",
+        "diffusers>=0.30.3",
         "scikit-image>=0.22.0",
         "pytorch-lightning>=2.2.0,<3.0",
         "requests>=2.31.0",
@@ -30,9 +31,7 @@ setup(
         "matplotlib>=3.8.0",
     ],
     extras_require={
-        "dpm": [
-            "diffusers>=0.30.3",
-        ],
+        "dpm": [],  # Compatibility alias; Diffusers is now a base dependency.
         "train": [
             "Pillow>=10.2.0",
             "tacoreader>=2.4.0,<3.0",

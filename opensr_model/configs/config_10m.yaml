@@ -11,13 +11,22 @@ apply_normalization: False
 ckpt_version: "opensr-ldsrs2_v1_0_0.ckpt"
 encode_conditioning: True
 
+# Decoded-image correction, independent of the diffusion sampler.
+spectral_correction: "back_projection" # "none", "histogram", or "back_projection"
+back_projection:
+  scale: 4
+  blur_sigma: 0.0 # HR pixels; 0 = block averaging. Optional per-band RGB-NIR list.
+  max_iterations: 100
+  tolerance: 0.000001 # masked LR reflectance RMSE, per image
+  relaxation: 1.0 # (0, 1]; output is not clipped after correction
+
 # Diffusion and Sampling Settings
 denoiser_settings:
   linear_start: 0.0015 # noise start
   linear_end: 0.0155 # noise end
   timesteps: 1000 # Timesteps model was trained on - always 1k
   parameterization: "eps" # ["eps" or "x0"]
-  sampler: "ddim" # "ddim" or "dpm_solver++" (DPM-Solver++ 2M)
+  sampler: "dpm_solver++" # "ddim" or "dpm_solver++" (DPM-Solver++ 2M)
   sampling_eta: 0.95 # DDIM only; 0 disables per-step noise
   sampling_temperature: 1.0 # DDIM only
   sampling_steps: null # Automatic: 100 for DDIM, 3 for DPM-Solver++; set an integer to override

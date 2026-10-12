@@ -162,6 +162,46 @@ With a released full checkpoint in `model.pretrained_checkpoint`, the default `c
 
 ## Stage 2: diffusion
 
+### Local worldwide finetuning from v1_0_0
+
+`opensr_model/configs/training_configs/finetune_worldwide_v1_0_0.yaml` is a local,
+gitignored recipe
+for `/work/data/SISR_worldwide` and the released checkpoint at the repository
+root. Run from the repository root in the `osr_model` environment:
+
+```bash
+python -m opensr_model.training.cli diffusion \
+  --config opensr_model/configs/training_configs/finetune_worldwide_v1_0_0.yaml
+```
+
+This starts a fresh optimizer from `opensr-ldsrs2_v1_0_0.ckpt`, freezes the
+autoencoder, and finetunes the denoiser at `1e-5` for up to 10 epochs. It uses two
+GPUs, batch 4 per GPU (global batch 8), mixed precision, and complete 512/128
+HR/LR tiles. This recipe uses vanilla, uniformly sampled epsilon MSE with nodata
+masking: P2 weighting and all latent/decoded auxiliary losses are disabled. It
+preserves the checkpoint noise schedule and reflectance/latent scaling, with
+no extra LR blur. Both NIR channels retain the existing synthetic-sidecar behavior.
+The deterministic split covers the full discovered corpus; each validation
+check evaluates 100 batches and samples SR on the first five.
+
+Outputs go to `training_runs/worldwide_v1_0_0_finetune`, including local
+TensorBoard logs, images, Lightning resume checkpoints, and native inference
+exports. Inspect logs with:
+
+```bash
+tensorboard --logdir training_runs/worldwide_v1_0_0_finetune/logs
+```
+
+Resume using the saved configuration so the exact archive list is retained:
+
+```bash
+python -m opensr_model.training.cli diffusion \
+  --config training_runs/worldwide_v1_0_0_finetune/resolved_config.yaml \
+  --resume training_runs/worldwide_v1_0_0_finetune/checkpoints/resume/last.ckpt
+```
+
+### Other initialization options
+
 Start from either a full checkpoint or a standalone stage-1 checkpoint:
 
 ```yaml
@@ -179,7 +219,8 @@ opensr-train-diffusion --config /path/train_diffusion.yaml
 
 The first-stage model is forced to eval mode and all of its parameters remain frozen. HR is encoded to the target latent. LR is bilinearly enlarged by four with `align_corners=False`, then encoded without the target latent scale factor, matching current inference. Other parameterizations and `apply_normalization: true` are rejected because the current public inference wrapper would interpret them differently. EMA updates happen only after real optimizer steps, including with gradient accumulation.
 
-The single diffusion recipe is deliberately biased toward perceptual quality:
+The general `train_diffusion.yaml` template includes optional perceptual losses
+(disabled in the vanilla finetuning recipe above):
 
 - [P2 perception-prioritized weighting](https://openaccess.thecvf.com/content/CVPR2022/html/Choi_Perception_Prioritized_Training_of_Diffusion_Models_CVPR_2022_paper.html) is applied to the epsilon-MSE objective;
 - a low-timestep latent Laplacian loss rewards recoverable high-frequency detail;

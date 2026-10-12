@@ -23,8 +23,9 @@ def _stub_inference_model() -> tuple[SRLatentDiffusion, _Sampler]:
     model = SRLatentDiffusion.__new__(SRLatentDiffusion)
     torch.nn.Module.__init__(model)
     model.config = SimpleNamespace(
+        spectral_correction="histogram",
         denoiser_settings=SimpleNamespace(
-            sampling_eta=0.25, sampling_temperature=0.75, sampling_steps=2
+            sampler="ddim", sampling_eta=0.25, sampling_temperature=0.75, sampling_steps=2
         )
     )
     model.device = torch.device("cpu")

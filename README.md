@@ -66,28 +66,51 @@ device = "cuda" if torch.cuda.is_available() else "cpu" # set device
 import opensr_model # import pachage
 model = opensr_model.SRLatentDiffusion(config, device=device) # create model
 model.load_pretrained(config.ckpt_version) # load checkpoint
-sr = model.forward(torch.rand(1,4,128,128), sampling_steps=100) # run SR
+sr = model(torch.rand(1,4,128,128)) # DPM-Solver++ (3 steps) + back-projection
 ```  
 
-DDIM remains the default sampler with 100 steps. **Selecting DPM-Solver++ 2M defaults to 3 steps**, the speed-oriented setting chosen from the sampling ablation. To use it, install the optional
-dependency and select it for an inference call:
+**Inference defaults to DPM-Solver++ 2M with 3 steps and PyTorch back-projection.**
+Diffusers is included in the standard package dependencies:
 
 ```bash
-pip install -e '.[dpm]'  # or: pip install 'opensr-model[dpm]'
+pip install -e .
 ```
 
 ```python
 torch.manual_seed(42)
-sr = model(image, sampler="dpm_solver++")  # defaults to 3 steps
-sr_more_steps = model(image, sampler="dpm_solver++", sampling_steps=5)  # explicit override
-sr_ddim = model(image, sampler="ddim", sampling_steps=100)
+sr = model(image)  # DPM-Solver++ (3 steps) + back-projection
+sr_more_steps = model(image, sampling_steps=5)
+sr_legacy = model(image, sampler="ddim", sampling_steps=100, spectral_correction="histogram")
 ```
 
-You can also set `denoiser_settings.sampler: "dpm_solver++"` in the model YAML, including for HPC inference. Leave `denoiser_settings.sampling_steps: null` (the bundled default), or omit that field, to use the selected sampler's default: **3 for DPM-Solver++, 100 for DDIM**. An integer in the config overrides this automatic default; an explicit `sampling_steps` call argument takes precedence over the config. Existing configs and checkpoint inference metadata with explicit counts retain those overrides. Checkpoint metadata can restore settings during `load_pretrained`, so set runtime overrides after loading when needed. Older configs without a sampler selection use DDIM.
+You can also select the sampler through `denoiser_settings.sampler` in the model YAML, including for HPC inference. Leave `denoiser_settings.sampling_steps: null` (the bundled default), or omit that field, to use the selected sampler's default: **3 for DPM-Solver++, 100 for DDIM**. An integer in the config overrides this automatic default; an explicit `sampling_steps` call argument takes precedence over the config. Existing configs and checkpoint inference metadata with explicit selections or counts retain those overrides. Checkpoint metadata can restore settings during `load_pretrained`, so set runtime overrides after loading when needed. Configs without a sampler selection now use DPM-Solver++.
 
-DPM-Solver++ uses the checkpoint's trained beta schedule, epsilon prediction, second-order multistep midpoint updates, linspace timesteps, a final sigma of zero, and no dynamic thresholding or Karras schedule. It accepts any positive integer step count smaller than the training timestep count; native DDIM step counts must additionally divide that count exactly. Each call starts fresh solver history. The existing decoding, histogram matching, masking, and `save_iterations` behavior also apply to DPM-Solver++.
+DPM-Solver++ uses the checkpoint's trained beta schedule, epsilon prediction, second-order multistep midpoint updates, linspace timesteps, a final sigma of zero, and no dynamic thresholding or Karras schedule. It accepts any positive integer step count smaller than the training timestep count; native DDIM step counts must additionally divide that count exactly. Each call starts fresh solver history. The existing decoding, selected spectral correction, masking, and `save_iterations` behavior also apply to DPM-Solver++.
 
 Configured `sampling_eta` and `sampling_temperature` apply only to DDIM. With DPM-Solver++, explicit arguments must be omitted or set to `sampling_eta=0` and `sampling_temperature=1`; other values raise an error. The solver adds no per-step noise, but initial latent noise and conditioning still depend on the random seed. The Lightning wrapper and `uncertainty_map(..., sampler=...)` support the same selection. Training validation and the deprecated explainer continue to use DDIM. The 3-step default prioritizes speed; equivalent perceptual quality on every scene is not guaranteed.
+
+Spectral correction can be selected independently of the sampler:
+
+```python
+sr = model(image)  # back-projection is the default
+sr_explicit = model(image, sampler="dpm_solver++", spectral_correction="back_projection")
+sr_hist = model(image, spectral_correction="histogram")
+sr_raw = model(image, spectral_correction="none")
+```
+
+Back-projection runs in PyTorch on decoded reflectances and adjusts the output so
+that blur/downsampling reproduces the LR measurement. Its default operator is
+4×4 block averaging; optional per-band Gaussian blur and stopping settings are
+available through `back_projection={...}` or the model YAML. Configs without
+`spectral_correction` also use back-projection. The new path keeps
+nodata at zero and does not clamp corrected values. The legacy
+`histogram_matching=False` still disables correction unless an explicit
+`spectral_correction` is supplied.
+
+See the [detailed inference changelog since v1.0.0](docs/changelog.md) for the
+algorithm, settings, compatibility rules, experimental results and other changes
+since the original release. Fine-tuning documentation remains in
+[docs/training.md](docs/training.md).
 
 ### 2.1 🧱 Weights and Checkpoints
 The model should load automatically with the `model.load_pretrained` command. Alternatively, the checkpoints can be found on [HuggingFace](https://huggingface.co/simon-donike/RS-SR-LTDF/tree/main).

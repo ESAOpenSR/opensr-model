@@ -192,7 +192,8 @@ def create_no_data_mask(X,target_size = 512):
         torch.Tensor: Mask of shape (B, C, H, W) where no-data values are marked as True.
     """
     # Create a mask where no-data values are True
-    interpolated_X = torch.nn.functional.interpolate(X, size=(target_size,target_size), mode='nearest')
+    size = (target_size, target_size) if isinstance(target_size, int) else target_size
+    interpolated_X = torch.nn.functional.interpolate(X, size=size, mode='nearest')
     mask = (interpolated_X == 0).float()
     return mask
 

@@ -10,6 +10,10 @@ from skimage.exposure import match_histograms
 import torch.utils.checkpoint as checkpoint
 from opensr_model.diffusion.utils import DDIMSampler
 from opensr_model.diffusion.dpm_solver import DPMSolverPlusPlusSampler
+from opensr_model.spectral_correction import (
+    BackProjectionConfig,
+    back_projection as correct_back_projection,
+)
 from tqdm import tqdm
 import numpy as np
 from typing import Literal
@@ -156,6 +160,43 @@ class SRLatentDiffusion(torch.nn.Module):
 
         return ddim, latent, time_range
 
+    def _resolve_correction(self, spectral_correction, histogram_matching, back_projection):
+        if spectral_correction is None:
+            spectral_correction = (
+                getattr(self.config, "spectral_correction", "back_projection")
+                if histogram_matching else "none"
+            )
+        if spectral_correction not in ("none", "histogram", "back_projection"):
+            raise ValueError("spectral_correction must be 'none', 'histogram' or 'back_projection'")
+        if spectral_correction != "back_projection":
+            if back_projection is not None:
+                raise ValueError("back_projection options require spectral_correction='back_projection'")
+            return spectral_correction, None
+        options = back_projection
+        if options is None:
+            options = getattr(self.config, "back_projection", {})
+        if isinstance(options, Mapping):
+            options = BackProjectionConfig(**dict(options))
+        if not isinstance(options, BackProjectionConfig):
+            raise ValueError("back_projection must be a mapping or BackProjectionConfig")
+        if options.scale != 4:
+            raise ValueError("OpenSR inference back_projection scale must be 4")
+        options.sigmas(4)
+        return spectral_correction, options
+
+    def _correct_output(self, output, reference, correction, options):
+        if correction == "histogram":
+            return self._match_output_histograms(output, reference)
+        if correction == "back_projection":
+            # Preserve the existing per-band zero-as-nodata convention. Keep
+            # invalid HR support fixed during optimization, not after it.
+            valid = reference != 0
+            support = valid.repeat_interleave(4, -2).repeat_interleave(4, -1)
+            return correct_back_projection(
+                output, reference, options, valid_mask=valid, output_mask=support
+            )
+        return output
+
     @torch.no_grad()
     def forward(
         self,
@@ -168,6 +209,8 @@ class SRLatentDiffusion(torch.nn.Module):
         verbose: bool = False,
         *,
         sampler: Literal["ddim", "dpm_solver++"] | None = None,
+        spectral_correction: Literal["none", "histogram", "back_projection"] | None = None,
+        back_projection: BackProjectionConfig | Mapping[str, Any] | None = None,
     ):
         """Obtain the super resolution of the given image.
 
@@ -184,10 +227,20 @@ class SRLatentDiffusion(torch.nn.Module):
                 Defaults to 1.0. The higher the temperature, the more stochastic
                 the denoiser is (random noise gets multiplied by this).
             histogram_matching (bool, optional): Apply spectral correction to the SR
-                image, using the LR image as reference. Defaults to True.
+                image, using the LR image as reference. Legacy switch: False
+                disables correction unless spectral_correction is explicit.
+            spectral_correction (str, optional): "none", "histogram" or
+                "back_projection". Explicit selection overrides the legacy bool;
+                otherwise use config.spectral_correction (default "back_projection")
+                when histogram_matching=True. Independent of sampler selection.
+            back_projection (BackProjectionConfig or mapping, optional): Options
+                for back-projection; otherwise use config.back_projection or its
+                defaults (4x block means, 100 iterations, tolerance 1e-6).
+                Runs on decoded reflectances with no final clipping. Half inputs
+                are corrected in float32. Zero-valued LR bands remain nodata.
             sampler (str, optional): "ddim" or "dpm_solver++" (second-order
                 multistep ODE solver). Falls back to denoiser_settings.sampler,
-                then "ddim" for older configs. DPM-Solver++ ignores configured
+                then "dpm_solver++" if absent. DPM-Solver++ ignores configured
                 DDIM eta/temperature; explicit overrides must be 0 and 1,
                 respectively. Initial noise and conditioning remain stochastic.
 
@@ -195,9 +248,12 @@ class SRLatentDiffusion(torch.nn.Module):
             torch.Tensor: The super resolved image or batch of images with a shape of
                 Cx(Wx4)x(Hx4) or BxCx(Wx4)x(Hx4).
         """
+        correction, correction_options = self._resolve_correction(
+            spectral_correction, histogram_matching, back_projection
+        )
         # Resolve the sampler before interpreting sampler-specific settings.
         if sampler is None:
-            sampler = getattr(self.config.denoiser_settings, "sampler", "ddim")
+            sampler = getattr(self.config.denoiser_settings, "sampler", "dpm_solver++")
         if sampler not in ("ddim", "dpm_solver++"):
             raise ValueError("sampler must be 'ddim' or 'dpm_solver++'")
         if sampling_steps is None:
@@ -234,7 +290,12 @@ class SRLatentDiffusion(torch.nn.Module):
         ]
 
         # create no_data_mask
-        no_data_mask = create_no_data_mask(X, target_size=X.shape[-1] * 4)
+        no_data_mask = create_no_data_mask(
+            X, target_size=(X.shape[-2] * 4, X.shape[-1] * 4)
+        )
+        # Encoding may normalize its input in-place; retain physical units for
+        # the padded intermediate-frame correction path.
+        iteration_reference = X.clone() if correction == "back_projection" else X
 
         # Normalize the image
         X = X.clone()
@@ -272,9 +333,11 @@ class SRLatentDiffusion(torch.nn.Module):
                 save_iters.append(self._tensor_decode(latent, spe_cor=False))
 
         if save_iterations:
-            if histogram_matching:
+            if correction != "none":
                 save_iters = [
-                    self._match_output_histograms(iteration, X)
+                    self._correct_output(
+                        iteration, iteration_reference, correction, correction_options
+                    )
                     for iteration in save_iters
                 ]
             return save_iters
@@ -286,9 +349,7 @@ class SRLatentDiffusion(torch.nn.Module):
         sr = revert_padding(
             sr, padding
         )  # remove padding from the SR image if there was any
-        if histogram_matching:
-            sr = self._match_output_histograms(sr, lr_reference)
-        return sr
+        return self._correct_output(sr, lr_reference, correction, correction_options)
 
     def hq_histogram_matching(
         self, image1: torch.Tensor, image2: torch.Tensor
@@ -665,7 +726,10 @@ class SRLatentDiffusion(torch.nn.Module):
             self._apply_checkpoint_inference_config(prepared_settings)
         print("Loaded pretrained weights from: ", weights_file)
 
-    def uncertainty_map(self, x, n_variations=15, sampling_steps=None, *, sampler=None):
+    def uncertainty_map(
+        self, x, n_variations=15, sampling_steps=None, *, sampler=None,
+        spectral_correction=None, back_projection=None, histogram_matching=True,
+    ):
         """
         Estimates uncertainty maps for each sample in the input batch using repeated stochastic forward passes.
 
@@ -679,6 +743,8 @@ class SRLatentDiffusion(torch.nn.Module):
             sampling_steps (int, optional): Sampling steps passed to forward;
                 omitted counts use the same config and sampler defaults as forward.
             sampler (str, optional): Sampler passed to forward; defaults to config.
+            spectral_correction, back_projection, histogram_matching: Same
+                correction selection/options as forward, applied to every draw.
 
         Returns:
             torch.Tensor: Uncertainty maps of shape (B, 1, H, W), where each value indicates pixel-wise uncertainty.
@@ -706,6 +772,9 @@ class SRLatentDiffusion(torch.nn.Module):
                     sampling_steps=sampling_steps,
                     sampling_eta=0.0,
                     sampler=sampler,
+                    spectral_correction=spectral_correction,
+                    back_projection=back_projection,
+                    histogram_matching=histogram_matching,
                 )  # shape (1, C, H, W)
                 variations.append(sr.detach().cpu())
 
@@ -870,11 +939,12 @@ class SRLatentDiffusionLightning(LightningModule):
 
     @torch.no_grad()
     def uncertainty_map(
-        self, x, n_variations=15, sampling_steps=None, custom_steps=None, *, sampler=None
+        self, x, n_variations=15, sampling_steps=None, custom_steps=None, *,
+        sampler=None, **correction_kwargs,
     ):
         if custom_steps is not None:
             sampling_steps = custom_steps
         uncertainty_map = self.model.uncertainty_map(
-            x, n_variations, sampling_steps, sampler=sampler
+            x, n_variations, sampling_steps, sampler=sampler, **correction_kwargs
         )
         return uncertainty_map

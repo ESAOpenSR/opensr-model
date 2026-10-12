@@ -37,6 +37,8 @@ TODO.md
 training_runs
 opensr_model/ablations/outputs
 opensr_model/ablations/samples
+.ruff_cache
+opensr_model/configs/training_configs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
