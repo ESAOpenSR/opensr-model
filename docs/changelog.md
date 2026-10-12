@@ -7,9 +7,7 @@ packaging, deployment and evaluation changes, including the current unreleased
 PyTorch spectral-correction integration and inference default changes. The package version is still 1.1.1;
 an entry here does not imply a new published package or checkpoint.
 
-Fine-tuning, training objectives, data loading for training, optimizer settings,
-training logs and training commands are documented in [training.md](training.md).
-Those details are intentionally kept there.
+Training instructions are in [training.md](training.md).
 
 ## Current behavior
 
@@ -48,28 +46,14 @@ of bitwise reproduction of every older implementation or of the published paper.
 | v1.1.1, 8 May 2026 (`10f4c01`) | Packaging/checkpoint safeguards, aligned examples and sampling APIs, expanded deployment support |
 | Post-v1.1.1, August 2026 | Checkpoint inference metadata handling, schedule/config alignment, inference/metric regression coverage and ablation utilities; training changes documented separately |
 | 12 October 2026 (`5b422ce`, `e32ff75`) | Optional DPM-Solver++ 2M integration and its automatic 3-step setting |
-| Current unreleased work, 12 October 2026 | Synthetic and real-HR spectral-correction experiments; selectable native PyTorch back-projection; rectangular nodata-mask fix; DPM-Solver++ (3 steps) and back-projection become the inference defaults; Diffusers becomes a base dependency; this changelog |
+| Current unreleased work, 12 October 2026 | Selectable PyTorch back-projection; rectangular nodata-mask fix; DPM-Solver++ (3 steps) and back-projection become the inference defaults; Diffusers becomes a base dependency |
 
 ## DPM-Solver++ 2M
 
 ### What changed
 
-[diffusion/dpm_solver.py](../opensr_model/diffusion/dpm_solver.py) adds an
-adapter around Diffusers' `DPMSolverMultistepScheduler`. It calls the existing
-OpenSR epsilon-predicting denoiser and uses the beta schedule loaded from the
-checkpoint, rather than substituting a generic diffusion schedule.
-
-The configured protocol is:
-
-- `algorithm_type="dpmsolver++"`, solver order 2, multistep midpoint updates;
-- epsilon prediction, linspace timestep spacing, zero steps offset;
-- lower-order final handling and terminal sigma zero;
-- no Karras sigmas, dynamic thresholding, or zero-SNR beta rescaling;
-- fresh scheduler history on every inference call.
-
-Each step makes one denoiser evaluation. Solver order two does not double that
-count. This is the ODE variant, without per-step stochastic noise; initial
-latent noise and sampled conditioning still depend on the random seed.
+DPM-Solver++ 2M uses the trained checkpoint's noise schedule. It adds no
+per-step noise, but initial noise and conditioning still depend on the random seed.
 
 ### Selection and defaults
 
@@ -107,26 +91,7 @@ The selection also works through the Lightning wrapper, saved intermediate
 iterations and uncertainty sampling. Existing training validation and the
 deprecated attribution/explainer method retain their DDIM path.
 
-### Evidence behind the 3-step setting
-
-The local sampler experiment contains 4,608 fresh predictions on 64
-SEN2NAIPv2 images with three seeds, plus a separately labeled historical DDIM
-series. Under that experiment's two RTX 3090 GPUs, FP32, batch size one,
-128×128 LR inputs and histogram correction, the measured means were:
-
-| Protocol | Seconds/image | Paired speedup versus DDIM-100 | RGB PSNR difference | NIR PSNR difference |
-|---|---:|---:|---:|---:|
-| DDIM-100, eta 0.95 | 3.875 | 1.000× | baseline | baseline |
-| DPM++ 2M, 5 steps | 0.672 | 5.763× | +0.130 dB | +0.070 dB |
-| DPM++ 2M, 3 steps | 0.607 | 6.389× | +0.112 dB | +0.047 dB |
-| DPM++ 2M, 1 step | 0.559 | 6.936× | −2.000 dB | −0.800 dB |
-
-These are recorded benchmark results, not a timing promise for another machine.
-The 3-step default prioritizes speed. Cross-sensor reference metrics do not
-establish equal perceptual quality on every scene, and the benchmark images
-are not guaranteed to have been unseen during the original training.
-See the [sampler report](../benchmarks/ddim_steps/output/sampler-comparison-20261012/report.md)
-for matched controls, settings sensitivity and detailed methodology.
+The 3-step default prioritizes speed; quality and timing vary by scene and hardware.
 
 ## New spectral correction: iterative back-projection
 
@@ -145,35 +110,10 @@ Back-projection instead enforces an explicit observation model. If `y` is the
 original LR image, `x` is the current decoded SR image and `D` is blur plus
 downsampling, the target is `D(x) ≈ y`.
 
-Each iteration computes:
+### Settings
 
-```text
-residual = y - D(x)
-x = x + relaxation * scale² * D_transpose(residual)
-```
-
-`D_transpose` is the actual adjoint, including averaging weights, not an
-arbitrary resize. For the implemented normalized blur and block average,
-`||D|| ≤ 1/scale`; `0 < relaxation ≤ 1` therefore gives a conservative
-Landweber step for reducing squared observation error. With noiseless,
-consistent data this preserves components invisible to the observation
-operator, including any incorrect fine detail in the initial prediction.
-
-### Production implementation
-
-[spectral_correction.py](../opensr_model/spectral_correction.py) contains:
-
-- `BackProjectionConfig`: validated scale, blur, iteration and stopping options;
-- `BlurDownsample`: batched Gaussian blur/block averaging and its adjoint;
-- `back_projection`: correction with per-image stopping and optional diagnostics.
-
-The implementation uses PyTorch tensor operations and depthwise separable
-convolutions. It runs on the image's device, without NumPy conversion or CPU
-image round trips. Small kernel tensors are constructed once per correction.
-The stopping decision can synchronize a scalar with the host each iteration.
-Float64 inputs retain float64; float16/bfloat16 are promoted to float32 and
-**the corrected result is returned in float32**. Autocast is disabled inside
-the correction. It is an inference operation under `no_grad`.
+Correction runs on the image's device. Float64 inputs retain their precision;
+float16/bfloat16 inputs produce a float32 result.
 
 | Option | Default | Meaning |
 |---|---:|---|
@@ -185,9 +125,8 @@ the correction. It is an inference operation under `no_grad`.
 
 The default uses pure 4×4 block averaging. One full update corrects those block
 means, apart from floating-point precision. An optional Gaussian blur uses a
-four-sigma truncated kernel and periodic boundaries, matching the controlled
-benchmarks. For example `[0.8, 1.0, 1.2, 1.4]` reproduces their illustrative
-RGB-NIR blur. These values are **not a calibrated Sentinel-2 MTF**. Kernel and
+four-sigma truncated kernel and periodic boundaries. Per-band values such as
+`[0.8, 1.0, 1.2, 1.4]` are illustrative, **not a calibrated Sentinel-2 MTF**. Kernel and
 boundary choices need evaluation for real imagery and tiled production use.
 
 ### Select it per call
@@ -204,7 +143,7 @@ sr_fast_bp = model(
     spectral_correction="back_projection",
 )
 
-# Optional blur-aware settings, matching the experimental operator.
+# Optional per-band blur settings; adapt these to your imagery.
 sr_blur = model(
     image,
     spectral_correction="back_projection",
@@ -260,9 +199,8 @@ decoder's own normalization/clamping behavior still applies.
 
 With `save_iterations=True`, each decoded frame is corrected on the padded
 grid. The returned frames retain the existing padded dimensions rather than
-adopting the normal final-output crop. Intermediate references are retained in
-physical units even if conditioning normalization mutates its working tensor.
-The Lightning `forward`/`predict_step` wrappers pass through these options;
+adopting the normal final-output crop. The Lightning `forward`/`predict_step`
+wrappers pass through these options;
 both uncertainty helpers support the same selection for every draw. The
 deprecated explainer retains its existing DDIM/histogram interface.
 
@@ -306,70 +244,6 @@ valid-measurement counts. No-observation samples are not labeled converged.
 Reaching the iteration limit returns the current result; use diagnostics when
 the convergence status matters.
 
-## Spectral-correction experiments
-
-Two CPU benchmark versions were added under `benchmarks/spectral_matching`.
-They compare uncorrected predictions, histogram matching, back-projection and
-histogram matching followed by back-projection. The combined method is an
-experimental comparison, not an additional production selection.
-
-**Version 1** uses procedural four-band scenes with known HR truth: five seeds,
-two observation operators, eight scenarios and four methods, giving **320
-evaluations**. Scenarios include gain/offset, spatial bias, blur, displacement,
-invisible checkerboard detail, perfect input, noisy observations and incorrect
-blur. The observation operators are block averaging and band-dependent
-Gaussian blur followed by averaging.
-
-**Version 2** uses the first eight fixed evaluation HR scenes from the existing
-SEN2NAIPv2 manifest. These are real NAIP-derived RGB-NIR images at 2.5 m that
-the dataset has already harmonized to S2, not unmodified raw NAIP radiometry.
-Checksums, central 256×256 crop windows, band order and scaling by `1e-4` are
-recorded. Existing real S2 observations are not used: LR is generated from HR
-to establish an exact reference. An additional bilinear-from-LR case brings
-the total to **576 evaluations**. No diffusion checkpoint is run in either
-correction experiment.
-
-The headline below averages only gain/offset and spatial-bias cases equally
-across scenes/seeds and both operators:
-
-| Experiment / method | HR RMSE ↓ | SSIM ↑ | Spectral angle ° ↓ | NDVI RMSE ↓ |
-|---|---:|---:|---:|---:|
-| Procedural / histogram | 0.0279707 | 0.935605 | 5.10785 | 0.205153 |
-| Procedural / back-projection | 0.00430345 | 0.996960 | 0.786681 | 0.0743939 |
-| Real HR / histogram | 0.0104802 | 0.980629 | 2.41227 | 0.0559325 |
-| Real HR / back-projection | 0.0013208 | 0.999028 | 0.265930 | 0.00771094 |
-
-Back-projection reduced mean HR RMSE by 84.6% in the procedural radiometric
-cases (20/20 paired wins) and 87.4% in the real-HR radiometric cases (32/32).
-All 160 and 288 respective back-projection/combined runs reached their specified
-LR RMSE threshold. These measurements originally used the independent
-NumPy/SciPy reference implementation, with 400 maximum iterations and tolerance
-`1e-7`; they are not timing measurements of the production PyTorch integration.
-
-The complete results show limits as well as gains:
-
-- Real-HR bilinear-from-LR RMSE changed from 0.0135491 uncorrected to 0.0122715
-  with back-projection: consistency does not restore all missing detail.
-- Real-HR invisible-checkerboard RMSE stayed 0.0165303 under back-projection;
-  histogram matching achieved 0.0130477. Back-projection is not uniformly best.
-- Fitting noise or the wrong operator can damage an otherwise perfect input.
-- A correct noiseless operator leaves an already consistent HR image unchanged.
-- Negative reflectances and unstable indices are measured rather than clipped
-  away in the comparisons.
-
-Metrics include HR RMSE, fixed-range PSNR, per-band SSIM, spectral angle,
-NDVI RMSE, per-band bias/RMSE, LR observed/clean/assumed-operator consistency,
-and out-of-range fractions. LR NDVI is calculated after degrading reflectance
-bands, not by averaging HR NDVI. Visual panels include common display scales,
-zoomed details and four-band error maps. CSVs, source hashes, inputs and
-convergence histories support reproduction.
-
-See [benchmark instructions](../benchmarks/spectral_matching/README.md),
-[procedural results](../benchmarks/spectral_matching/results/synthetic/REPORT.md),
-and [real-HR results](../benchmarks/spectral_matching/results/real_hr/REPORT.md).
-The repository currently ignores `benchmarks/`, so these local artifacts are
-not guaranteed to accompany an installed package or a fresh checkout.
-
 ## Other changes since v1.0.0
 
 ### Inference API and preprocessing
@@ -391,19 +265,10 @@ on CPU. Histogram equality is not a guarantee of pixelwise spectral fidelity.
 
 ### Checkpoint loading and configuration
 
-Downloads use a timeout, HTTP status checks and a temporary file that is renamed
-only after success. Failed downloads clean up the temporary file and give a
-contextual exception. Loading validates the checkpoint mapping/state dict,
-and uses `weights_only=True`. The original loss-tensor filtering and strict
-state-dict loading are retained.
-
-Supported inference metadata can restore normalization, conditioning and
-denoiser/sampling settings after validation, including schedule length and
-epsilon parameterization. Declared schedule endpoints are checked against
-stored beta buffers. Changing the configured schedule length requires enough
-metadata to rebuild matching buffers before strict loading. Runtime overrides
-should be applied after `load_pretrained` where checkpoint metadata may reset
-those supported settings.
+Checkpoint downloads check for failures before saving the final file. Loading
+validates weights and supported inference settings. Checkpoint metadata may
+restore sampling, normalization and conditioning settings, so apply runtime
+overrides after `load_pretrained`.
 
 The bundled YAML now documents and uses the released checkpoint's actual
 beta endpoints, **0.0015 → 0.0155**, and disabled input normalization. The
@@ -430,38 +295,9 @@ config validation, packaged task entrypoints, configurable batch size,
 run/patch manifests, structured logs, metadata and compressed GeoTIFF outputs.
 See [deployment/README.md](../deployment/README.md) for operational details.
 
-### Validation and scope
+### Validation
 
-Inference, autoencoder, noise-schedule and DDIM/DPM regression tests were added
-after the original release. New spectral tests verify the adjoint, constants,
-block means, a dense pseudoinverse solution, agreement with independent SciPy
-iterations, per-sample stopping, precision/autocast behavior, masks, invalid
-settings and input immutability. Integration tests cover both samplers,
-rectangular images, padded intermediate frames, config/argument precedence,
-Lightning and uncertainty propagation. Default-call regression tests verify
-three DPM-Solver++ evaluations, LR block-average consistency and equality with
-the explicitly selected DPM/back-projection combination, both with the bundled
-config and with selection fields omitted. A CUDA comparison test is included
-and is skipped when CUDA is unavailable.
-
-Validation of this integration on CPU: **120 production inference/diffusion
-tests passed**, with only the CUDA test skipped. The Diffusers 0.38.0
-dependency was available for these checks. An additional 36 comparisons against
-the saved first real-HR image (nine scenarios, two operators, float32/float64)
-matched the independent NumPy/SciPy outputs: maximum absolute discrepancy was
-`4.983e-7` in float32 and `1.111e-15` in float64. This comparison uses the
-benchmark's 400-iteration / `1e-7` settings, not a new quality experiment.
-See [PyTorch parity results](../benchmarks/spectral_matching/results/real_hr/torch_validation.json).
-
-A separate end-to-end CPU smoke run loaded the released
-`opensr-ldsrs2_v1_0_0.ckpt` and ran DPM-Solver++ at its 3-step default with
-back-projection on a real-image-derived 64×64 LR input. It returned a finite
-256×256 four-band image with block-averaged LR RMSE `9.25e-9`.
-See [production smoke result](../benchmarks/spectral_matching/results/real_hr/production_smoke.json).
-This confirms the actual checkpoint/inference path, beyond stub-based
-integration tests; it is not a new ground-truth quality assessment.
-
-Run the relevant production tests with:
+Run the inference regression tests with:
 
 ```bash
 python -m pytest tests/test_inference.py tests/test_inference_utils.py \
@@ -469,9 +305,6 @@ python -m pytest tests/test_inference.py tests/test_inference_utils.py \
   tests/diffusion -q
 ```
 
-Install the package dependencies to exercise DPM tests instead of skipping them.
-Full training tests have additional dependencies and are covered by the
-training workflow. Neither the correction benchmarks nor their passing tests
-prove that generated subpixel spectra equal unknown physical ground truth on
-new S2 scenes; that requires independent validation and an appropriate sensor
-degradation model.
+Training tests require the `train` extra. Observation consistency does not
+guarantee accurate subpixel spectra; results depend on the chosen blur/downsampling
+model.

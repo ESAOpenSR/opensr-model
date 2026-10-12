@@ -1,5 +1,5 @@
 # Training Codebase Disclaimer
-This training implementation is not the exact same as the paper describes, but instead a continued-development codebase built upon LDSR-S2. The main branch will continue to hold the inference codebase and checkpoints, producing the results described in the publication.
+This repository continues development beyond the paper. The [`paper-release`](https://github.com/ESAOpenSR/opensr-model/tree/paper-release) branch preserves the previous `main` snapshot (v1.1.1).
 
 <img src="https://github.com/ESAOpenSR/opensr-model/blob/main/resources/opensr_logo.png?raw=true" width="250"/>
 
@@ -16,7 +16,7 @@ This training implementation is not the exact same as the paper describes, but i
 ---
 
 # Table of Contents
-- [🚀 1. Interactive Notebooks - Google Colab](#1--google-colab-demos--interactive-notebooks)
+- [🚀 1. Interactive Notebooks - Google Colab](#1--interactive-notebooks---google-colab)
 - [🛠️ 2. Install and Usage - Local](#2-install-and-usage---local)
   - [🧱 2.1 Weights and Checkpoints](#21-weights-and-checkpoints)
   - [🖥️ 2.2 HPC and Slurm Launcher](#22-hpc-and-slurm-launcher)
@@ -37,7 +37,7 @@ Run LDSR-S2 directly in Google Colab within seconds! These notebooks let you fet
 
 | Notebook Name                  | Description                                                                                      | Link                                                                 |
 |-------------------------------|--------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
-| **LDSR-S2 No-Code**           | 🔘 No coding required — chose point on a map and download SR results as GeoTIFFs               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1xhlVjGkHPF1znafSGrWtyZ0wzcogVRCe?usp=sharing) |
+| **LDSR-S2 No-Code**           | 🔘 No coding required — choose a point on a map and download SR results as GeoTIFFs               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1xhlVjGkHPF1znafSGrWtyZ0wzcogVRCe?usp=sharing) |
 | **LDSR-S2 Walkthrough**              | 🧪 Code-level walkthrough with uncertainty estimation and advanced plotting                       | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1onza61SP5IyiUQM85PtyVLz6JovvQ0TN?usp=sharing) |
 | **LDSR-S2 & SEN2SR**          | 🔄 Use LDSR-S2 alongside SEN2SR to compare results on 10m + 20m bands                             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1NJuyswsquOLMFc_AP93P_5QcZnbNhGuB?usp=sharing) |
 
@@ -63,7 +63,7 @@ config = OmegaConf.load(StringIO(response.text))
 # Get Model
 import torch
 device = "cuda" if torch.cuda.is_available() else "cpu" # set device
-import opensr_model # import pachage
+import opensr_model # import package
 model = opensr_model.SRLatentDiffusion(config, device=device) # create model
 model.load_pretrained(config.ckpt_version) # load checkpoint
 sr = model(torch.rand(1,4,128,128)) # DPM-Solver++ (3 steps) + back-projection
@@ -83,11 +83,11 @@ sr_more_steps = model(image, sampling_steps=5)
 sr_legacy = model(image, sampler="ddim", sampling_steps=100, spectral_correction="histogram")
 ```
 
-You can also select the sampler through `denoiser_settings.sampler` in the model YAML, including for HPC inference. Leave `denoiser_settings.sampling_steps: null` (the bundled default), or omit that field, to use the selected sampler's default: **3 for DPM-Solver++, 100 for DDIM**. An integer in the config overrides this automatic default; an explicit `sampling_steps` call argument takes precedence over the config. Existing configs and checkpoint inference metadata with explicit selections or counts retain those overrides. Checkpoint metadata can restore settings during `load_pretrained`, so set runtime overrides after loading when needed. Configs without a sampler selection now use DPM-Solver++.
-
-DPM-Solver++ uses the checkpoint's trained beta schedule, epsilon prediction, second-order multistep midpoint updates, linspace timesteps, a final sigma of zero, and no dynamic thresholding or Karras schedule. It accepts any positive integer step count smaller than the training timestep count; native DDIM step counts must additionally divide that count exactly. Each call starts fresh solver history. The existing decoding, selected spectral correction, masking, and `save_iterations` behavior also apply to DPM-Solver++.
-
-Configured `sampling_eta` and `sampling_temperature` apply only to DDIM. With DPM-Solver++, explicit arguments must be omitted or set to `sampling_eta=0` and `sampling_temperature=1`; other values raise an error. The solver adds no per-step noise, but initial latent noise and conditioning still depend on the random seed. The Lightning wrapper and `uncertainty_map(..., sampler=...)` support the same selection. Training validation and the deprecated explainer continue to use DDIM. The 3-step default prioritizes speed; equivalent perceptual quality on every scene is not guaranteed.
+Set `denoiser_settings.sampler` in the model YAML to choose a default sampler.
+With `sampling_steps: null`, DPM-Solver++ uses 3 steps and DDIM uses 100.
+Call arguments override config values; apply runtime settings after
+`load_pretrained`, which may restore checkpoint settings. The 3-step setting
+prioritizes speed; output quality can vary by scene.
 
 Spectral correction can be selected independently of the sampler:
 
@@ -107,10 +107,8 @@ nodata at zero and does not clamp corrected values. The legacy
 `histogram_matching=False` still disables correction unless an explicit
 `spectral_correction` is supplied.
 
-See the [detailed inference changelog since v1.0.0](docs/changelog.md) for the
-algorithm, settings, compatibility rules, experimental results and other changes
-since the original release. Fine-tuning documentation remains in
-[docs/training.md](docs/training.md).
+See the [inference changelog](docs/changelog.md) for settings and compatibility,
+and the [training guide](docs/training.md) for training instructions.
 
 ### 2.1 🧱 Weights and Checkpoints
 The model should load automatically with the `model.load_pretrained` command. Alternatively, the checkpoints can be found on [HuggingFace](https://huggingface.co/simon-donike/RS-SR-LTDF/tree/main).
@@ -200,9 +198,9 @@ Use the notebooks and `demo.py` for quick starts; for full‑tile processing and
 # 5. 📝 Notes
 
 ## 5.1 🎓 Training
-The autoencoder and conditional diffusion model can now be trained independently with the additive PyTorch Lightning pipeline. Training accepts completed TACO `.tortilla` parts only and includes stable train/validation splitting, reflectance normalization, nodata-aware losses, reconstruction and spectral metrics, complete-image logging each epoch, complete Lightning resume checkpoints, and native checkpoints compatible with the current strict inference loader. Stage 1 reproduces the executable checkpoint-era autoencoder objective; stage 2 uses a quality-oriented P2/detail/perceptual objective with EMA inference exports.
+The autoencoder and conditional diffusion model can be trained independently with PyTorch Lightning using paired TACO data. Runs save checkpoints for both training resume and inference.
 
-See the [training guide](https://github.com/ESAopenSR/opensr-model/blob/main/docs/training.md) and the packaged `train_autoencoder.yaml` / `train_diffusion.yaml` configurations.
+See the [training guide](docs/training.md) and the packaged `train_autoencoder.yaml` / `train_diffusion.yaml` configurations.
 
 ## 5.2 📚 Citation
 If you use this model in your work, please cite  

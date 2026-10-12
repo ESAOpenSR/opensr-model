@@ -6,8 +6,8 @@ the same random seed, uses the same RGB stretch, and shows the same center
 detail crop. At `eta=0`, DDIM is deterministic and temperature has no effect.
 
 ```bash
-/work/envs/opensr/bin/python -m opensr_model.ablations.temperature_eta \
-  --input runs/opensr_test_20260312T123948411350Z/patches/patch_000001/inputs/lr.tif \
+python -m opensr_model.ablations.temperature_eta \
+  --input /path/to/lr.tif \
   --checkpoint opensr-ldsrs2_v1_0_0.ckpt
 ```
 
