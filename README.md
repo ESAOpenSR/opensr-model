@@ -69,6 +69,25 @@ model.load_pretrained(config.ckpt_version) # load checkpoint
 sr = model.forward(torch.rand(1,4,128,128), sampling_steps=100) # run SR
 ```  
 
+DDIM remains the default sampler. To use DPM-Solver++ 2M, install the optional
+dependency and select it for an inference call:
+
+```bash
+pip install -e '.[dpm]'  # or: pip install 'opensr-model[dpm]'
+```
+
+```python
+torch.manual_seed(42)
+sr = model(image, sampler="dpm_solver++", sampling_steps=20)
+sr_ddim = model(image, sampler="ddim", sampling_steps=100)
+```
+
+You can also set `denoiser_settings.sampler: "dpm_solver++"` and `denoiser_settings.sampling_steps: 20` in the model YAML, including for HPC inference. Explicit call arguments override the loaded config. Checkpoint inference metadata can restore these defaults during `load_pretrained`, so set runtime overrides after loading when needed. Older configs default to DDIM.
+
+DPM-Solver++ uses the checkpoint's trained beta schedule, epsilon prediction, second-order multistep updates, and no dynamic thresholding or Karras schedule. It accepts any positive integer step count smaller than the training timestep count; native DDIM step counts must additionally divide that count exactly. Each call starts fresh solver history. The existing decoding, histogram matching, masking, and `save_iterations` behavior also apply to DPM-Solver++.
+
+Configured `sampling_eta` and `sampling_temperature` apply only to DDIM. With DPM-Solver++, explicit arguments must be omitted or set to `sampling_eta=0` and `sampling_temperature=1`; other values raise an error. The solver adds no per-step noise, but initial latent noise and conditioning still depend on the random seed. The Lightning wrapper and `uncertainty_map(..., sampler=...)` support the same selection. Training validation and the deprecated explainer continue to use DDIM. Twenty steps is a starting point for evaluation, not aguarantee of equivalent quality on every scene.
+
 ### 2.1 🧱 Weights and Checkpoints
 The model should load automatically with the `model.load_pretrained` command. Alternatively, the checkpoints can be found on [HuggingFace](https://huggingface.co/simon-donike/RS-SR-LTDF/tree/main).
 

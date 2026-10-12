@@ -1,6 +1,7 @@
 import math
 import pathlib
 from collections.abc import Mapping, MutableMapping
+from numbers import Integral
 from typing import Any, Union
 import requests
 import torch
@@ -8,6 +9,7 @@ from opensr_model.diffusion.latentdiffusion import LatentDiffusion
 from skimage.exposure import match_histograms
 import torch.utils.checkpoint as checkpoint
 from opensr_model.diffusion.utils import DDIMSampler
+from opensr_model.diffusion.dpm_solver import DPMSolverPlusPlusSampler
 from tqdm import tqdm
 import numpy as np
 from typing import Literal
@@ -128,6 +130,17 @@ class SRLatentDiffusion(torch.nn.Module):
         custom_steps: int = 100,
         verbose: bool = False,
     ):
+        # Switching back from a DPM config may supply a non-dividing step count.
+        if (
+            isinstance(custom_steps, bool)
+            or not isinstance(custom_steps, Integral)
+            or not 1 <= custom_steps < self.model.num_timesteps
+            or self.model.num_timesteps % custom_steps
+        ):
+            raise ValueError(
+                "DDIM sampling_steps must be a positive integer smaller than "
+                "and dividing the number of training timesteps exactly"
+            )
         # Create the DDIM sampler
         ddim = DDIMSampler(self.model)
 
@@ -153,6 +166,8 @@ class SRLatentDiffusion(torch.nn.Module):
         histogram_matching: bool = True,
         save_iterations: bool = False,
         verbose: bool = False,
+        *,
+        sampler: Literal["ddim", "dpm_solver++"] | None = None,
     ):
         """Obtain the super resolution of the given image.
 
@@ -163,23 +178,40 @@ class SRLatentDiffusion(torch.nn.Module):
                 of super resolved images is returned.
             sampling_steps (int, optional): Number of steps to run the denoiser. Defaults
                 to 100.
-            temperature (float, optional): Temperature to use in the denoiser.
+            sampling_temperature (float, optional): DDIM noise temperature.
                 Defaults to 1.0. The higher the temperature, the more stochastic
                 the denoiser is (random noise gets multiplied by this).
-            spectral_correction (bool, optional): Apply spectral correction to the SR
+            histogram_matching (bool, optional): Apply spectral correction to the SR
                 image, using the LR image as reference. Defaults to True.
+            sampler (str, optional): "ddim" or "dpm_solver++" (second-order
+                multistep ODE solver). Falls back to denoiser_settings.sampler,
+                then "ddim" for older configs. DPM-Solver++ ignores configured
+                DDIM eta/temperature; explicit overrides must be 0 and 1,
+                respectively. Initial noise and conditioning remain stochastic.
 
         Returns:
             torch.Tensor: The super resolved image or batch of images with a shape of
                 Cx(Wx4)x(Hx4) or BxCx(Wx4)x(Hx4).
         """
-        # fall back on config if args are None
-        if sampling_eta is None:
-            sampling_eta = self.config.denoiser_settings.sampling_eta
-        if sampling_temperature is None:
-            sampling_temperature = self.config.denoiser_settings.sampling_temperature
+        # Resolve the sampler before interpreting sampler-specific settings.
+        if sampler is None:
+            sampler = getattr(self.config.denoiser_settings, "sampler", "ddim")
+        if sampler not in ("ddim", "dpm_solver++"):
+            raise ValueError("sampler must be 'ddim' or 'dpm_solver++'")
         if sampling_steps is None:
             sampling_steps = self.config.denoiser_settings.sampling_steps
+        dpm_sampler = None
+        if sampler == "ddim":
+            if sampling_eta is None:
+                sampling_eta = self.config.denoiser_settings.sampling_eta
+            if sampling_temperature is None:
+                sampling_temperature = self.config.denoiser_settings.sampling_temperature
+        else:
+            if sampling_eta is not None and sampling_eta != 0.0:
+                raise ValueError("DPM-Solver++ requires sampling_eta=0 or None")
+            if sampling_temperature is not None and sampling_temperature != 1.0:
+                raise ValueError("DPM-Solver++ requires sampling_temperature=1 or None")
+            dpm_sampler = DPMSolverPlusPlusSampler(self.model, sampling_steps)
 
         # Set potentially problematic values to 0 to avoid issues in the model.
         X = torch.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
@@ -202,12 +234,15 @@ class SRLatentDiffusion(torch.nn.Module):
         X = X.clone()
         Xnorm = self._tensor_encode(X)
 
-        # ddim, latent and time_range
-        ddim, latent, time_range = self._prepare_model(
-            X=Xnorm, eta=sampling_eta, custom_steps=sampling_steps, verbose=verbose
-        )
+        if dpm_sampler is None:
+            ddim, latent, time_range = self._prepare_model(
+                X=Xnorm, eta=sampling_eta, custom_steps=sampling_steps, verbose=verbose
+            )
+        else:
+            latent = torch.randn(Xnorm.shape, device=Xnorm.device)
+            time_range = dpm_sampler.timesteps
         iterator = tqdm(
-            time_range, desc="DDIM Sampler", total=sampling_steps, disable=True
+            time_range, desc=f"{sampler} Sampler", total=sampling_steps, disable=True
         )
 
         # Iterate over the timesteps
@@ -215,15 +250,17 @@ class SRLatentDiffusion(torch.nn.Module):
             save_iters = []
 
         for i, step in enumerate(iterator):
-            outs = ddim.p_sample_ddim(
-                x=latent,
-                c=Xnorm,
-                t=step,
-                index=sampling_steps - i - 1,
-                use_original_steps=False,
-                temperature=sampling_temperature,
-            )
-            latent, _ = outs
+            if dpm_sampler is None:
+                latent, _ = ddim.p_sample_ddim(
+                    x=latent,
+                    c=Xnorm,
+                    t=step,
+                    index=sampling_steps - i - 1,
+                    use_original_steps=False,
+                    temperature=sampling_temperature,
+                )
+            else:
+                latent = dpm_sampler.step(latent, Xnorm, step)
 
             if save_iterations:
                 save_iters.append(self._tensor_decode(latent, spe_cor=False))
@@ -410,6 +447,15 @@ class SRLatentDiffusion(torch.nn.Module):
                 )
             prepared["parameterization"] = parameterization
 
+        # Metadata without a sampler describes the historical DDIM protocol.
+        checkpoint_sampler = denoiser.get("sampler", "ddim")
+        if checkpoint_sampler not in ("ddim", "dpm_solver++"):
+            raise RuntimeError(
+                "Checkpoint inference sampler must be 'ddim' or 'dpm_solver++'"
+            )
+        if "sampler" in denoiser:
+            prepared["sampler"] = checkpoint_sampler
+
         sampling_steps = denoiser.get("sampling_steps")
         if sampling_steps is not None:
             if (
@@ -440,7 +486,11 @@ class SRLatentDiffusion(torch.nn.Module):
             raise RuntimeError(
                 "Checkpoint inference sampling_steps must be smaller than timesteps"
             )
-        if sampling_steps is not None and effective_timesteps % sampling_steps:
+        if (
+            checkpoint_sampler == "ddim"
+            and sampling_steps is not None
+            and effective_timesteps % sampling_steps
+        ):
             raise RuntimeError(
                 "Checkpoint inference sampling_steps must divide timesteps exactly "
                 "for the native uniform DDIM sampler"
@@ -483,6 +533,7 @@ class SRLatentDiffusion(torch.nn.Module):
             "linear_start",
             "linear_end",
             "parameterization",
+            "sampler",
             "sampling_steps",
             "sampling_eta",
             "sampling_temperature",
@@ -608,7 +659,7 @@ class SRLatentDiffusion(torch.nn.Module):
             self._apply_checkpoint_inference_config(prepared_settings)
         print("Loaded pretrained weights from: ", weights_file)
 
-    def uncertainty_map(self, x, n_variations=15, sampling_steps=100):
+    def uncertainty_map(self, x, n_variations=15, sampling_steps=100, *, sampler=None):
         """
         Estimates uncertainty maps for each sample in the input batch using repeated stochastic forward passes.
 
@@ -620,6 +671,7 @@ class SRLatentDiffusion(torch.nn.Module):
             x (torch.Tensor): Input tensor of shape (B, C, H, W), where B is batch size.
             n_variations (int): Number of stochastic forward passes per input sample.
             sampling_steps (int): Sampling steps passed to the forward method.
+            sampler (str, optional): Sampler passed to forward; defaults to config.
 
         Returns:
             torch.Tensor: Uncertainty maps of shape (B, 1, H, W), where each value indicates pixel-wise uncertainty.
@@ -643,7 +695,10 @@ class SRLatentDiffusion(torch.nn.Module):
                     # pytorch_lightning.utilities.seed.seed_everything(seed=seed, workers=True)
 
                 sr = self.forward(
-                    x_b, sampling_steps=sampling_steps, sampling_eta=0.0
+                    x_b,
+                    sampling_steps=sampling_steps,
+                    sampling_eta=0.0,
+                    sampler=sampler,
                 )  # shape (1, C, H, W)
                 variations.append(sr.detach().cpu())
 
@@ -788,14 +843,14 @@ class SRLatentDiffusionLightning(LightningModule):
     @torch.no_grad()
     def forward(self, x, **kwargs):
         # print("Dont call 'forward' on the PL model, instead use 'predict'")
-        return self.model(x)
+        return self.model(x, **kwargs)
 
     def load_pretrained(self, weights_file: str):
         self.model.load_pretrained(weights_file)
         print("PL Model: Model loaded from ", weights_file)
 
     @torch.no_grad()
-    def predict_step(self, x, idx: int = 0, **kwargs):
+    def predict_step(self, x, idx: int = 0, dataloader_idx: int = 0, **kwargs):
         # perform SR
         assert (
             self.model.training == False
@@ -803,14 +858,16 @@ class SRLatentDiffusionLightning(LightningModule):
         x = torch.nan_to_num(
             x, nan=0.0, posinf=0.0, neginf=0.0
         )  # replace nans and infs in input with 0s
-        p = self.model.forward(x)
+        p = self.model.forward(x, **kwargs)
         return p
 
     @torch.no_grad()
     def uncertainty_map(
-        self, x, n_variations=15, sampling_steps=100, custom_steps=None
+        self, x, n_variations=15, sampling_steps=100, custom_steps=None, *, sampler=None
     ):
         if custom_steps is not None:
             sampling_steps = custom_steps
-        uncertainty_map = self.model.uncertainty_map(x, n_variations, sampling_steps)
+        uncertainty_map = self.model.uncertainty_map(
+            x, n_variations, sampling_steps, sampler=sampler
+        )
         return uncertainty_map

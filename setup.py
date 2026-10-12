@@ -30,6 +30,9 @@ setup(
         "matplotlib>=3.8.0",
     ],
     extras_require={
+        "dpm": [
+            "diffusers>=0.30.3",
+        ],
         "train": [
             "Pillow>=10.2.0",
             "tacoreader>=2.4.0,<3.0",

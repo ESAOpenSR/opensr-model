@@ -17,9 +17,10 @@ denoiser_settings:
   linear_end: 0.0155 # noise end
   timesteps: 1000 # Timesteps model was trained on - always 1k
   parameterization: "eps" # ["eps" or "x0"]
-  sampling_eta: 0.95 # 0 is deterministic; values >0 add sampling stochasticity
-  sampling_temperature: 1.0 # 0. to 1.
-  sampling_steps: 100 # No of DDIM sampling steps
+  sampler: "ddim" # "ddim" or "dpm_solver++" (DPM-Solver++ 2M)
+  sampling_eta: 0.95 # DDIM only; 0 disables per-step noise
+  sampling_temperature: 1.0 # DDIM only
+  sampling_steps: 100 # Denoiser evaluations; try 20 for DPM-Solver++
 
 # Autoencoder Settings
 first_stage_config:

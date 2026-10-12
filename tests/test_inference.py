@@ -7,7 +7,7 @@ import pytest
 import torch
 
 import opensr_model.srmodel as srmodel_module
-from opensr_model.srmodel import SRLatentDiffusion
+from opensr_model.srmodel import SRLatentDiffusion, SRLatentDiffusionLightning
 
 
 class _Sampler:
@@ -86,10 +86,9 @@ def test_forward_histogram_matches_only_after_final_postprocessing(monkeypatch) 
         model,
     )
     model.hq_histogram_matching = MethodType(
-        lambda self, source, reference: matched_sources.append(
-            (source.clone(), reference.clone())
-        )
-        or source + 1000,
+        lambda self, source, reference: (
+            matched_sources.append((source.clone(), reference.clone())) or source + 1000
+        ),
         model,
     )
     monkeypatch.setattr(
@@ -176,8 +175,10 @@ def test_uncertainty_map_returns_twice_channel_mean_standard_deviation(
     model = SRLatentDiffusion.__new__(SRLatentDiffusion)
     torch.nn.Module.__init__(model)
     draw = {"value": 0}
+    sampling_calls = []
 
     def forward(self, image, **kwargs):
+        sampling_calls.append(kwargs)
         value = draw["value"] % 4
         draw["value"] += 1
         return torch.full((1, 4, 3, 3), float(value))
@@ -190,11 +191,117 @@ def test_uncertainty_map_returns_twice_channel_mean_standard_deviation(
     )
 
     result = model.uncertainty_map(
-        torch.zeros(2, 4, 1, 1), n_variations=4, sampling_steps=3
+        torch.zeros(2, 4, 1, 1),
+        n_variations=4,
+        sampling_steps=3,
+        sampler="dpm_solver++",
     )
 
     expected = 2 * torch.tensor([0.0, 1.0, 2.0, 3.0]).std()
     assert result.shape == (2, 1, 3, 3)
     assert torch.allclose(result, torch.full_like(result, expected))
+    assert all(call["sampler"] == "dpm_solver++" for call in sampling_calls)
     with pytest.raises(AssertionError, match="greater than 3"):
         model.uncertainty_map(torch.zeros(1, 4, 1, 1), n_variations=3)
+
+
+@pytest.mark.parametrize("save_iterations", [False, True])
+def test_dpm_forward_uses_config_and_resets_history(monkeypatch, save_iterations):
+    pytest.importorskip("diffusers")
+    model, ddim = _stub_inference_model()
+    model.config.denoiser_settings.sampler = "dpm_solver++"
+    model.config.denoiser_settings.sampling_steps = 3  # Does not divide T=10.
+    calls = []
+    model.model = SimpleNamespace(
+        num_timesteps=10,
+        parameterization="eps",
+        betas=torch.linspace(0.001, 0.02, 10),
+        apply_model=lambda x, t, c: (
+            calls.append((t.clone(), c.clone())) or torch.zeros_like(x)
+        ),
+    )
+    monkeypatch.setattr(
+        srmodel_module, "assert_tensor_validity", lambda x: (x, (0, 0, 0, 0))
+    )
+    monkeypatch.setattr(
+        srmodel_module, "create_no_data_mask", lambda x, target_size: None
+    )
+    monkeypatch.setattr(srmodel_module, "apply_no_data_mask", lambda x, mask: x + 10)
+    monkeypatch.setattr(srmodel_module, "revert_padding", lambda x, padding: x + 100)
+    model._match_output_histograms = MethodType(lambda self, x, ref: x + 1000, model)
+    x = torch.ones(2, 4, 8, 8)
+
+    torch.manual_seed(42)
+    first = model(x, save_iterations=save_iterations)
+    torch.manual_seed(42)
+    second = model(x, save_iterations=save_iterations)
+    assert len(calls) == 6
+    assert all(torch.equal(c, x + 10) for _, c in calls)
+    assert all(t.shape == (2,) for t, _ in calls)
+    assert not ddim.calls
+    if save_iterations:
+        assert len(first) == 3
+        assert all(torch.equal(a, b) for a, b in zip(first, second))
+        final = first[-1]
+        postprocess_offset = 1000
+    else:
+        assert torch.equal(first, second)
+        final = first
+        postprocess_offset = 1110
+    torch.manual_seed(42)
+    expected = 2 * torch.randn(x.shape) / (1 - model.model.betas).prod().sqrt()
+    torch.testing.assert_close(final, expected + postprocess_offset)
+
+    # An explicit argument overrides the config and keeps DDIM's noise defaults.
+    model(x, sampler="ddim", sampling_steps=2)
+    assert len(ddim.calls) == 2
+    assert all(call["temperature"] == 0.75 for call in ddim.calls)
+
+
+@pytest.mark.parametrize(
+    "kwargs, message",
+    [
+        ({"sampler": "unknown"}, "sampler must"),
+        ({"sampler": "dpm_solver++", "sampling_eta": 0.95}, "sampling_eta"),
+        (
+            {"sampler": "dpm_solver++", "sampling_temperature": 0},
+            "sampling_temperature",
+        ),
+    ],
+)
+def test_invalid_sampler_settings_fail_before_encoding(kwargs, message):
+    model, _ = _stub_inference_model()
+    with pytest.raises(ValueError, match=message):
+        model(torch.ones(1, 4, 8, 8), **kwargs)
+
+
+def test_lightning_wrapper_forwards_sampling_arguments():
+    wrapper = SRLatentDiffusionLightning.__new__(SRLatentDiffusionLightning)
+    torch.nn.Module.__init__(wrapper)
+    calls = []
+
+    class Recorder(torch.nn.Module):
+        def forward(self, x, **kwargs):
+            calls.append(kwargs)
+            return x
+
+        def uncertainty_map(self, x, *args, **kwargs):
+            calls.append(kwargs)
+            return x
+
+    wrapper.model = Recorder().eval()
+    x = torch.ones(1, 4, 8, 8)
+    wrapper(x, sampler="dpm_solver++", sampling_steps=20)
+    wrapper.predict_step(x, dataloader_idx=1, sampler="dpm_solver++", sampling_steps=20)
+    wrapper.uncertainty_map(x, sampler="dpm_solver++")
+    assert calls[:2] == [{"sampler": "dpm_solver++", "sampling_steps": 20}] * 2
+    assert calls[2] == {"sampler": "dpm_solver++"}
+
+
+@pytest.mark.parametrize("steps", [0, -1, 3, 10, 11, True, 2.5])
+def test_ddim_rejects_invalid_steps_when_switching_from_dpm(steps):
+    model = SRLatentDiffusion.__new__(SRLatentDiffusion)
+    torch.nn.Module.__init__(model)
+    model.model = SimpleNamespace(num_timesteps=10)
+    with pytest.raises(ValueError, match="DDIM sampling_steps"):
+        model._prepare_model(torch.zeros(1, 4, 8, 8), custom_steps=steps)

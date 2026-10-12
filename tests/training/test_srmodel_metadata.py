@@ -163,3 +163,50 @@ def test_load_pretrained_rejects_unsupported_x0_metadata(
 
     assert OmegaConf.to_container(config, resolve=True) == config_before
     assert model.model.parameterization == "eps"
+
+
+def test_dpm_metadata_restores_sampler_and_nondividing_steps(
+    tmp_path, tiny_model_config
+):
+    source = SRLatentDiffusion(OmegaConf.create(tiny_model_config))
+    inference_config = _inference_config(source)
+    inference_config["denoiser_settings"]["sampler"] = "dpm_solver++"
+    # Six steps are valid for DPM-Solver++ with ten training timesteps.
+    checkpoint = tmp_path / "dpm.ckpt"
+    torch.save(
+        {
+            "state_dict": source.model.state_dict(),
+            "opensr_inference_config": inference_config,
+        },
+        checkpoint,
+    )
+    restored = SRLatentDiffusion(OmegaConf.create(tiny_model_config))
+    restored.load_pretrained(str(checkpoint))
+
+    assert restored.config.denoiser_settings.sampler == "dpm_solver++"
+    assert restored.config.denoiser_settings.sampling_steps == 6
+    for key, value in source.model.state_dict().items():
+        assert torch.equal(restored.model.state_dict()[key], value)
+
+
+@pytest.mark.parametrize("sampler", ["unknown", None, 42])
+def test_invalid_sampler_metadata_does_not_mutate_model(
+    tmp_path, tiny_model_config, sampler
+):
+    model = SRLatentDiffusion(OmegaConf.create(tiny_model_config))
+    inference_config = _inference_config(model)
+    inference_config["denoiser_settings"].update(sampler=sampler, sampling_steps=5)
+    checkpoint = tmp_path / "bad-sampler.ckpt"
+    torch.save(
+        {
+            "state_dict": model.model.state_dict(),
+            "opensr_inference_config": inference_config,
+        },
+        checkpoint,
+    )
+    before = OmegaConf.to_container(model.config, resolve=True)
+    betas_before = model.model.betas.clone()
+    with pytest.raises(RuntimeError, match="sampler must"):
+        model.load_pretrained(str(checkpoint))
+    assert OmegaConf.to_container(model.config, resolve=True) == before
+    assert torch.equal(model.model.betas, betas_before)

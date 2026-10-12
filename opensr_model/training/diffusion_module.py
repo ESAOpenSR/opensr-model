@@ -435,6 +435,7 @@ class DiffusionTrainingModule(pl.LightningModule):
                 "linear_start": float(betas[0].item()),
                 "linear_end": float(betas[-1].item()),
                 "parameterization": str(self.diffusion.parameterization),
+                "sampler": "ddim",  # Validation uses the native DDIM protocol.
                 "sampling_steps": int(self.validation_sampling_steps),
                 "sampling_eta": float(self.validation_sampling_eta),
                 "sampling_temperature": float(self.validation_sampling_temperature),

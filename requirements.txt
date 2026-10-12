@@ -35,7 +35,7 @@ typing-extensions>=4.10.0
 wandb>=0.17.0
 
 # Diffusion
-diffusers>=0.30.0
+diffusers>=0.30.3
 huggingface-hub>=0.24.0
 taming-transformers>=0.0.1
 
