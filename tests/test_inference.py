@@ -169,8 +169,9 @@ def test_histogram_matching_supports_images_and_rejects_invalid_rank() -> None:
         model.hq_histogram_matching(torch.zeros(2), torch.zeros(2))
 
 
+@pytest.mark.parametrize("sampling_steps", [None, 3])
 def test_uncertainty_map_returns_twice_channel_mean_standard_deviation(
-    monkeypatch,
+    monkeypatch, sampling_steps,
 ) -> None:
     model = SRLatentDiffusion.__new__(SRLatentDiffusion)
     torch.nn.Module.__init__(model)
@@ -190,27 +191,47 @@ def test_uncertainty_map_returns_twice_channel_mean_standard_deviation(
         lambda population, count: list(range(count)),
     )
 
+    kwargs = {} if sampling_steps is None else {"sampling_steps": sampling_steps}
     result = model.uncertainty_map(
         torch.zeros(2, 4, 1, 1),
         n_variations=4,
-        sampling_steps=3,
         sampler="dpm_solver++",
+        **kwargs,
     )
 
     expected = 2 * torch.tensor([0.0, 1.0, 2.0, 3.0]).std()
     assert result.shape == (2, 1, 3, 3)
     assert torch.allclose(result, torch.full_like(result, expected))
     assert all(call["sampler"] == "dpm_solver++" for call in sampling_calls)
+    assert all(call["sampling_steps"] == sampling_steps for call in sampling_calls)
     with pytest.raises(AssertionError, match="greater than 3"):
         model.uncertainty_map(torch.zeros(1, 4, 1, 1), n_variations=3)
 
 
 @pytest.mark.parametrize("save_iterations", [False, True])
-def test_dpm_forward_uses_config_and_resets_history(monkeypatch, save_iterations):
+@pytest.mark.parametrize(
+    "selection",
+    ["configured_count", "config_sampler", "call_sampler", "call_count", "missing_count"],
+)
+def test_dpm_forward_uses_config_and_resets_history(
+    monkeypatch, save_iterations, selection
+):
     pytest.importorskip("diffusers")
     model, ddim = _stub_inference_model()
     model.config.denoiser_settings.sampler = "dpm_solver++"
-    model.config.denoiser_settings.sampling_steps = 3  # Does not divide T=10.
+    model.config.denoiser_settings.sampling_steps = None
+    kwargs = {}
+    expected_steps = 5 if selection == "configured_count" else 3
+    if selection == "configured_count":
+        model.config.denoiser_settings.sampling_steps = expected_steps
+    elif selection == "call_sampler":
+        model.config.denoiser_settings.sampler = "ddim"
+        kwargs["sampler"] = "dpm_solver++"
+    elif selection == "call_count":
+        model.config.denoiser_settings.sampling_steps = 2
+        kwargs["sampling_steps"] = 3
+    elif selection == "missing_count":
+        del model.config.denoiser_settings.sampling_steps
     calls = []
     model.model = SimpleNamespace(
         num_timesteps=10,
@@ -232,15 +253,15 @@ def test_dpm_forward_uses_config_and_resets_history(monkeypatch, save_iterations
     x = torch.ones(2, 4, 8, 8)
 
     torch.manual_seed(42)
-    first = model(x, save_iterations=save_iterations)
+    first = model(x, save_iterations=save_iterations, **kwargs)
     torch.manual_seed(42)
-    second = model(x, save_iterations=save_iterations)
-    assert len(calls) == 6
+    second = model(x, save_iterations=save_iterations, **kwargs)
+    assert len(calls) == 2 * expected_steps
     assert all(torch.equal(c, x + 10) for _, c in calls)
     assert all(t.shape == (2,) for t, _ in calls)
     assert not ddim.calls
     if save_iterations:
-        assert len(first) == 3
+        assert len(first) == expected_steps
         assert all(torch.equal(a, b) for a, b in zip(first, second))
         final = first[-1]
         postprocess_offset = 1000
@@ -279,6 +300,7 @@ def test_lightning_wrapper_forwards_sampling_arguments():
     wrapper = SRLatentDiffusionLightning.__new__(SRLatentDiffusionLightning)
     torch.nn.Module.__init__(wrapper)
     calls = []
+    uncertainty_counts = []
 
     class Recorder(torch.nn.Module):
         def forward(self, x, **kwargs):
@@ -287,6 +309,7 @@ def test_lightning_wrapper_forwards_sampling_arguments():
 
         def uncertainty_map(self, x, *args, **kwargs):
             calls.append(kwargs)
+            uncertainty_counts.append(args[1])
             return x
 
     wrapper.model = Recorder().eval()
@@ -296,6 +319,47 @@ def test_lightning_wrapper_forwards_sampling_arguments():
     wrapper.uncertainty_map(x, sampler="dpm_solver++")
     assert calls[:2] == [{"sampler": "dpm_solver++", "sampling_steps": 20}] * 2
     assert calls[2] == {"sampler": "dpm_solver++"}
+    assert uncertainty_counts == [None]
+    wrapper.uncertainty_map(x, sampling_steps=5, custom_steps=7, sampler="dpm_solver++")
+    assert uncertainty_counts[-1] == 7
+
+
+@pytest.mark.parametrize("sampler, expected_steps", [("ddim", 100), ("dpm_solver++", 3)])
+def test_bundled_config_uses_sampler_specific_default_steps(
+    monkeypatch, sampler, expected_steps
+):
+    from pathlib import Path
+    from omegaconf import OmegaConf
+
+    model, ddim = _stub_inference_model()
+    model.config = OmegaConf.load(
+        Path(srmodel_module.__file__).parent / "configs" / "config_10m.yaml"
+    )
+    model.model = SimpleNamespace()
+    observed = []
+
+    def prepare(self, X, eta, custom_steps, verbose):
+        observed.append(custom_steps)
+        return ddim, torch.zeros_like(X), np.arange(custom_steps)
+
+    class DPM:
+        def __init__(self, model, steps):
+            observed.append(steps)
+            self.timesteps = list(range(steps))
+
+        def step(self, latent, conditioning, step):
+            return latent
+
+    model._prepare_model = MethodType(prepare, model)
+    monkeypatch.setattr(srmodel_module, "DPMSolverPlusPlusSampler", DPM)
+    monkeypatch.setattr(
+        srmodel_module, "assert_tensor_validity", lambda x: (x, (0, 0, 0, 0))
+    )
+    monkeypatch.setattr(srmodel_module, "create_no_data_mask", lambda x, target_size: None)
+    monkeypatch.setattr(srmodel_module, "apply_no_data_mask", lambda x, mask: x)
+    monkeypatch.setattr(srmodel_module, "revert_padding", lambda x, padding: x)
+    model(torch.ones(1, 4, 8, 8), sampler=sampler, histogram_matching=False)
+    assert observed == [expected_steps]
 
 
 @pytest.mark.parametrize("steps", [0, -1, 3, 10, 11, True, 2.5])

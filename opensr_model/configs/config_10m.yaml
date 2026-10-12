@@ -20,7 +20,7 @@ denoiser_settings:
   sampler: "ddim" # "ddim" or "dpm_solver++" (DPM-Solver++ 2M)
   sampling_eta: 0.95 # DDIM only; 0 disables per-step noise
   sampling_temperature: 1.0 # DDIM only
-  sampling_steps: 100 # Denoiser evaluations; try 20 for DPM-Solver++
+  sampling_steps: null # Automatic: 100 for DDIM, 3 for DPM-Solver++; set an integer to override
 
 # Autoencoder Settings
 first_stage_config:

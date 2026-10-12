@@ -176,8 +176,10 @@ class SRLatentDiffusion(torch.nn.Module):
                 in the range [0, 1] and shape CxWxH, the super resolution of the image
                 is returned. If a batch of images with shape BxCxWxH is given, a batch
                 of super resolved images is returned.
-            sampling_steps (int, optional): Number of steps to run the denoiser. Defaults
-                to 100.
+            sampling_steps (int, optional): Number of denoiser evaluations. Uses
+                denoiser_settings.sampling_steps when configured; otherwise defaults
+                to 3 for DPM-Solver++ and 100 for DDIM. Explicit arguments override
+                the configured count.
             sampling_temperature (float, optional): DDIM noise temperature.
                 Defaults to 1.0. The higher the temperature, the more stochastic
                 the denoiser is (random noise gets multiplied by this).
@@ -199,7 +201,11 @@ class SRLatentDiffusion(torch.nn.Module):
         if sampler not in ("ddim", "dpm_solver++"):
             raise ValueError("sampler must be 'ddim' or 'dpm_solver++'")
         if sampling_steps is None:
-            sampling_steps = self.config.denoiser_settings.sampling_steps
+            sampling_steps = getattr(
+                self.config.denoiser_settings, "sampling_steps", None
+            )
+        if sampling_steps is None:
+            sampling_steps = 3 if sampler == "dpm_solver++" else 100
         dpm_sampler = None
         if sampler == "ddim":
             if sampling_eta is None:
@@ -659,7 +665,7 @@ class SRLatentDiffusion(torch.nn.Module):
             self._apply_checkpoint_inference_config(prepared_settings)
         print("Loaded pretrained weights from: ", weights_file)
 
-    def uncertainty_map(self, x, n_variations=15, sampling_steps=100, *, sampler=None):
+    def uncertainty_map(self, x, n_variations=15, sampling_steps=None, *, sampler=None):
         """
         Estimates uncertainty maps for each sample in the input batch using repeated stochastic forward passes.
 
@@ -670,7 +676,8 @@ class SRLatentDiffusion(torch.nn.Module):
         Args:
             x (torch.Tensor): Input tensor of shape (B, C, H, W), where B is batch size.
             n_variations (int): Number of stochastic forward passes per input sample.
-            sampling_steps (int): Sampling steps passed to the forward method.
+            sampling_steps (int, optional): Sampling steps passed to forward;
+                omitted counts use the same config and sampler defaults as forward.
             sampler (str, optional): Sampler passed to forward; defaults to config.
 
         Returns:
@@ -863,7 +870,7 @@ class SRLatentDiffusionLightning(LightningModule):
 
     @torch.no_grad()
     def uncertainty_map(
-        self, x, n_variations=15, sampling_steps=100, custom_steps=None, *, sampler=None
+        self, x, n_variations=15, sampling_steps=None, custom_steps=None, *, sampler=None
     ):
         if custom_steps is not None:
             sampling_steps = custom_steps
