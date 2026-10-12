@@ -1,5 +1,9 @@
-# Training Codebase Disclaimer
+# Development beyond the paper
 This repository continues development beyond the paper. The [`paper-release`](https://github.com/ESAOpenSR/opensr-model/tree/paper-release) branch preserves the previous `main` snapshot (v1.1.1).
+
+**v1.2.0** adds DPM-Solver++ sampling, two-stage training, and PyTorch spectral
+back-projection. Inference now defaults to **3-step DPM-Solver++ with
+back-projection**. See the [release notes and migration example](docs/changelog.md#v120--2026-10-12).
 
 <img src="https://github.com/ESAOpenSR/opensr-model/blob/main/resources/opensr_logo.png?raw=true" width="250"/>
 

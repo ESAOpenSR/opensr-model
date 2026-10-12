@@ -1,1 +1,2 @@
 include opensr_model/configs/*.yaml
+include docs/changelog.md docs/training.md

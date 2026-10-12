@@ -2,7 +2,10 @@ name: Publish Python Package
 
 on:
   release:
-    types: [created]
+    types: [published]
+
+permissions:
+  contents: read
 
 jobs:
   build-and-publish:
@@ -12,15 +15,18 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.x'
+        python-version: '3.12'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install setuptools wheel twine build
-    - name: Build and publish
+    - name: Build and validate distributions
+      run: |
+        python -m build
+        python -m twine check --strict dist/*
+    - name: Publish to PyPI
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: |
-        python -m build
-        twine upload dist/*
+        python -m twine upload --non-interactive dist/*

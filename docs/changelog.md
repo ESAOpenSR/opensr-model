@@ -1,11 +1,79 @@
-# Inference changelog since the original release
+# Changelog
+
+## v1.2.0 — 2026-10-12
+
+This release adds fast diffusion sampling, a complete two-stage training workflow,
+and device-native spectral correction for four-band Sentinel-2 super-resolution.
+
+### Sampling
+
+- Add DPM-Solver++ 2M through Diffusers, using the loaded checkpoint's noise schedule.
+- Make DPM-Solver++ with **3 sampling steps** the inference default. DDIM remains
+  available, and sampling steps can be selected per call or in the model config.
+- Support the new sampler in Lightning prediction, uncertainty sampling, and
+  decoded intermediate outputs. Diffusers is now installed with the base package;
+  the `dpm` extra remains a compatibility alias.
+
+### Training
+
+- Add independent PyTorch Lightning stages for the autoencoder and conditional
+  diffusion model, with packaged YAML recipes and the `opensr-train`,
+  `opensr-train-autoencoder`, and `opensr-train-diffusion` commands.
+- Add paired TACO data loading, aligned augmentation, nodata masking, deterministic
+  dataset splits, and support for SEN2NAIPv2 cross-sensor RGB-NIR pairs.
+- Add reconstruction/perceptual/adversarial autoencoder losses, P2-weighted
+  diffusion training with optional detail losses, EMA validation, and RGB/NIR
+  metrics and image logging through TensorBoard or optional W&B.
+- Save separate Lightning resume checkpoints and native inference exports, with
+  inference metadata validation and support for pretrained initialization.
+
+### Spectral matching and fixes
+
+- Make PyTorch iterative **back-projection** the default spectral correction,
+  matching the downsampled SR image to the observed LR input on the image's device.
+- Keep per-band histogram matching and uncorrected output available through
+  `spectral_correction="histogram"` and `spectral_correction="none"`.
+- Add configurable blur, iteration limit, tolerance, relaxation, masks, and
+  standalone convergence diagnostics. Sampler and correction are independent.
+- Fix rectangular nodata-mask dimensions and expand inference, diffusion,
+  spectral-correction, and training regression coverage.
+
+### Upgrade and compatibility
+
+Python **3.12 or newer** is required. Install the release with:
+
+```bash
+pip install --upgrade 'opensr-model==1.2.0'
+# Include the optional training dependencies:
+pip install --upgrade 'opensr-model[train]==1.2.0'
+```
+
+**Default inference output changes in this release.** To explicitly select the
+previous sampler and correction:
+
+```python
+sr = model(image, sampler="ddim", sampling_steps=100, spectral_correction="histogram")
+```
+
+Existing explicit config values, checkpoint inference metadata, and call arguments
+still take precedence where supported. Apply runtime overrides after loading a
+checkpoint. The model architecture, RGB-NIR band order, 4× scale, and released
+checkpoint remain unchanged; this package release does not include new weights.
+Three-step sampling prioritizes speed; quality varies by scene. Back-projection
+enforces the selected observation model and does not clamp the corrected output,
+so values can fall outside `[0, 1]`.
+
+See the [training guide](training.md), the detailed inference notes below, and
+the [full comparison with v1.1.1](https://github.com/ESAOpenSR/opensr-model/compare/v1.1.1...v1.2.0).
+
+## Inference changelog since the original release
 
 Updated 12 October 2026. The baseline for this document is the **v1.0.0 release
 (`034d10f`, 18 June 2025)** and the released
 `opensr-ldsrs2_v1_0_0.ckpt` checkpoint. It records the subsequent inference,
-packaging, deployment and evaluation changes, including the current unreleased
-PyTorch spectral-correction integration and inference default changes. The package version is still 1.1.1;
-an entry here does not imply a new published package or checkpoint.
+packaging, deployment and evaluation changes through v1.2.0, including the
+PyTorch spectral-correction integration and inference default changes.
+Package releases do not imply new published model checkpoints.
 
 Training instructions are in [training.md](training.md).
 
@@ -46,7 +114,7 @@ of bitwise reproduction of every older implementation or of the published paper.
 | v1.1.1, 8 May 2026 (`10f4c01`) | Packaging/checkpoint safeguards, aligned examples and sampling APIs, expanded deployment support |
 | Post-v1.1.1, August 2026 | Checkpoint inference metadata handling, schedule/config alignment, inference/metric regression coverage and ablation utilities; training changes documented separately |
 | 12 October 2026 (`5b422ce`, `e32ff75`) | Optional DPM-Solver++ 2M integration and its automatic 3-step setting |
-| Current unreleased work, 12 October 2026 | Selectable PyTorch back-projection; rectangular nodata-mask fix; DPM-Solver++ (3 steps) and back-projection become the inference defaults; Diffusers becomes a base dependency |
+| v1.2.0, 12 October 2026 | Two-stage training; selectable PyTorch back-projection; rectangular nodata-mask fix; DPM-Solver++ (3 steps) and back-projection become the inference defaults; Diffusers becomes a base dependency |
 
 ## DPM-Solver++ 2M
 
