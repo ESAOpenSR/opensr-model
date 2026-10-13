@@ -5,13 +5,13 @@ import torch
 from omegaconf import OmegaConf
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-from opensr_model.training.callbacks import NativeCheckpointCallback
+from opensr_model.training.runtime.callbacks import NativeCheckpointCallback
 from opensr_model.training.cli import (
     _build_callbacks,
     _build_module,
     _validate_resume_checkpoint,
 )
-from opensr_model.training.config import load_model_config, load_training_config
+from opensr_model.training.runtime.config import load_model_config, load_training_config
 
 
 def test_diffusion_module_resume_does_not_reload_initializer(
@@ -71,7 +71,7 @@ def test_diffusion_native_export_defaults_to_ema_and_allows_raw(
     tmp_path,
 ) -> None:
     config = load_training_config(
-        "opensr_model/configs/train_diffusion.yaml",
+        "opensr_model/configs/training_configs/train_diffusion.yaml",
         overrides=[
             "trainer.enable_checkpointing=false",
             "logging.images.enabled=false",
@@ -116,7 +116,7 @@ def test_resume_validation_rejects_malformed_optimizer_state(tmp_path) -> None:
 
 def test_disabling_lightning_checkpointing_omits_model_checkpoint(tmp_path) -> None:
     config = load_training_config(
-        "opensr_model/configs/train_autoencoder.yaml",
+        "opensr_model/configs/training_configs/train_autoencoder.yaml",
         overrides=[
             "trainer.enable_checkpointing=false",
             "checkpoint.native.enabled=false",
@@ -134,7 +134,7 @@ def test_diffusion_checkpointing_selects_ema_quality_and_rolls_every_10k_steps(
     tmp_path,
 ) -> None:
     config = load_training_config(
-        "opensr_model/configs/train_diffusion.yaml",
+        "opensr_model/configs/training_configs/train_diffusion.yaml",
         overrides=["logging.images.enabled=false"],
         expected_stage="diffusion",
     )

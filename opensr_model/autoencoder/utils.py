@@ -350,6 +350,8 @@ class AttnBlock(nn.Module):
     def __init__(self, in_channels: int):
         super().__init__()
         self.in_channels = in_channels
+        # Runtime-only option: no new parameters or checkpoint keys.
+        self.query_chunk_size = None
 
         self.norm = Normalize(in_channels)
         self.q = torch.nn.Conv2d(
@@ -386,6 +388,15 @@ class AttnBlock(nn.Module):
         q = q.reshape(b, c, h * w)
         q = q.permute(0, 2, 1)  # reshape q to b,hw,c and transpose to b,c,hw
         k = k.reshape(b, c, h * w)  # reshape k to b,c,hw
+        if self.query_chunk_size is not None:
+            values = v.reshape(b, c, h * w).transpose(1, 2)
+            chunks = []
+            for start in range(0, h * w, self.query_chunk_size):
+                weights = torch.bmm(q[:, start:start + self.query_chunk_size], k)
+                weights = torch.softmax(weights * (c ** -0.5), dim=-1)
+                chunks.append(torch.bmm(weights, values))
+            attended = torch.cat(chunks, dim=1).transpose(1, 2).reshape(b, c, h, w)
+            return x + self.proj_out(attended)
         w_ = torch.bmm(
             q, k
         )  # compute attention weights w[b,i,j] = sum_c q[b,i,c]k[b,c,j]

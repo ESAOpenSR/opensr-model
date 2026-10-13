@@ -114,7 +114,7 @@ class AutoencoderTrainingModule(pl.LightningModule):
             }
         )
         if pretrained_checkpoint:
-            from .checkpoints import load_autoencoder_weights
+            from ..runtime.checkpoints import load_autoencoder_weights
 
             load_autoencoder_weights(
                 self.autoencoder, pretrained_checkpoint, strict=True

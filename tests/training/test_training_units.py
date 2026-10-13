@@ -3,14 +3,14 @@ from __future__ import annotations
 import pytest
 import torch
 
-from opensr_model.training.losses import (
+from opensr_model.training.modules.losses import (
     discriminator_hinge_loss,
     discriminator_vanilla_loss,
     generator_adversarial_loss,
     reconstruction_l1,
     reconstruction_l2,
 )
-from opensr_model.training.optim import build_adamw, build_scheduler
+from opensr_model.training.modules.optim import build_adamw, build_scheduler
 
 
 def test_masked_reconstruction_losses_ignore_invalid_pixels() -> None:

@@ -6,18 +6,18 @@ import pytorch_lightning as pl
 import torch
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-from opensr_model.training.autoencoder_module import AutoencoderTrainingModule
-from opensr_model.training.callbacks import (
+from opensr_model.training.modules.autoencoder import AutoencoderTrainingModule
+from opensr_model.training.runtime.callbacks import (
     NativeCheckpointCallback,
     ReconstructionImageLogger,
 )
-from opensr_model.training.checkpoints import (
+from opensr_model.training.runtime.checkpoints import (
     load_autoencoder_weights,
     load_checkpoint_payload,
     load_diffusion_weights,
 )
-from opensr_model.training.data import OpenSRDataModule
-from opensr_model.training.diffusion_module import DiffusionTrainingModule
+from opensr_model.training.data.taco import OpenSRDataModule
+from opensr_model.training.modules.diffusion import DiffusionTrainingModule
 
 
 def _data(fake_taco_factory) -> OpenSRDataModule:

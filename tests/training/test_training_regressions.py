@@ -7,17 +7,17 @@ import pytest
 import torch
 import torch.nn.functional as F
 
-import opensr_model.training.diffusion_module as diffusion_module_helpers
+import opensr_model.training.modules.diffusion as diffusion_module_helpers
 from opensr_model.diffusion.utils import LitEma
-from opensr_model.training.autoencoder_module import AutoencoderTrainingModule
-from opensr_model.training.callbacks import ReconstructionImageLogger
+from opensr_model.training.modules.autoencoder import AutoencoderTrainingModule
+from opensr_model.training.runtime.callbacks import ReconstructionImageLogger
 from opensr_model.training.cli import _prepare_trainer_kwargs
-from opensr_model.training.diffusion_module import DiffusionTrainingModule
-from opensr_model.training.losses import (
+from opensr_model.training.modules.diffusion import DiffusionTrainingModule
+from opensr_model.training.modules.losses import (
     PatchDiscriminator,
     adaptive_generator_weight,
 )
-from opensr_model.training.metrics import (
+from opensr_model.training.modules.metrics import (
     batch_clipped_fraction,
     compute_rgb_nir_reconstruction_metrics,
     spectral_angle,
@@ -379,7 +379,7 @@ def test_legacy_autoencoder_random_subset_is_shared_by_all_image_losses(
         return [3, 1, 0]
 
     monkeypatch.setattr(
-        "opensr_model.training.autoencoder_module.random.sample",
+        "opensr_model.training.modules.autoencoder.random.sample",
         sample,
     )
     image = torch.stack(

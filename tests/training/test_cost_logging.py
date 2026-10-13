@@ -4,10 +4,10 @@ from types import SimpleNamespace
 
 import pytest
 
-import opensr_model.training.callbacks as callback_helpers
-from opensr_model.training.callbacks import NvidiaPowerCostLogger
+import opensr_model.training.runtime.callbacks as callback_helpers
+from opensr_model.training.runtime.callbacks import NvidiaPowerCostLogger
 from opensr_model.training.cli import _build_callbacks
-from opensr_model.training.config import load_training_config
+from opensr_model.training.runtime.config import load_training_config
 
 
 class WandbTestLogger:
@@ -60,7 +60,7 @@ def test_cost_logger_restores_totals_without_charging_process_downtime() -> None
 
 def test_wandb_configuration_adds_cost_callback(tmp_path) -> None:
     config = load_training_config(
-        "opensr_model/configs/train_autoencoder.yaml",
+        "opensr_model/configs/training_configs/train_autoencoder.yaml",
         overrides=[
             "logging.type=wandb",
             "logging.cost.overhead_watts=225",

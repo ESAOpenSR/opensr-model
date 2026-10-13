@@ -204,7 +204,8 @@ Use the notebooks and `demo.py` for quick starts; for full‑tile processing and
 ## 5.1 🎓 Training
 The autoencoder and conditional diffusion model can be trained independently with PyTorch Lightning using paired TACO data. Runs save checkpoints for both training resume and inference.
 
-See the [training guide](docs/training.md) and the packaged `train_autoencoder.yaml` / `train_diffusion.yaml` configurations.
+See the [training guide](docs/training.md) and the packaged configurations in
+[`opensr_model/configs/training_configs`](opensr_model/configs/training_configs).
 
 ## 5.2 📚 Citation
 If you use this model in your work, please cite  

@@ -1,0 +1,2882 @@
+[
+  {
+    "id": "2022_STEI_5__3_1",
+    "lr": "s2_l2a_10m/2022_STEI_5__3_1.tif",
+    "hr": "neon_2.5m_linearized/2022_STEI_5__3_1.tif",
+    "site": "STEI",
+    "landcover": "Water",
+    "lr_sha256": "379cc0e455fd045c2646f1c2de9bfe1d89f11243bf240161addc6e48ec046565",
+    "hr_sha256": "fa2004d3f57b9341017a8efedbe69fc5db7f5363f8107af76e9e67748bfb2c41",
+    "bounds_wgs84": [
+      -89.5911691197727,
+      45.482178178008155,
+      -89.55738894579568,
+      45.50593592904934
+    ]
+  },
+  {
+    "id": "2023_SCBI_6__1_1",
+    "lr": "s2_l2a_10m/2023_SCBI_6__1_1.tif",
+    "hr": "neon_2.5m_linearized/2023_SCBI_6__1_1.tif",
+    "site": "SCBI",
+    "landcover": "Forest",
+    "lr_sha256": "5deb9fd3e675254fe0c7b7a97988e45cdc23dbf375af30dfb8e441d9b354f719",
+    "hr_sha256": "1ea955da5243c23f4c6ad13fc957c57ab3fb225099930ba438fb93780b98e6ce",
+    "bounds_wgs84": [
+      -78.1920074034817,
+      38.88515711088129,
+      -78.16160901548021,
+      38.90891201241831
+    ]
+  },
+  {
+    "id": "2021_JORN_4__6_4",
+    "lr": "s2_l2a_10m/2021_JORN_4__6_4.tif",
+    "hr": "neon_2.5m_linearized/2021_JORN_4__6_4.tif",
+    "site": "JORN",
+    "landcover": "Rural",
+    "lr_sha256": "e05552d43b677480f059c73f4b6309b8d7e0483ea97be98395614ac067439085",
+    "hr_sha256": "56d57bfb47388a73ee949c5d8516948593ce3fb9b7cf5f04a00b96f18b34d7af",
+    "bounds_wgs84": [
+      -106.87336479524278,
+      32.58744288573237,
+      -106.84562060962146,
+      32.61092805400721
+    ]
+  },
+  {
+    "id": "2023_NOGP_6__3_3",
+    "lr": "s2_l2a_10m/2023_NOGP_6__3_3.tif",
+    "hr": "neon_2.5m_linearized/2023_NOGP_6__3_3.tif",
+    "site": "NOGP",
+    "landcover": "Rural",
+    "lr_sha256": "863ffcc456d034e0035fb384a1a7a09d43cbf87536a6daf69958d86261ebafeb",
+    "hr_sha256": "b80c77c215cea0860f70ea34bcdec6a7bb3c8a7aa35b3c54ef38f30ca058cbf6",
+    "bounds_wgs84": [
+      -100.89054155680321,
+      46.75578544459306,
+      -100.8562331774224,
+      46.779359600691436
+    ]
+  },
+  {
+    "id": "2024_KONZ_9__6_2",
+    "lr": "s2_l2a_10m/2024_KONZ_9__6_2.tif",
+    "hr": "neon_2.5m_linearized/2024_KONZ_9__6_2.tif",
+    "site": "KONZ",
+    "landcover": "Rural",
+    "lr_sha256": "4ff48f95a8cb758549ff4872f6b3088ec5156f49026adac0bc5741ccef8138d8",
+    "hr_sha256": "fc6019e72da4ee98b8b9557c2c3e1757263a1667a77a8d2c83a9ee05c264148e",
+    "bounds_wgs84": [
+      -96.60471651675479,
+      39.103485098735334,
+      -96.57434491467835,
+      39.12714535262931
+    ]
+  },
+  {
+    "id": "2022_HARV_7__6_1",
+    "lr": "s2_l2a_10m/2022_HARV_7__6_1.tif",
+    "hr": "neon_2.5m_linearized/2022_HARV_7__6_1.tif",
+    "site": "HARV",
+    "landcover": "Water",
+    "lr_sha256": "1ed5dfba85292f261fba91508ee8b595a6be4d4c2ffc0c057b2e41473eaa7ad6",
+    "hr_sha256": "33156acc111095862fda4d31e4773a199e7398632cf2159cb225b18272150b0b",
+    "bounds_wgs84": [
+      -72.2700020977879,
+      42.43797587991085,
+      -72.23789971282626,
+      42.46175012439153
+    ]
+  },
+  {
+    "id": "2023_ONAQ_5__5_2",
+    "lr": "s2_l2a_10m/2023_ONAQ_5__5_2.tif",
+    "hr": "neon_2.5m_linearized/2023_ONAQ_5__5_2.tif",
+    "site": "ONAQ",
+    "landcover": "Rural",
+    "lr_sha256": "0cd20050ea773fe8a6de39b2b09baa096ac29298c1a1c0bac8980d04c2b56e9b",
+    "hr_sha256": "8c20b5fb4a235e095d317a9ca1e3001a7478d30f58e0cfb689788755288c7490",
+    "bounds_wgs84": [
+      -112.52524797760181,
+      40.13324040634315,
+      -112.49469345669719,
+      40.15668873875695
+    ]
+  },
+  {
+    "id": "2024_HEAL_6__3_2",
+    "lr": "s2_l2a_10m/2024_HEAL_6__3_2.tif",
+    "hr": "neon_2.5m_linearized/2024_HEAL_6__3_2.tif",
+    "site": "HEAL",
+    "landcover": "Unknown",
+    "lr_sha256": "b385b9812ead9b8a39df370d3c951543b7c62daff6e1a65f6bc175b8723d190d",
+    "hr_sha256": "10b750478777bc4640257b06a84dfa68f5347bb4031b02c1a3012093aeaf5e7c",
+    "bounds_wgs84": [
+      -149.23666558383127,
+      63.85499770996219,
+      -149.18281012152394,
+      63.87874980378644
+    ]
+  },
+  {
+    "id": "2023_DSNY_7__1_1",
+    "lr": "s2_l2a_10m/2023_DSNY_7__1_1.tif",
+    "hr": "neon_2.5m_linearized/2023_DSNY_7__1_1.tif",
+    "site": "DSNY",
+    "landcover": "Developed",
+    "lr_sha256": "18ae1a80dbd5365fd4a4463c4ec9a8e00eaf730f2cd3c3047c57d567cbfcde7a",
+    "hr_sha256": "f0271e72c2288c762f34eedd128d3122f0aca0ea2dcde0d76ea2dd99dabb6307",
+    "bounds_wgs84": [
+      -81.47271555103194,
+      28.113809910013394,
+      -81.44655081654311,
+      28.137006012942145
+    ]
+  },
+  {
+    "id": "2022_GRSM_7__4_2",
+    "lr": "s2_l2a_10m/2022_GRSM_7__4_2.tif",
+    "hr": "neon_2.5m_linearized/2022_GRSM_7__4_2.tif",
+    "site": "GRSM",
+    "landcover": "Forest",
+    "lr_sha256": "3deb1af044f9c19327f277a45f88356e5e7577eaecf9560c87f61705528496a4",
+    "hr_sha256": "2279f520012858e1aa72f04564de7f49d0e1b4609cc6c329935006190920ec77",
+    "bounds_wgs84": [
+      -83.60564167213462,
+      35.6404885125199,
+      -83.57664490754134,
+      35.66415522560837
+    ]
+  },
+  {
+    "id": "2024_UKFS_8__1_3",
+    "lr": "s2_l2a_10m/2024_UKFS_8__1_3.tif",
+    "hr": "neon_2.5m_linearized/2024_UKFS_8__1_3.tif",
+    "site": "UKFS",
+    "landcover": "Forest",
+    "lr_sha256": "51cd9880939fc5215e94c156b947f1c2031ea76a8a6ff2053c4db8bc1b8e5273",
+    "hr_sha256": "5009f193e03e87a2187d038591b6eabfc3886d227fb9867cf9623d2205d3a9ad",
+    "bounds_wgs84": [
+      -95.1770581816233,
+      39.06154031616888,
+      -95.14678101044011,
+      39.08514116352836
+    ]
+  },
+  {
+    "id": "2024_SRER_6__4_5",
+    "lr": "s2_l2a_10m/2024_SRER_6__4_5.tif",
+    "hr": "neon_2.5m_linearized/2024_SRER_6__4_5.tif",
+    "site": "SRER",
+    "landcover": "Rural",
+    "lr_sha256": "982b4cf1cc3a358c22d6b8905c6e55fc377e9868745dc0625533092967540135",
+    "hr_sha256": "d32f98f9826e01e2d4aad83d47bc246d416d611a828e1335308130360854c154",
+    "bounds_wgs84": [
+      -110.85417341704597,
+      31.826339351947937,
+      -110.82707855762808,
+      31.84946958529468
+    ]
+  },
+  {
+    "id": "2024_JERC_8__4_7",
+    "lr": "s2_l2a_10m/2024_JERC_8__4_7.tif",
+    "hr": "neon_2.5m_linearized/2024_JERC_8__4_7.tif",
+    "site": "JERC",
+    "landcover": "Forest",
+    "lr_sha256": "abcd06db2635e30308b9aaeafe4035def4deb3abc340ae5f8ba19c61d661666b",
+    "hr_sha256": "bfaeb2502ab178e0f67731206c6d766ab9d2a96f13da156ea1f8a22d37617965",
+    "bounds_wgs84": [
+      -84.39694819113807,
+      31.231134211830238,
+      -84.36945548759462,
+      31.254755604611123
+    ]
+  },
+  {
+    "id": "2021_TALL_6__1_3",
+    "lr": "s2_l2a_10m/2021_TALL_6__1_3.tif",
+    "hr": "neon_2.5m_linearized/2021_TALL_6__1_3.tif",
+    "site": "TALL",
+    "landcover": "Forest",
+    "lr_sha256": "cbf0b04b329e8e0d7fa2c8ce4ca2fbe98152dea1e626269af993fe5ef4821b09",
+    "hr_sha256": "fd48be8af7304dcf3863e3a0f92f385ec09786c14b54d0b64fa1e89ced4896e3",
+    "bounds_wgs84": [
+      -87.39963961475871,
+      32.95978905788941,
+      -87.37214431823271,
+      32.982965446907954
+    ]
+  },
+  {
+    "id": "2022_SRER_5__4_5",
+    "lr": "s2_l2a_10m/2022_SRER_5__4_5.tif",
+    "hr": "neon_2.5m_linearized/2022_SRER_5__4_5.tif",
+    "site": "SRER",
+    "landcover": "Rural",
+    "lr_sha256": "960317de547f87ffa0b7ddd0eb3f4620e4cdf4c456ce433f0ed9ebb862b39e0e",
+    "hr_sha256": "41c8bd9ba85a95348a28551c1f4aaf9ae42937ddd29830742d22ca58334bbbfa",
+    "bounds_wgs84": [
+      -110.85417341704597,
+      31.826339351947937,
+      -110.82707855762808,
+      31.84946958529468
+    ]
+  },
+  {
+    "id": "2018_MLBS_3__5_2",
+    "lr": "s2_l2a_10m/2018_MLBS_3__5_2.tif",
+    "hr": "neon_2.5m_linearized/2018_MLBS_3__5_2.tif",
+    "site": "MLBS",
+    "landcover": "Forest",
+    "lr_sha256": "78ed33d0f0bff9c7bab5730278236aa6c81cfc4f3a26baef91cde7031277fee4",
+    "hr_sha256": "efcdfceca64e3a9fd3e552157c58a085f10100fd8198bfd9947243612f5f8058",
+    "bounds_wgs84": [
+      -80.55846589410531,
+      37.32148088058336,
+      -80.52942899730404,
+      37.34466717339769
+    ]
+  },
+  {
+    "id": "2023_NOGP_6__3_2",
+    "lr": "s2_l2a_10m/2023_NOGP_6__3_2.tif",
+    "hr": "neon_2.5m_linearized/2023_NOGP_6__3_2.tif",
+    "site": "NOGP",
+    "landcover": "Rural",
+    "lr_sha256": "d6525a6245b28cf4ba44144bdb17bdf094c99a76df735871fe78dc12e27328b2",
+    "hr_sha256": "4a553881b1ebb03ce94ee2b0f14e5c97ab2ffbdd2f784c0fbd9ccf957d52e49b",
+    "bounds_wgs84": [
+      -100.92405751276478,
+      46.75522714832626,
+      -100.88973586137415,
+      46.7788106678721
+    ]
+  },
+  {
+    "id": "2022_CLBJ_6__1_2",
+    "lr": "s2_l2a_10m/2022_CLBJ_6__1_2.tif",
+    "hr": "neon_2.5m_linearized/2022_CLBJ_6__1_2.tif",
+    "site": "CLBJ",
+    "landcover": "Rural",
+    "lr_sha256": "0b15c88993436d4d92f449fa42804bdb96037d99066ab7abe91034ab894cd32b",
+    "hr_sha256": "65e44546332657c2a78ef05bd37ff5bfc0892ccd805f8f930b52e44875ce56ce",
+    "bounds_wgs84": [
+      -97.62274014857377,
+      33.385442819462966,
+      -97.59485206415032,
+      33.4088352655277
+    ]
+  },
+  {
+    "id": "2022_STEI_5__4_1",
+    "lr": "s2_l2a_10m/2022_STEI_5__4_1.tif",
+    "hr": "neon_2.5m_linearized/2022_STEI_5__4_1.tif",
+    "site": "STEI",
+    "landcover": "Water",
+    "lr_sha256": "fe8f304ff7947254162b4ea94268ae0c1c52629e8ef0e9e8ddd211ad94a27386",
+    "hr_sha256": "856d8c9ed27da5249f378c9054c7eb2fc2cc1c098ae135c9c13fb089f4e60547",
+    "bounds_wgs84": [
+      -89.59011297418803,
+      45.45915872171981,
+      -89.55634736868417,
+      45.48291599587965
+    ]
+  },
+  {
+    "id": "2024_OAES_8__5_1",
+    "lr": "s2_l2a_10m/2024_OAES_8__5_1.tif",
+    "hr": "neon_2.5m_linearized/2024_OAES_8__5_1.tif",
+    "site": "OAES",
+    "landcover": "Rural",
+    "lr_sha256": "9e8892303e70ea11ab9a392bfa089f4242b1f0df00ec127f6aa8b73de7c1a9a7",
+    "hr_sha256": "b812916f6470435f9d9946908e36684d27ce127e0276a924bdaf4ed9fc775cf1",
+    "bounds_wgs84": [
+      -99.15889348448103,
+      35.311683136720745,
+      -99.13068692494835,
+      35.33480020584264
+    ]
+  },
+  {
+    "id": "2022_PRIN_5__1_2",
+    "lr": "s2_l2a_10m/2022_PRIN_5__1_2.tif",
+    "hr": "neon_2.5m_linearized/2022_PRIN_5__1_2.tif",
+    "site": "PRIN",
+    "landcover": "Rural",
+    "lr_sha256": "4711e2a2527b5b25c6f30d1569ca69e5d8466f0c11b4b0ce136e11f3bee584e5",
+    "hr_sha256": "ca6f8b3e8ded007c33400e0971534279df19bc313ee88c35f73721a81639697f",
+    "bounds_wgs84": [
+      -97.83763434020095,
+      33.37848998827423,
+      -97.80980304070498,
+      33.40183669452886
+    ]
+  },
+  {
+    "id": "2024_KONZ_9__5_2",
+    "lr": "s2_l2a_10m/2024_KONZ_9__5_2.tif",
+    "hr": "neon_2.5m_linearized/2024_KONZ_9__5_2.tif",
+    "site": "KONZ",
+    "landcover": "Rural",
+    "lr_sha256": "2a1779d7b665d0642d2d58503e62629c6b7d50ea6d7defe70dfc34ce56525ed4",
+    "hr_sha256": "c3345c63c1fe1b4ffb586974f686d99ddfa8071342fab096231ff6f356f8de53",
+    "bounds_wgs84": [
+      -96.6039356031273,
+      39.126533003386605,
+      -96.5735534731886,
+      39.15019365255775
+    ]
+  },
+  {
+    "id": "2023_DELA_7__2_3",
+    "lr": "s2_l2a_10m/2023_DELA_7__2_3.tif",
+    "hr": "neon_2.5m_linearized/2023_DELA_7__2_3.tif",
+    "site": "DELA",
+    "landcover": "Water",
+    "lr_sha256": "e633e4e6f1e0e63e9dd2e1535d6a502cc4e6f1b855f314576136dddc620a411b",
+    "hr_sha256": "511050f763f7dd1c90e1ed128e401d6a50115255ff62d7c734326b7376943628",
+    "bounds_wgs84": [
+      -87.83436165053087,
+      32.54649601673731,
+      -87.80688504517741,
+      32.56976543440052
+    ]
+  },
+  {
+    "id": "2022_SERC_6__2_1",
+    "lr": "s2_l2a_10m/2022_SERC_6__2_1.tif",
+    "hr": "neon_2.5m_linearized/2022_SERC_6__2_1.tif",
+    "site": "SERC",
+    "landcover": "Forest",
+    "lr_sha256": "548defae6af58b792aececb148e055185e899c3ed081e9cd965d0640ec8f15b9",
+    "hr_sha256": "210e057b232a27cab5acc1db775028c818c045c5f009dd4e51aea9b80a16e78f",
+    "bounds_wgs84": [
+      -76.6077765664523,
+      38.87686634469596,
+      -76.57775512203449,
+      38.90032949209487
+    ]
+  },
+  {
+    "id": "2024_BART_7__4_2",
+    "lr": "s2_l2a_10m/2024_BART_7__4_2.tif",
+    "hr": "neon_2.5m_linearized/2024_BART_7__4_2.tif",
+    "site": "BART",
+    "landcover": "Forest",
+    "lr_sha256": "75fc5cbc79511164f33f2b5af4e5afb86195674a6c7393949127229b6b2a7d43",
+    "hr_sha256": "227eaf51ac2fb352493bf6884837ab97b90df75fe4a5aca4ba2f35feb69641ab",
+    "bounds_wgs84": [
+      -71.2814750611763,
+      43.989003601496165,
+      -71.24869242383757,
+      44.012667357888816
+    ]
+  },
+  {
+    "id": "2024_UKFS_8__2_3",
+    "lr": "s2_l2a_10m/2024_UKFS_8__2_3.tif",
+    "hr": "neon_2.5m_linearized/2024_UKFS_8__2_3.tif",
+    "site": "UKFS",
+    "landcover": "Rural",
+    "lr_sha256": "ae4ae2744f3120c4d90810ec8e8f04e8cab80161efc84c5262c3a62b36b7faa1",
+    "hr_sha256": "4a8acfb85e118deb2ad57e6ea26c714c047dc6f7e78ef1602651b6d2a654b175",
+    "bounds_wgs84": [
+      -95.17634968373908,
+      39.038488115443634,
+      -95.14608292090047,
+      39.06208861688172
+    ]
+  },
+  {
+    "id": "2021_ABBY_4__1_4",
+    "lr": "s2_l2a_10m/2021_ABBY_4__1_4.tif",
+    "hr": "neon_2.5m_linearized/2021_ABBY_4__1_4.tif",
+    "site": "ABBY",
+    "landcover": "Forest",
+    "lr_sha256": "ccf436d8e49cdb273bafe501595e53e284f153d96a35e7664e11e8114a48e52f",
+    "hr_sha256": "e41d909d617241f8a87213c56ebf3d0d2177d1c656f7f7febcd25ecc5795671a",
+    "bounds_wgs84": [
+      -122.28977903397086,
+      45.77124261216359,
+      -122.2565497256114,
+      45.79449200135392
+    ]
+  },
+  {
+    "id": "2022_HARV_7__1_1",
+    "lr": "s2_l2a_10m/2022_HARV_7__1_1.tif",
+    "hr": "neon_2.5m_linearized/2022_HARV_7__1_1.tif",
+    "site": "HARV",
+    "landcover": "Forest",
+    "lr_sha256": "a8c0406cf5871fdce1fa8f8c599acef542ce16517ace07e66028c1b576a781b1",
+    "hr_sha256": "a5d00e53844fd39a47cc5d70c59e8f43e4cdc6fe150a323215d013380882e5ef",
+    "bounds_wgs84": [
+      -72.26498538562788,
+      42.553116893220675,
+      -72.23282009257773,
+      42.57689356985144
+    ]
+  },
+  {
+    "id": "2024_TALL_8__4_3",
+    "lr": "s2_l2a_10m/2024_TALL_8__4_3.tif",
+    "hr": "neon_2.5m_linearized/2024_TALL_8__4_3.tif",
+    "site": "TALL",
+    "landcover": "Forest",
+    "lr_sha256": "67dafcd431e63c0c4caf84f41d53616689c44d272410f67e874a534fe71655fb",
+    "hr_sha256": "3a830dcc64c83171bf3321d1a7c3d22931d8068074ca4784cd34b23dc25867e3",
+    "bounds_wgs84": [
+      -87.39936692703037,
+      32.8991729079312,
+      -87.37189061416038,
+      32.92234932710925
+    ]
+  },
+  {
+    "id": "2024_CHEQ_8__2_1",
+    "lr": "s2_l2a_10m/2024_CHEQ_8__2_1.tif",
+    "hr": "neon_2.5m_linearized/2024_CHEQ_8__2_1.tif",
+    "site": "CHEQ",
+    "landcover": "Forest",
+    "lr_sha256": "90b5999836beb34316247ad75beb0ac46b93ecbf2f047572c0336325cbc0b832",
+    "hr_sha256": "184d464d89e4888d823cf470b5fad71f428ecd66fb224ad91ef9ce09ace9d462",
+    "bounds_wgs84": [
+      -90.11079156121109,
+      45.794243304364606,
+      -90.07669003675524,
+      45.81809291390113
+    ]
+  },
+  {
+    "id": "2024_KONZ_9__6_4",
+    "lr": "s2_l2a_10m/2024_KONZ_9__6_4.tif",
+    "hr": "neon_2.5m_linearized/2024_KONZ_9__6_4.tif",
+    "site": "KONZ",
+    "landcover": "Rural",
+    "lr_sha256": "6c2daae7ef6ad8ae4ec16c8291cdc2839b1ac27d3d9470f492a8e49a966d1a0e",
+    "hr_sha256": "d52bf0e5ae82cd85a3ad4f9e05bec31c89faa67edb551f7b31d3ccefb091a984",
+    "bounds_wgs84": [
+      -96.54555528772862,
+      39.10223890929012,
+      -96.51516626893414,
+      39.12591315094927
+    ]
+  },
+  {
+    "id": "2024_DELA_8__3_2",
+    "lr": "s2_l2a_10m/2024_DELA_8__3_2.tif",
+    "hr": "neon_2.5m_linearized/2024_DELA_8__3_2.tif",
+    "site": "DELA",
+    "landcover": "Water",
+    "lr_sha256": "8f1e434a2b1641777197f5b27899ce39e9c3c9713189207fe72a003526c33144",
+    "hr_sha256": "ac7451725dcf0cc0b0dc8eb2028bff08218f9af257100f58625e366008ffdecb",
+    "bounds_wgs84": [
+      -87.85063500283017,
+      32.53249527210737,
+      -87.82315868940626,
+      32.555768106518094
+    ]
+  },
+  {
+    "id": "2021_OSBS_6__3_3",
+    "lr": "s2_l2a_10m/2021_OSBS_6__3_3.tif",
+    "hr": "neon_2.5m_linearized/2021_OSBS_6__3_3.tif",
+    "site": "OSBS",
+    "landcover": "Forest",
+    "lr_sha256": "33cda53fd469435564a84dee39d7ea67bc9469fc678da1246938aaeeef4216d2",
+    "hr_sha256": "d01023303f04f4fee1ab5bfa3f5792d1afa8cd58a016df1c92bb009a8e3924ed",
+    "bounds_wgs84": [
+      -82.01616687615633,
+      29.680007430544887,
+      -81.98948007947561,
+      29.703308253586272
+    ]
+  },
+  {
+    "id": "2024_DELA_8__3_3",
+    "lr": "s2_l2a_10m/2024_DELA_8__3_3.tif",
+    "hr": "neon_2.5m_linearized/2024_DELA_8__3_3.tif",
+    "site": "DELA",
+    "landcover": "Water",
+    "lr_sha256": "5490433c1a1cacae0beb881ed094bbf5118e19e72611bc5fa7792a91e1dd7637",
+    "hr_sha256": "4498dabc35413f0fd078ea6c44a59cc46b5bb3982b1fa79a79a98182879dd3eb",
+    "bounds_wgs84": [
+      -87.82336943084056,
+      32.532676647632265,
+      -87.79589985317278,
+      32.55594373006025
+    ]
+  },
+  {
+    "id": "2023_CLBJ_7__3_1",
+    "lr": "s2_l2a_10m/2023_CLBJ_7__3_1.tif",
+    "hr": "neon_2.5m_linearized/2023_CLBJ_7__3_1.tif",
+    "site": "CLBJ",
+    "landcover": "Rural",
+    "lr_sha256": "925d8217d01f3e216322bd5aaedb19d10951a10975651d5cf093daadb3ca52b7",
+    "hr_sha256": "c6efdea46533df21e74395404a3fe0bdf58fe0044cab2868546f11c5b2519be6",
+    "bounds_wgs84": [
+      -97.65083634892181,
+      33.348239580186096,
+      -97.62296759483773,
+      33.37162590888915
+    ]
+  },
+  {
+    "id": "2018_OAES_3__3_1",
+    "lr": "s2_l2a_10m/2018_OAES_3__3_1.tif",
+    "hr": "neon_2.5m_linearized/2018_OAES_3__3_1.tif",
+    "site": "OAES",
+    "landcover": "Rural",
+    "lr_sha256": "5502d64dbbd22f344a8cc45f7fe79ecb26a12d513cc57d462cd1cb9788b84817",
+    "hr_sha256": "804fde242cfd3e16b736df96e3b05fae0a998e4a896cee52f0449ab7987ee89d",
+    "bounds_wgs84": [
+      -99.1589839490708,
+      35.357849703649066,
+      -99.13076126708643,
+      35.380966653321885
+    ]
+  },
+  {
+    "id": "2023_MOAB_7__1_1",
+    "lr": "s2_l2a_10m/2023_MOAB_7__1_1.tif",
+    "hr": "neon_2.5m_linearized/2023_MOAB_7__1_1.tif",
+    "site": "MOAB",
+    "landcover": "Rural",
+    "lr_sha256": "da1b31674210a79189c0e73c7594bbef114563ecaee501b13e5cd7ca95aded7f",
+    "hr_sha256": "ce36684925ef9cd085a2aafc75718efc2f319591ecbc7e4218e019efc9e9c022",
+    "bounds_wgs84": [
+      -109.42791175200072,
+      38.25985845433679,
+      -109.39815465939041,
+      38.28331730178989
+    ]
+  },
+  {
+    "id": "2023_JERC_7__4_7",
+    "lr": "s2_l2a_10m/2023_JERC_7__4_7.tif",
+    "hr": "neon_2.5m_linearized/2023_JERC_7__4_7.tif",
+    "site": "JERC",
+    "landcover": "Forest",
+    "lr_sha256": "a88b94f6106c894f785432bb46a07bd8b4404b542020874654e79d5f2b6c8652",
+    "hr_sha256": "f57771d818bdf3d72ddd2a988d5eafa0cd2af8aacf6ac8cc3fefe0334a1d13f4",
+    "bounds_wgs84": [
+      -84.39720034610811,
+      31.221940573229574,
+      -84.36971052965337,
+      31.245561806831052
+    ]
+  },
+  {
+    "id": "2022_ARIK_4__2_3",
+    "lr": "s2_l2a_10m/2022_ARIK_4__2_3.tif",
+    "hr": "neon_2.5m_linearized/2022_ARIK_4__2_3.tif",
+    "site": "ARIK",
+    "landcover": "Rural",
+    "lr_sha256": "1fa425938ccb038542e7c8b029cb1a7a69fbf7300a7b8a423795ba1c832e760e",
+    "hr_sha256": "6733e5b8d3937660ea347382151aa32f13a9916a90215d54e321e0a618222cf0",
+    "bounds_wgs84": [
+      -102.51650456555339,
+      39.779806104108914,
+      -102.48579868933642,
+      39.803493665098934
+    ]
+  },
+  {
+    "id": "2023_ONAQ_5__2_4",
+    "lr": "s2_l2a_10m/2023_ONAQ_5__2_4.tif",
+    "hr": "neon_2.5m_linearized/2023_ONAQ_5__2_4.tif",
+    "site": "ONAQ",
+    "landcover": "Rural",
+    "lr_sha256": "09a59a4736440d5f3e772464090754d0664ceac5815ea6deb7a57df711d5a66a",
+    "hr_sha256": "ffed5e39fd4e566f9cbd244eab6f382a70e0ea661fd2395d1b755e07e6fccf21",
+    "bounds_wgs84": [
+      -112.46663893430596,
+      40.203186572840536,
+      -112.43607135381706,
+      40.22662056953816
+    ]
+  },
+  {
+    "id": "2024_UKFS_8__3_2",
+    "lr": "s2_l2a_10m/2024_UKFS_8__3_2.tif",
+    "hr": "neon_2.5m_linearized/2024_UKFS_8__3_2.tif",
+    "site": "UKFS",
+    "landcover": "Rural",
+    "lr_sha256": "8af37716a7cd38aaf4afacd541623b08c80a76df7c0ccf2eef96f8bd0e810717",
+    "hr_sha256": "025a27fe49c3f5627a3268f66401fd8425a30121382319914655fadbecc082d4",
+    "bounds_wgs84": [
+      -95.20520026340878,
+      39.014880929307445,
+      -95.17493512170068,
+      39.038488115443634
+    ]
+  },
+  {
+    "id": "2021_HEAL_4__1_3",
+    "lr": "s2_l2a_10m/2021_HEAL_4__1_3.tif",
+    "hr": "neon_2.5m_linearized/2021_HEAL_4__1_3.tif",
+    "site": "HEAL",
+    "landcover": "Unknown",
+    "lr_sha256": "2d74a6e5903752b0181e4799863da07c593a928c637291dd95c17b43e064527c",
+    "hr_sha256": "a3ae4921e6c80862d8964275a7acc597ff50941a282a2e9f5eddb883de17f61c",
+    "bounds_wgs84": [
+      -149.20962605191318,
+      63.91000061985501,
+      -149.15568547216478,
+      63.93374357578266
+    ]
+  },
+  {
+    "id": "2021_SOAP_5__1_4",
+    "lr": "s2_l2a_10m/2021_SOAP_5__1_4.tif",
+    "hr": "neon_2.5m_linearized/2021_SOAP_5__1_4.tif",
+    "site": "SOAP",
+    "landcover": "Forest",
+    "lr_sha256": "d3e9f2b4428ba4c6dd80472274c6eca3e48d4380d794881e791afd0eb6688e14",
+    "hr_sha256": "0f067e5e0bcbc6ed52234a1c928602775cac78bb6af04a492198f20b70cabe7a",
+    "bounds_wgs84": [
+      -119.22520599060117,
+      37.078538555655186,
+      -119.19575153592451,
+      37.102134706678726
+    ]
+  },
+  {
+    "id": "2022_GUIL_2__1_1",
+    "lr": "s2_l2a_10m/2022_GUIL_2__1_1.tif",
+    "hr": "neon_2.5m_linearized/2022_GUIL_2__1_1.tif",
+    "site": "GUIL",
+    "landcover": "Unknown",
+    "lr_sha256": "b16de2a8355756c697955759b761f03cb08133d540e5a493be54e71de304f094",
+    "hr_sha256": "79630c4213f176278541e7ab227d16845f320c9fc3926a1e94bc30883d0600ae",
+    "bounds_wgs84": [
+      -66.7924209152139,
+      18.15619629652188,
+      -66.76794155093604,
+      18.17959680201812
+    ]
+  },
+  {
+    "id": "2024_BONA_6__3_4",
+    "lr": "s2_l2a_10m/2024_BONA_6__3_4.tif",
+    "hr": "neon_2.5m_linearized/2024_BONA_6__3_4.tif",
+    "site": "BONA",
+    "landcover": "Unknown",
+    "lr_sha256": "d059a929492bcf50f5a1244bd5692ac0f1bf3c31e647c51470b9c19c3c5f878c",
+    "hr_sha256": "bac1dfadf468ef62d0b272de1f8521dd5da340317e8441f717f00ff04c91fa95",
+    "bounds_wgs84": [
+      -147.4864707624109,
+      65.16364158632628,
+      -147.43142992564555,
+      65.1867776407206
+    ]
+  },
+  {
+    "id": "2022_STEI_5__1_1",
+    "lr": "s2_l2a_10m/2022_STEI_5__1_1.tif",
+    "hr": "neon_2.5m_linearized/2022_STEI_5__1_1.tif",
+    "site": "STEI",
+    "landcover": "Forest",
+    "lr_sha256": "d8c20f637a1ec5f6a9cbd93d0cabdb4c1e35aa8d6d85e3cd206c1e2d1ba23576",
+    "hr_sha256": "3783716c5b10b326c0db9312a2815c441c960d0f4138438513a0887855560970",
+    "bounds_wgs84": [
+      -89.59328524853507,
+      45.528216753583536,
+      -89.55947588376122,
+      45.55197545972948
+    ]
+  },
+  {
+    "id": "2021_OAES_5__1_2",
+    "lr": "s2_l2a_10m/2021_OAES_5__1_2.tif",
+    "hr": "neon_2.5m_linearized/2021_OAES_5__1_2.tif",
+    "site": "OAES",
+    "landcover": "Rural",
+    "lr_sha256": "5444feaced06a10f8bd016c2e7abdf4b13f228a7647f0fc1b679ac882e464597",
+    "hr_sha256": "938051c9fcb6fa7a0b079d16e68fe63731e3407812884b8af1c1aadbb5bf25ee",
+    "bounds_wgs84": [
+      -99.09782438594809,
+      35.404081011957594,
+      -99.06960293010245,
+      35.42718359345698
+    ]
+  },
+  {
+    "id": "2021_HEAL_4__4_2",
+    "lr": "s2_l2a_10m/2021_HEAL_4__4_2.tif",
+    "hr": "neon_2.5m_linearized/2021_HEAL_4__4_2.tif",
+    "site": "HEAL",
+    "landcover": "Unknown",
+    "lr_sha256": "eaad7206173c92f91b6396f50d1012b418ea95a77679b161f64aa7a943242a81",
+    "hr_sha256": "a7780971154d5e22303d7a8f16f07721e1f3690d69b4a05ae4488343aac3a9ac",
+    "bounds_wgs84": [
+      -149.2562615058601,
+      63.840328177439126,
+      -149.20241902805148,
+      63.86408696576414
+    ]
+  },
+  {
+    "id": "2023_DEJU_5__2_3",
+    "lr": "s2_l2a_10m/2023_DEJU_5__2_3.tif",
+    "hr": "neon_2.5m_linearized/2023_DEJU_5__2_3.tif",
+    "site": "DEJU",
+    "landcover": "Unknown",
+    "lr_sha256": "45851b6bcd724fa531c5dfc115afbcae5645cd27538c01607f67f02bc916e656",
+    "hr_sha256": "e16c3a8a9ddae2f23f3ca03eb74dd20ec85a842dd748c360696a584d16f67b3f",
+    "bounds_wgs84": [
+      -145.6620011545656,
+      63.897178405429244,
+      -145.60873120487506,
+      63.920637038775
+    ]
+  },
+  {
+    "id": "2018_MLBS_3__1_2",
+    "lr": "s2_l2a_10m/2018_MLBS_3__1_2.tif",
+    "hr": "neon_2.5m_linearized/2018_MLBS_3__1_2.tif",
+    "site": "MLBS",
+    "landcover": "Forest",
+    "lr_sha256": "7a77ec5685e44760e41c7f869608834e80a60f154b1386c2f651fdec22811b75",
+    "hr_sha256": "158d45657cef0d70d9a9494916e3af84cdb328616fd052280da6e3f0bcb0970a",
+    "bounds_wgs84": [
+      -80.55792467470478,
+      37.4137797766339,
+      -80.52885170715702,
+      37.43696607687842
+    ]
+  },
+  {
+    "id": "2023_NOGP_6__1_3",
+    "lr": "s2_l2a_10m/2023_NOGP_6__1_3.tif",
+    "hr": "neon_2.5m_linearized/2023_NOGP_6__1_3.tif",
+    "site": "NOGP",
+    "landcover": "Developed",
+    "lr_sha256": "5088834ac54442a6aaebca7048208697b4168ad69551e2d2597d106bcb298c46",
+    "hr_sha256": "9fb86f990c693f6dbd8c267048405a9f87e90db5f1dccdc826c3f8f57457523a",
+    "bounds_wgs84": [
+      -100.89215592455011,
+      46.80183578740656,
+      -100.85781701494251,
+      46.82541061493074
+    ]
+  },
+  {
+    "id": "2022_ARIK_4__4_3",
+    "lr": "s2_l2a_10m/2022_ARIK_4__4_3.tif",
+    "hr": "neon_2.5m_linearized/2022_ARIK_4__4_3.tif",
+    "site": "ARIK",
+    "landcover": "Rural",
+    "lr_sha256": "1eaea6ce5f72b119f96292bc18820f740745a60ad7af495eaa5d364363ec987b",
+    "hr_sha256": "c4dba79d033d7e07ef752746fac70384686ab865fcc33a493f8096e656dd1cca",
+    "bounds_wgs84": [
+      -102.51816039049112,
+      39.73371842535244,
+      -102.48747630473072,
+      39.75740515379675
+    ]
+  },
+  {
+    "id": "2023_JERC_7__3_1",
+    "lr": "s2_l2a_10m/2023_JERC_7__3_1.tif",
+    "hr": "neon_2.5m_linearized/2023_JERC_7__3_1.tif",
+    "site": "JERC",
+    "landcover": "Rural",
+    "lr_sha256": "1cf3651be2e242763ba18264987097b2bd7293af556bd0f8b6728dffecfae99a",
+    "hr_sha256": "ddae0cc3087e1412b04b6644fc6ac8913616e75f172dd3f4ef3d6a0a40b1c975",
+    "bounds_wgs84": [
+      -84.55772273179934,
+      31.248212925518914,
+      -84.5302605388776,
+      31.271803798218077
+    ]
+  },
+  {
+    "id": "2022_BLAN_5__3_1",
+    "lr": "s2_l2a_10m/2022_BLAN_5__3_1.tif",
+    "hr": "neon_2.5m_linearized/2022_BLAN_5__3_1.tif",
+    "site": "BLAN",
+    "landcover": "Rural",
+    "lr_sha256": "ff1df916f95a0fbeb3e22aef88aa93ee3f978c44fcc3188522e068d990a3e8b5",
+    "hr_sha256": "c43783b32dd0a0336efac0d04f22f649281d0ad9d3f043aab69b41990bd8625e",
+    "bounds_wgs84": [
+      -78.08064228850664,
+      39.07085955649115,
+      -78.05012734011792,
+      39.09464255178151
+    ]
+  },
+  {
+    "id": "2022_UKFS_6__2_1",
+    "lr": "s2_l2a_10m/2022_UKFS_6__2_1.tif",
+    "hr": "neon_2.5m_linearized/2022_UKFS_6__2_1.tif",
+    "site": "UKFS",
+    "landcover": "Rural",
+    "lr_sha256": "f7fdd56557a4f19d007c4e3566d06658c1e06d0afb5362e1565b5071136d91dd",
+    "hr_sha256": "9127f226e68dfd7c52fc3b8c11d2b3f50befa0f03132d72f5896df745d96a9b0",
+    "bounds_wgs84": [
+      -95.23521190819342,
+      39.028725699248874,
+      -95.20493149449906,
+      39.05234013230412
+    ]
+  },
+  {
+    "id": "2019_NIWO_3__5_4",
+    "lr": "s2_l2a_10m/2019_NIWO_3__5_4.tif",
+    "hr": "neon_2.5m_linearized/2019_NIWO_3__5_4.tif",
+    "site": "NIWO",
+    "landcover": "Forest",
+    "lr_sha256": "17c10d45c4ca0adfd6d3504afb6118d0652bb61cb68412117ad5f38a9f44fdc8",
+    "hr_sha256": "63cf5b3b99d172efb65d1ed9294cd4c1a0107203817103c24722a718e1e93f54",
+    "bounds_wgs84": [
+      -105.55952245966778,
+      40.00678412922429,
+      -105.52934173997843,
+      40.02998903579089
+    ]
+  },
+  {
+    "id": "2024_CPER_10__3_2",
+    "lr": "s2_l2a_10m/2024_CPER_10__3_2.tif",
+    "hr": "neon_2.5m_linearized/2024_CPER_10__3_2.tif",
+    "site": "CPER",
+    "landcover": "Rural",
+    "lr_sha256": "144ac943c16b6585b7dea791fb82afb8b17ebaf0be40beee5d22a26d0111e8da",
+    "hr_sha256": "b92828e344a74eb5fe7b853d93e4d014e52f34e9933f371bce5c085d2a0bba8a",
+    "bounds_wgs84": [
+      -104.74965898091708,
+      40.792311687160854,
+      -104.71921776920743,
+      40.81544316585216
+    ]
+  },
+  {
+    "id": "2024_UKFS_8__4_2",
+    "lr": "s2_l2a_10m/2024_UKFS_8__4_2.tif",
+    "hr": "neon_2.5m_linearized/2024_UKFS_8__4_2.tif",
+    "site": "UKFS",
+    "landcover": "Rural",
+    "lr_sha256": "6fd8408624b1739a1da86c67c843864d41a79cfe547b0c0ed5e9885b25b48e45",
+    "hr_sha256": "64a505238d781de34616d089890186f34527faf4882242e6a844c1e7a5b590a9",
+    "bounds_wgs84": [
+      -95.20448380289929,
+      38.99182897765667,
+      -95.17422905551459,
+      39.01543581256753
+    ]
+  },
+  {
+    "id": "2021_TALL_6__1_2",
+    "lr": "s2_l2a_10m/2021_TALL_6__1_2.tif",
+    "hr": "neon_2.5m_linearized/2021_TALL_6__1_2.tif",
+    "site": "TALL",
+    "landcover": "Forest",
+    "lr_sha256": "a08fc1835a57ccf1e72c1dd8ed0049de5d5b799391d4b9e65cda320c1b5defbe",
+    "hr_sha256": "646d8cfa094ca7e749e3b1bbab24487c4a05894689c4dd924c56dbe3bfa30fe4",
+    "bounds_wgs84": [
+      -87.42703794314706,
+      32.95969844857472,
+      -87.39953563733894,
+      32.982880769093235
+    ]
+  },
+  {
+    "id": "2022_CLBJ_6__3_3",
+    "lr": "s2_l2a_10m/2022_CLBJ_6__3_3.tif",
+    "hr": "neon_2.5m_linearized/2022_CLBJ_6__3_3.tif",
+    "site": "CLBJ",
+    "landcover": "Forest",
+    "lr_sha256": "6a2e773bd5eb245a10214e145785fa131fdef24acf07fe82e6c0ac442d668bf7",
+    "hr_sha256": "e094efa00a7428ad389ec3261ae71be45b0d27e32805377f406c45cf0fdcdb05",
+    "bounds_wgs84": [
+      -97.59596536356348,
+      33.33896109507329,
+      -97.56808581137942,
+      33.36235900093242
+    ]
+  },
+  {
+    "id": "2022_CLBJ_6__2_1",
+    "lr": "s2_l2a_10m/2022_CLBJ_6__2_1.tif",
+    "hr": "neon_2.5m_linearized/2022_CLBJ_6__2_1.tif",
+    "site": "CLBJ",
+    "landcover": "Rural",
+    "lr_sha256": "db4bcb73f730aaf28d750b76d21edb6779b4f26edae02a96bde87418f21854f1",
+    "hr_sha256": "dc19702df4178fcbcc974ff8295ad692812f14ddca3a2675f5b09215d93922f7",
+    "bounds_wgs84": [
+      -97.65061369748689,
+      33.362667180246675,
+      -97.62274014857377,
+      33.386053617759195
+    ]
+  },
+  {
+    "id": "2024_UKFS_8__2_2",
+    "lr": "s2_l2a_10m/2024_UKFS_8__2_2.tif",
+    "hr": "neon_2.5m_linearized/2024_UKFS_8__2_2.tif",
+    "site": "UKFS",
+    "landcover": "Forest",
+    "lr_sha256": "424abf3b48b8b328c1328289c5cd910e55b98d0a075699fdb7d5d8e339234c2d",
+    "hr_sha256": "c41f488408f76465963c1cad938b1cab8e83a817d76aa82956062539ff7693b6",
+    "bounds_wgs84": [
+      -95.20591754545605,
+      39.03793277854792,
+      -95.17564199743717,
+      39.06154031616888
+    ]
+  },
+  {
+    "id": "2023_CLBJ_7__4_2",
+    "lr": "s2_l2a_10m/2023_CLBJ_7__4_2.tif",
+    "hr": "neon_2.5m_linearized/2023_CLBJ_7__4_2.tif",
+    "site": "CLBJ",
+    "landcover": "Rural",
+    "lr_sha256": "8b1dc34200a82bdde71545026f8831a74e1985d46c5cd68cf9bcb57ea5d33366",
+    "hr_sha256": "9a1d9f813cd03284a46adb11f0cdf099f778c918980ea7a2ad1e142e36f5f597",
+    "bounds_wgs84": [
+      -97.6236943348466,
+      33.32484760470556,
+      -97.5958264092605,
+      33.348239580186096
+    ]
+  },
+  {
+    "id": "2021_BONA_4__2_3",
+    "lr": "s2_l2a_10m/2021_BONA_4__2_3.tif",
+    "hr": "neon_2.5m_linearized/2021_BONA_4__2_3.tif",
+    "site": "BONA",
+    "landcover": "Unknown",
+    "lr_sha256": "3298bfaee0e5c326d22347cfbac02383d82c51ee74449f837c94d31fb1f71f1b",
+    "hr_sha256": "7b1fc6cc62cc0a330842d31b49a58a17e23ce581f49f3cc8cb8311bbb82404e3",
+    "bounds_wgs84": [
+      -147.541782422558,
+      65.19503688043841,
+      -147.48662881020195,
+      65.21819280058357
+    ]
+  },
+  {
+    "id": "2023_JERC_7__2_1",
+    "lr": "s2_l2a_10m/2023_JERC_7__2_1.tif",
+    "hr": "neon_2.5m_linearized/2023_JERC_7__2_1.tif",
+    "site": "JERC",
+    "landcover": "Rural",
+    "lr_sha256": "01f1871b11a438569c77e2067ce91a69765dda916986e4529b90381e5163f2c1",
+    "hr_sha256": "3177ac911170e201871f7628a793f0573221b1f933174c9066f8df7b6189ff3b",
+    "bounds_wgs84": [
+      -84.55712805986175,
+      31.271289922316466,
+      -84.52965865087579,
+      31.294881165779135
+    ]
+  },
+  {
+    "id": "2023_NOGP_6__2_1",
+    "lr": "s2_l2a_10m/2023_NOGP_6__2_1.tif",
+    "hr": "neon_2.5m_linearized/2023_NOGP_6__2_1.tif",
+    "site": "NOGP",
+    "landcover": "Rural",
+    "lr_sha256": "4ed0ddc5192f6de2b29816e1aef637e78183e8b2813f5a40c44af24cddabef1d",
+    "hr_sha256": "965ecb397303a50be510c3f2f1f4b24944314660ab5848442dd90e8d717b081d",
+    "bounds_wgs84": [
+      -100.9584077046751,
+      46.77768337241866,
+      -100.92405751276478,
+      46.801276597279866
+    ]
+  },
+  {
+    "id": "2021_SJER_5__1_2",
+    "lr": "s2_l2a_10m/2021_SJER_5__1_2.tif",
+    "hr": "neon_2.5m_linearized/2021_SJER_5__1_2.tif",
+    "site": "SJER",
+    "landcover": "Rural",
+    "lr_sha256": "0b7b82a95d77775e693b5d2329a00dc9d87557de8afc6bc3837b35f91b2abe98",
+    "hr_sha256": "3ff3c4eb72555e47ef6eaeb95f9a200619c41071b8ce58c2d1035ca10ebea3eb",
+    "bounds_wgs84": [
+      -119.74544955263922,
+      37.10332286248495,
+      -119.71583869080472,
+      37.1270364675892
+    ]
+  },
+  {
+    "id": "2023_DELA_7__2_5",
+    "lr": "s2_l2a_10m/2023_DELA_7__2_5.tif",
+    "hr": "neon_2.5m_linearized/2023_DELA_7__2_5.tif",
+    "site": "DELA",
+    "landcover": "Rural",
+    "lr_sha256": "d8af42c080324f2c0d7c2273f5435b6139fe9e2e763918a6845c952053d24ae4",
+    "hr_sha256": "ee579cc36fb513f329aad3c87843ac2553f736f221a9ce16063d0c1e4e569fb3",
+    "bounds_wgs84": [
+      -87.77982157650872,
+      32.54684593957697,
+      -87.75235847009198,
+      32.5701038351913
+    ]
+  },
+  {
+    "id": "2024_ARIK_6__4_1",
+    "lr": "s2_l2a_10m/2024_ARIK_6__4_1.tif",
+    "hr": "neon_2.5m_linearized/2024_ARIK_6__4_1.tif",
+    "site": "ARIK",
+    "landcover": "Rural",
+    "lr_sha256": "533a0ae08c5d72bfdf70b5c686bd4e3b9ded79cad41f4e50f5d978999eeee9ee",
+    "hr_sha256": "1420bc3cab836c253728489562a52593641ee99714664ebbbc558224acb76867",
+    "bounds_wgs84": [
+      -102.50887290683968,
+      39.70649137460857,
+      -102.47819848748578,
+      39.73018006937287
+    ]
+  },
+  {
+    "id": "2023_LENO_7__2_2",
+    "lr": "s2_l2a_10m/2023_LENO_7__2_2.tif",
+    "hr": "neon_2.5m_linearized/2023_LENO_7__2_2.tif",
+    "site": "LENO",
+    "landcover": "Water",
+    "lr_sha256": "e08efe0d24bd7834c9fc029f2b9ff57ce70016f59a215e5662c7307b37be7113",
+    "hr_sha256": "8c582683c18ddbb7ca07ec72015206b13017f7280c4146cfdde411340045b3fa",
+    "bounds_wgs84": [
+      -88.21436895491283,
+      31.821928276144977,
+      -88.18702188989438,
+      31.84527491056135
+    ]
+  },
+  {
+    "id": "2023_ONAQ_5__4_4",
+    "lr": "s2_l2a_10m/2023_ONAQ_5__4_4.tif",
+    "hr": "neon_2.5m_linearized/2023_ONAQ_5__4_4.tif",
+    "site": "ONAQ",
+    "landcover": "Rural",
+    "lr_sha256": "afd790ea777b89f323b87047fe67b4505b77f87dbefe8be735bf44b6c92655a2",
+    "hr_sha256": "0bcc331d5315451523dfddbbd02a0e742cf2a99dcfa6bcf30c069eede84cb805",
+    "bounds_wgs84": [
+      -112.46564533397388,
+      40.1570729467642,
+      -112.43509923703232,
+      40.180506526424175
+    ]
+  },
+  {
+    "id": "2023_CLBJ_7__4_3",
+    "lr": "s2_l2a_10m/2023_CLBJ_7__4_3.tif",
+    "hr": "neon_2.5m_linearized/2023_CLBJ_7__4_3.tif",
+    "site": "CLBJ",
+    "landcover": "Forest",
+    "lr_sha256": "120ed9c99e163d1db9b874bb94e3bb64f2647ef805f32cd4cc30515cdfd68bac",
+    "hr_sha256": "df3f888fdfd78bf5e2438060332f06c1048880c8fc0fe99597456369eb0af3a3",
+    "bounds_wgs84": [
+      -97.59619682209762,
+      33.324533778191544,
+      -97.56832206906847,
+      33.347931568841496
+    ]
+  },
+  {
+    "id": "2024_JERC_8__5_7",
+    "lr": "s2_l2a_10m/2024_JERC_8__5_7.tif",
+    "hr": "neon_2.5m_linearized/2024_JERC_8__5_7.tif",
+    "site": "JERC",
+    "landcover": "Rural",
+    "lr_sha256": "2b8028a04a831522ad7f812c680a2f8b019ee7551eada8b2bf196bcfae5d07ff",
+    "hr_sha256": "41f7db7953738493f8befaa3266ada1e175af3124353d71c9e9a43f123221861",
+    "bounds_wgs84": [
+      -84.39758083178499,
+      31.208059953147345,
+      -84.37009537179779,
+      31.231680946474505
+    ]
+  },
+  {
+    "id": "2022_PRIN_5__2_3",
+    "lr": "s2_l2a_10m/2022_PRIN_5__2_3.tif",
+    "hr": "neon_2.5m_linearized/2022_PRIN_5__2_3.tif",
+    "site": "PRIN",
+    "landcover": "Rural",
+    "lr_sha256": "e77645da64fab8fde13b6fd525e58fbc59ddd0db27f14d3e63a2bfd51d76b8d3",
+    "hr_sha256": "2147b16b308d29a79410fb5b4b78fb1159e96b42ff9f03d14a8301d36ece1831",
+    "bounds_wgs84": [
+      -97.81043191316867,
+      33.355137555602745,
+      -97.78260133058929,
+      33.37848998827423
+    ]
+  },
+  {
+    "id": "2022_HARV_7__7_4",
+    "lr": "s2_l2a_10m/2022_HARV_7__7_4.tif",
+    "hr": "neon_2.5m_linearized/2022_HARV_7__7_4.tif",
+    "site": "HARV",
+    "landcover": "Forest",
+    "lr_sha256": "5822f65356b0899b4bc1abf0a56ca88753c9d94764133853d10f079f9a2b7d01",
+    "hr_sha256": "01aee74aac5f9d5fefac3acadd97151bbf2d268afcf981298133352fb31b4b22",
+    "bounds_wgs84": [
+      -72.17776944758312,
+      42.412662989944685,
+      -72.14564914760801,
+      42.436460178433016
+    ]
+  },
+  {
+    "id": "2023_DSNY_7__4_3",
+    "lr": "s2_l2a_10m/2023_DSNY_7__4_3.tif",
+    "hr": "neon_2.5m_linearized/2023_DSNY_7__4_3.tif",
+    "site": "DSNY",
+    "landcover": "Rural",
+    "lr_sha256": "9e3e4d5e2c783c67a20af4cf254756b8030fc5114d7e1d2a170ab3e065e08de1",
+    "hr_sha256": "6123d30d1ec81716a4d5ee43a9a3cc9464d8d465d63c1739937450602e30669e",
+    "bounds_wgs84": [
+      -81.42030727834519,
+      28.04465268249703,
+      -81.39417055367963,
+      28.067839043219816
+    ]
+  },
+  {
+    "id": "2021_SJER_5__3_3",
+    "lr": "s2_l2a_10m/2021_SJER_5__3_3.tif",
+    "hr": "neon_2.5m_linearized/2021_SJER_5__3_3.tif",
+    "site": "SJER",
+    "landcover": "Rural",
+    "lr_sha256": "c4856fc9a4ca262ab6cc39ed6040608e009a9eae2289d64f3b845b1594d0fb2e",
+    "hr_sha256": "ab8b427d931fc167c2ebbed152cab14ef85009284cb4a2beabbb5d13a97a0ba0",
+    "bounds_wgs84": [
+      -119.71501561602099,
+      37.05788467492829,
+      -119.68543177768298,
+      37.08159097128126
+    ]
+  },
+  {
+    "id": "2019_SOAP_4__4_1",
+    "lr": "s2_l2a_10m/2019_SOAP_4__4_1.tif",
+    "hr": "neon_2.5m_linearized/2019_SOAP_4__4_1.tif",
+    "site": "SOAP",
+    "landcover": "Rural",
+    "lr_sha256": "344487c213e9567cfba669de320021a06b943c0e7aeea81f16f4fee36b7c5817",
+    "hr_sha256": "cab3963737979efd6e24d64b1d8a8d48b3c04ffbbf0448fe4259766825196bd4",
+    "bounds_wgs84": [
+      -119.30919017496265,
+      36.998525867754104,
+      -119.2797441476424,
+      37.02214035981606
+    ]
+  },
+  {
+    "id": "2024_KONZ_9__8_2",
+    "lr": "s2_l2a_10m/2024_KONZ_9__8_2.tif",
+    "hr": "neon_2.5m_linearized/2024_KONZ_9__8_2.tif",
+    "site": "KONZ",
+    "landcover": "Rural",
+    "lr_sha256": "ace2c46026166b23de6f60ce637e00ffe3a18876ef4b7c0830cd9454354a0adf",
+    "hr_sha256": "cead543853ce3fe3c6484a051977b262c60fa693539d775a73ba8f025b6157d2",
+    "bounds_wgs84": [
+      -96.60627566139864,
+      39.05738897505934,
+      -96.5759250786517,
+      39.08104843925857
+    ]
+  },
+  {
+    "id": "2021_HEAL_4__3_1",
+    "lr": "s2_l2a_10m/2021_HEAL_4__3_1.tif",
+    "hr": "neon_2.5m_linearized/2021_HEAL_4__3_1.tif",
+    "site": "HEAL",
+    "landcover": "Unknown",
+    "lr_sha256": "44a149d47a05d4478eeb5ce770d76388daa0e3cc75c899fff122e6b939d3c81e",
+    "hr_sha256": "6d22903291623c277db20e0317464c3aac6a729b84ed3f4326a2b5f72fd2210e",
+    "bounds_wgs84": [
+      -149.3101887312307,
+      63.86246301439481,
+      -149.2562615058601,
+      63.88624041441083
+    ]
+  },
+  {
+    "id": "2023_DELA_7__4_4",
+    "lr": "s2_l2a_10m/2023_DELA_7__4_4.tif",
+    "hr": "neon_2.5m_linearized/2023_DELA_7__4_4.tif",
+    "site": "DELA",
+    "landcover": "Rural",
+    "lr_sha256": "2aebe216e0fbc0fdf9901c5385bc1d6a81bbf254cdfe3a4fb5d232805067cc3d",
+    "hr_sha256": "8c6b852d31a0dddc351a85a85769799528993788c610eeb0cae14a7b3e2139a7",
+    "bounds_wgs84": [
+      -87.80667859481304,
+      32.50049067299988,
+      -87.7792231466654,
+      32.523754200451684
+    ]
+  },
+  {
+    "id": "2023_SCBI_6__2_1",
+    "lr": "s2_l2a_10m/2023_SCBI_6__2_1.tif",
+    "hr": "neon_2.5m_linearized/2023_SCBI_6__2_1.tif",
+    "site": "SCBI",
+    "landcover": "Forest",
+    "lr_sha256": "6f6bb6c8526eff1a1863c1e9411f0b6be16ddf3a6a2f2d36ad51b4f8af23c16b",
+    "hr_sha256": "e10159a35f25077b6de368b2c8bcc089a06922b278d6e6ae2669f5e0c2d9776f",
+    "bounds_wgs84": [
+      -78.19291464040685,
+      38.86211588023808,
+      -78.16252679626427,
+      38.8858703078204
+    ]
+  },
+  {
+    "id": "2023_ONAQ_5__4_3",
+    "lr": "s2_l2a_10m/2023_ONAQ_5__4_3.tif",
+    "hr": "neon_2.5m_linearized/2023_ONAQ_5__4_3.tif",
+    "site": "ONAQ",
+    "landcover": "Rural",
+    "lr_sha256": "106cef79d2006f1aa64c85951837890dc15e4fff82fda3870ee3883789d9e1ae",
+    "hr_sha256": "939042ec22870af28a64ab95b6c9bfeeca4b83f6072bdfa69dd14b0a32363489",
+    "bounds_wgs84": [
+      -112.4957050804565,
+      40.15668873875695,
+      -112.46514939279645,
+      40.18012980840681
+    ]
+  },
+  {
+    "id": "2020_YELL_3__5_4",
+    "lr": "s2_l2a_10m/2020_YELL_3__5_4.tif",
+    "hr": "neon_2.5m_linearized/2020_YELL_3__5_4.tif",
+    "site": "YELL",
+    "landcover": "Rural",
+    "lr_sha256": "4e21cc9bf97b5ff8404287d5bf26e0e882f3422a2698611d2ca04c58472ebc93",
+    "hr_sha256": "3da3d0167b8a40eed2565f2a508dc5cf95e1fcc1a353234a856042a4022a77f7",
+    "bounds_wgs84": [
+      -110.56672996530119,
+      44.879050009750294,
+      -110.53413204676873,
+      44.90222229060851
+    ]
+  },
+  {
+    "id": "2021_BONA_4__5_4",
+    "lr": "s2_l2a_10m/2021_BONA_4__5_4.tif",
+    "hr": "neon_2.5m_linearized/2021_BONA_4__5_4.tif",
+    "site": "BONA",
+    "landcover": "Unknown",
+    "lr_sha256": "9d66f3aadda6f8eead28171fcdb6f53d143f616b5913f0b85355be8caaa68bfb",
+    "hr_sha256": "e90871b649542570d161516ba7269d500cda4fe4a6b0a1183462b1feef7bdcc1",
+    "bounds_wgs84": [
+      -147.48578719985264,
+      65.12631683633685,
+      -147.4308243333697,
+      65.14945272405112
+    ]
+  },
+  {
+    "id": "2021_BONA_4__4_3",
+    "lr": "s2_l2a_10m/2021_BONA_4__4_3.tif",
+    "hr": "neon_2.5m_linearized/2021_BONA_4__4_3.tif",
+    "site": "BONA",
+    "landcover": "Unknown",
+    "lr_sha256": "6cdb8dfadc6e7a66d5b54cc368e4872c1773af0bca8d0fad31ce61e81933c669",
+    "hr_sha256": "87e0d10f2b7cdaecf5ccbcb7af183aef6795c67e0604d885a0fb7321fddeb17e",
+    "bounds_wgs84": [
+      -147.5408444516402,
+      65.14909928992033,
+      -147.48578719985264,
+      65.17225496304675
+    ]
+  },
+  {
+    "id": "2021_TALL_6__2_1",
+    "lr": "s2_l2a_10m/2021_TALL_6__2_1.tif",
+    "hr": "neon_2.5m_linearized/2021_TALL_6__2_1.tif",
+    "site": "TALL",
+    "landcover": "Forest",
+    "lr_sha256": "510aad8d56e68360ad34c80026d510c36f49e2a5a1ceedf06cb0d3eb62f7a65a",
+    "hr_sha256": "883934c3fd5736541726b1609e4be461b7391b24db47b90e8b14663743b04fd0",
+    "bounds_wgs84": [
+      -87.4543179114735,
+      32.93651020090181,
+      -87.42681585922831,
+      32.95969844857472
+    ]
+  },
+  {
+    "id": "2019_SOAP_4__3_4",
+    "lr": "s2_l2a_10m/2019_SOAP_4__3_4.tif",
+    "hr": "neon_2.5m_linearized/2019_SOAP_4__3_4.tif",
+    "site": "SOAP",
+    "landcover": "Forest",
+    "lr_sha256": "0c674619a3df6a15c5d7a550cf6cb4a7f9f189f7ee24b7107097df4c5efe7787",
+    "hr_sha256": "dcf34d66797456c1fca6d4ea1c8bc69a168220851258246b5aa91122750989ce",
+    "bounds_wgs84": [
+      -119.22358975831065,
+      37.0232322273821,
+      -119.19415798739236,
+      37.046827549146784
+    ]
+  },
+  {
+    "id": "2019_SOAP_4__1_2",
+    "lr": "s2_l2a_10m/2019_SOAP_4__1_2.tif",
+    "hr": "neon_2.5m_linearized/2019_SOAP_4__1_2.tif",
+    "site": "SOAP",
+    "landcover": "Forest",
+    "lr_sha256": "5f42f7dfd4297fe0aadb129619f8cf152297ac241a2f88a5a2ccd7cb2fa062ef",
+    "hr_sha256": "0267d1291e8727397b2ef196272c44686679c97acb884f0bd91577f9c49f03ef",
+    "bounds_wgs84": [
+      -119.28250545049083,
+      37.06825721397077,
+      -119.25303890670232,
+      37.09186627707637
+    ]
+  },
+  {
+    "id": "2020_YELL_3__5_3",
+    "lr": "s2_l2a_10m/2020_YELL_3__5_3.tif",
+    "hr": "neon_2.5m_linearized/2020_YELL_3__5_3.tif",
+    "site": "YELL",
+    "landcover": "Rural",
+    "lr_sha256": "e88d25d91e81c8640621f3fa5eb41806de02d90f4f94ecd188937bb85ed73998",
+    "hr_sha256": "56a1f4d560d95608d3d22c5d3b3a3ec661fdefc764f2f603ae238229aa7e003a",
+    "bounds_wgs84": [
+      -110.59914209426678,
+      44.87917757456546,
+      -110.5665569123927,
+      44.90234075167165
+    ]
+  },
+  {
+    "id": "2020_RMNP_3__3_1",
+    "lr": "s2_l2a_10m/2020_RMNP_3__3_1.tif",
+    "hr": "neon_2.5m_linearized/2020_RMNP_3__3_1.tif",
+    "site": "RMNP",
+    "landcover": "Forest",
+    "lr_sha256": "8e532bd8caaf1c16958749ddc1fa9624e2ab43403edbfd9eef3da94398bdb5cc",
+    "hr_sha256": "4e262e68b9bfd066fe36ae3670b29a98809a4c1ad83afc158d41ff54d1a8d020",
+    "bounds_wgs84": [
+      -105.55777763654162,
+      40.223742499391875,
+      -105.52750058630761,
+      40.24694670917073
+    ]
+  },
+  {
+    "id": "2021_OAES_5__5_3",
+    "lr": "s2_l2a_10m/2021_OAES_5__5_3.tif",
+    "hr": "neon_2.5m_linearized/2021_OAES_5__5_3.tif",
+    "site": "OAES",
+    "landcover": "Rural",
+    "lr_sha256": "038b1829215699815b2be383c8f2f1b83ef230f22f250538afd86998af5994a0",
+    "hr_sha256": "c5c3fbf8b8f298c6a7359a0d8ce5f7142130afd27848c8a9536a122ceddf91da",
+    "bounds_wgs84": [
+      -99.0695435051049,
+      35.31176748058192,
+      -99.04136223488602,
+      35.33486380217886
+    ]
+  },
+  {
+    "id": "2022_UKFS_6__1_1",
+    "lr": "s2_l2a_10m/2022_UKFS_6__1_1.tif",
+    "hr": "neon_2.5m_linearized/2022_UKFS_6__1_1.tif",
+    "site": "UKFS",
+    "landcover": "Forest",
+    "lr_sha256": "f1f9afb321c5e77821f16461cc37f31565d8d931ba99fb74ce9448bcdd64a822",
+    "hr_sha256": "cbdd690e69ff776bfd0e8050a9f903abf4c8ce7bc47427d69284603621f0311c",
+    "bounds_wgs84": [
+      -95.23593930580323,
+      39.05177702454164,
+      -95.205648468349,
+      39.07539181506122
+    ]
+  },
+  {
+    "id": "2022_CHEQ_7__1_2",
+    "lr": "s2_l2a_10m/2022_CHEQ_7__1_2.tif",
+    "hr": "neon_2.5m_linearized/2022_CHEQ_7__1_2.tif",
+    "site": "CHEQ",
+    "landcover": "Water",
+    "lr_sha256": "ddfc3e8aba0a6e4a4a23b44e24158916746880479ff7edecd3f9fcb5d7c465c3",
+    "hr_sha256": "3bcbbfd1fc6f2e76aeb08486d0b3867db4411cf4c23db7ef5c49a9c2c3201a98",
+    "bounds_wgs84": [
+      -90.07669003675524,
+      45.816407526265856,
+      -90.04256147149722,
+      45.84026648475206
+    ]
+  },
+  {
+    "id": "2023_MOAB_7__3_1",
+    "lr": "s2_l2a_10m/2023_MOAB_7__3_1.tif",
+    "hr": "neon_2.5m_linearized/2023_MOAB_7__3_1.tif",
+    "site": "MOAB",
+    "landcover": "Rural",
+    "lr_sha256": "6dd5129162631bccf0a6348f258f6d7b538bcba2495494b686db8f730c8a32cd",
+    "hr_sha256": "6006408fdd92790405b8a64d5d9e67b48bb34e7f5b3ca6b7eaca3ad9ee36a5e9",
+    "bounds_wgs84": [
+      -109.42890484497627,
+      38.2137323262691,
+      -109.39916736738827,
+      38.23719071598258
+    ]
+  },
+  {
+    "id": "2019_SOAP_4__4_2",
+    "lr": "s2_l2a_10m/2019_SOAP_4__4_2.tif",
+    "hr": "neon_2.5m_linearized/2019_SOAP_4__4_2.tif",
+    "site": "SOAP",
+    "landcover": "Rural",
+    "lr_sha256": "d018d8aa6c74f63e716bfa5d4aebdefb205dfea1cf59d6516c5a1aa53daae817",
+    "hr_sha256": "f6e31b7df9e13c447d015e4da861fc0e8a4b586f08f422be33b10cb8364c8d0a",
+    "bounds_wgs84": [
+      -119.28043329531587,
+      36.99908178147207,
+      -119.25099515582457,
+      37.02268977468676
+    ]
+  },
+  {
+    "id": "2021_JORN_4__3_1",
+    "lr": "s2_l2a_10m/2021_JORN_4__3_1.tif",
+    "hr": "neon_2.5m_linearized/2021_JORN_4__3_1.tif",
+    "site": "JORN",
+    "landcover": "Rural",
+    "lr_sha256": "a2e518476e746aa2227d41443bcb0391886ae34a178bd465d8ce21097e64f16e",
+    "hr_sha256": "e21900008d2aadf4fb87e2fa32b56461e840a32d1e9501b3e549a6ff2f60d9a1",
+    "bounds_wgs84": [
+      -106.95668126248896,
+      32.6554370159275,
+      -106.92889510687955,
+      32.67893967233344
+    ]
+  },
+  {
+    "id": "2021_BONA_4__3_3",
+    "lr": "s2_l2a_10m/2021_BONA_4__3_3.tif",
+    "hr": "neon_2.5m_linearized/2021_BONA_4__3_3.tif",
+    "site": "BONA",
+    "landcover": "Unknown",
+    "lr_sha256": "5647fa8fbab241e322f18ea83bcfe4857bf5462d0cd4e9e9b2e834abd557629c",
+    "hr_sha256": "f274323473aa4c4f27ce2e74486db383afd6958bb7a706072b321ada4e26a8c9",
+    "bounds_wgs84": [
+      -147.54131298734404,
+      65.17206812149544,
+      -147.48620760181254,
+      65.19522391793953
+    ]
+  },
+  {
+    "id": "2019_SRER_3__2_5",
+    "lr": "s2_l2a_10m/2019_SRER_3__2_5.tif",
+    "hr": "neon_2.5m_linearized/2019_SRER_3__2_5.tif",
+    "site": "SRER",
+    "landcover": "Rural",
+    "lr_sha256": "0e16cd310aaa006af7214496ddc0c511ccf3052c4e937c7f451427e0f1cdca65",
+    "hr_sha256": "ee7eda4ae88ecab77d614372c40bd367ae8eda4470e283aedd35959c74b61dde",
+    "bounds_wgs84": [
+      -110.85411521331761,
+      31.863329524546764,
+      -110.8270094776384,
+      31.88645967190365
+    ]
+  },
+  {
+    "id": "2024_HARV_8__6_5",
+    "lr": "s2_l2a_10m/2024_HARV_8__6_5.tif",
+    "hr": "neon_2.5m_linearized/2024_HARV_8__6_5.tif",
+    "site": "HARV",
+    "landcover": "Forest",
+    "lr_sha256": "35e76fa06b9fc6ccef8d1d90e6a81ca18d38e3ea843f1c5ea6036b85b9f4110b",
+    "hr_sha256": "c4325b275c09dacf8c03daa3064be86d6adbbbf6103b9608c0057e4e2e9412db",
+    "bounds_wgs84": [
+      -72.14525687661852,
+      42.44354555082461,
+      -72.11310914996743,
+      42.467351235680795
+    ]
+  },
+  {
+    "id": "2023_DELA_7__2_4",
+    "lr": "s2_l2a_10m/2023_DELA_7__2_4.tif",
+    "hr": "neon_2.5m_linearized/2023_DELA_7__2_4.tif",
+    "site": "DELA",
+    "landcover": "Water",
+    "lr_sha256": "a2cdd753831d8ef8b0ae0a71d68e14196441bc4566cdf35c15370e902f7aff49",
+    "hr_sha256": "b6716efe6b10eb2c4bf52fb23c30eb88a7116b329efbf9fcd9a035baf18d8ba4",
+    "bounds_wgs84": [
+      -87.80709173174549,
+      32.54667393334878,
+      -87.77962187174775,
+      32.569937592685704
+    ]
+  },
+  {
+    "id": "2021_ABBY_4__2_4",
+    "lr": "s2_l2a_10m/2021_ABBY_4__2_4.tif",
+    "hr": "neon_2.5m_linearized/2021_ABBY_4__2_4.tif",
+    "site": "ABBY",
+    "landcover": "Forest",
+    "lr_sha256": "b2eb1498b55c8e8edb513025258df8722366205c2fa0ff400667c0064839de35",
+    "hr_sha256": "9ead8944952424b52476ff00146aa04838628b612856bcbe26c5ed156241a10e",
+    "bounds_wgs84": [
+      -122.29007130600316,
+      45.74820269743829,
+      -122.25685591505663,
+      45.77145201413336
+    ]
+  },
+  {
+    "id": "2023_NOGP_6__2_2",
+    "lr": "s2_l2a_10m/2023_NOGP_6__2_2.tif",
+    "hr": "neon_2.5m_linearized/2023_NOGP_6__2_2.tif",
+    "site": "NOGP",
+    "landcover": "Rural",
+    "lr_sha256": "83cffc39b15f48adf288a11c03ceba030d4df9bbdb7b02ff49c69cb450669a41",
+    "hr_sha256": "2dd4826fb9e22e0e386f1ffcc05780c5dffea84a819b915998ff86edc5e282bc",
+    "bounds_wgs84": [
+      -100.9248784797823,
+      46.7782519248644,
+      -100.89054155680321,
+      46.80183578740656
+    ]
+  },
+  {
+    "id": "2018_MLBS_3__4_3",
+    "lr": "s2_l2a_10m/2018_MLBS_3__4_3.tif",
+    "hr": "neon_2.5m_linearized/2018_MLBS_3__4_3.tif",
+    "site": "MLBS",
+    "landcover": "Forest",
+    "lr_sha256": "9abdcc8281697552eb88291e83640510a919f1ce70b1de786ba499f2a642dbca",
+    "hr_sha256": "3eb088da10b44ed0b2909da9a137acdeb9c07adacc05a5f59bfc3d3bd8e25a92",
+    "bounds_wgs84": [
+      -80.52942899730404,
+      37.34443724754963,
+      -80.50037441434516,
+      37.36763051005089
+    ]
+  },
+  {
+    "id": "2022_BLAN_5__1_1",
+    "lr": "s2_l2a_10m/2022_BLAN_5__1_1.tif",
+    "hr": "neon_2.5m_linearized/2022_BLAN_5__1_1.tif",
+    "site": "BLAN",
+    "landcover": "Rural",
+    "lr_sha256": "8c0217af4afc00aed167208051315d599129d7d092264fa34f748e6f9af689f6",
+    "hr_sha256": "451511b8bced7788a76664c21d6967b4e609776a34cfce1538a99ae1c03f8c2a",
+    "bounds_wgs84": [
+      -78.07874012137259,
+      39.116935676444,
+      -78.0482037811693,
+      39.1407196662694
+    ]
+  },
+  {
+    "id": "2022_SERC_6__3_1",
+    "lr": "s2_l2a_10m/2022_SERC_6__3_1.tif",
+    "hr": "neon_2.5m_linearized/2022_SERC_6__3_1.tif",
+    "site": "SERC",
+    "landcover": "Forest",
+    "lr_sha256": "3a896cbe719cc5b615065baf7f06d8a7c788732507575cc5cae79119f0724acb",
+    "hr_sha256": "63d0493866a7320bc48d25ded055d55470134ab46d26ea2683f6e84f633a8271",
+    "bounds_wgs84": [
+      -76.60725670943454,
+      38.853805832241186,
+      -76.57724538165564,
+      38.87726874736945
+    ]
+  },
+  {
+    "id": "2022_KONZ_7__7_5",
+    "lr": "s2_l2a_10m/2022_KONZ_7__7_5.tif",
+    "hr": "neon_2.5m_linearized/2022_KONZ_7__7_5.tif",
+    "site": "KONZ",
+    "landcover": "Rural",
+    "lr_sha256": "f17e53828f92a4f0a5af17fc9c97e890baeb188741b372609037531257a83d21",
+    "hr_sha256": "1b594277ea44a540fad45469683bd294470f1a7b1d61147c428a51e4f2c7d296",
+    "bounds_wgs84": [
+      -96.51708796702829,
+      39.06991564115929,
+      -96.4867047547095,
+      39.09359629958038
+    ]
+  },
+  {
+    "id": "2022_BLAN_5__1_3",
+    "lr": "s2_l2a_10m/2022_BLAN_5__1_3.tif",
+    "hr": "neon_2.5m_linearized/2022_BLAN_5__1_3.tif",
+    "site": "BLAN",
+    "landcover": "Rural",
+    "lr_sha256": "831496b8eec133a1005f5eeacb8685d2ec3160a8c48a671252a7c1c05ee76779",
+    "hr_sha256": "3273573c31a7695f1181f58f8148a8dcaba076ac06fb0cb9aa9c110e9c267e48",
+    "bounds_wgs84": [
+      -78.01959320384967,
+      39.11542223034815,
+      -77.98903986055169,
+      39.13921997661273
+    ]
+  },
+  {
+    "id": "2020_RMNP_3__2_1",
+    "lr": "s2_l2a_10m/2020_RMNP_3__2_1.tif",
+    "hr": "neon_2.5m_linearized/2020_RMNP_3__2_1.tif",
+    "site": "RMNP",
+    "landcover": "Forest",
+    "lr_sha256": "e614c757c9f4a0a123d22382376fab90a7730ba425a39506d068506b20f324ed",
+    "hr_sha256": "0fb56bd325c2ab611b29e4d5db182e477acc8f61e7665076bd088f7c17886f04",
+    "bounds_wgs84": [
+      -105.55796705710897,
+      40.246805560037124,
+      -105.52767958006669,
+      40.270009791378676
+    ]
+  },
+  {
+    "id": "2022_BLAN_5__2_2",
+    "lr": "s2_l2a_10m/2022_BLAN_5__2_2.tif",
+    "hr": "neon_2.5m_linearized/2022_BLAN_5__2_2.tif",
+    "site": "BLAN",
+    "landcover": "Rural",
+    "lr_sha256": "c8dbd53b3ba58adca32cc7af5d02494378648525fd8a1ac694cf7b13eee70547",
+    "hr_sha256": "0539657d9f77292cfb63b310d35ced39e145477dddce906e2922f5b66b72403c",
+    "bounds_wgs84": [
+      -78.05012734011792,
+      39.093145308076245,
+      -78.01959320384967,
+      39.116935676444
+    ]
+  },
+  {
+    "id": "2018_MLBS_3__2_2",
+    "lr": "s2_l2a_10m/2018_MLBS_3__2_2.tif",
+    "hr": "neon_2.5m_linearized/2018_MLBS_3__2_2.tif",
+    "site": "MLBS",
+    "landcover": "Forest",
+    "lr_sha256": "c75e0e512c34374bae40bab8036c6de3128a86983b7e9f21a037738035f8339e",
+    "hr_sha256": "8235159927d01b995ee930ff66d96ef71dd7678927a0a4e5a0ad9b738debf967",
+    "bounds_wgs84": [
+      -80.558060210991,
+      37.390705188712985,
+      -80.52899627656826,
+      37.41389148704608
+    ]
+  },
+  {
+    "id": "2019_SOAP_4__2_1",
+    "lr": "s2_l2a_10m/2019_SOAP_4__2_1.tif",
+    "hr": "neon_2.5m_linearized/2019_SOAP_4__2_1.tif",
+    "site": "SOAP",
+    "landcover": "Forest",
+    "lr_sha256": "64d268a7aff0a62dbe8a06514a202183045b881a98dcd32bbec37dbbf7c44e3d",
+    "hr_sha256": "793fc3a46c797478d86de5b320a4f993b1ac66cd6040735e84786fe16b95f2b9",
+    "bounds_wgs84": [
+      -119.31058819830785,
+      37.044641997858434,
+      -119.28112322772654,
+      37.06825721397077
+    ]
+  },
+  {
+    "id": "2024_JERC_8__1_1",
+    "lr": "s2_l2a_10m/2024_JERC_8__1_1.tif",
+    "hr": "neon_2.5m_linearized/2024_JERC_8__1_1.tif",
+    "site": "JERC",
+    "landcover": "Rural",
+    "lr_sha256": "3b3c4b1f5d2d8b0fa6b1cfb9470b095649286e3df51e075e14de998e7082f3a1",
+    "hr_sha256": "6083279ad583936767d7d343327f5789eb9367b790d8f2f4075bc6ce0ad1c17c",
+    "bounds_wgs84": [
+      -84.55629530060277,
+      31.303561503411206,
+      -84.52881578665945,
+      31.32715326565272
+    ]
+  },
+  {
+    "id": "2021_CPER_8__2_2",
+    "lr": "s2_l2a_10m/2021_CPER_8__2_2.tif",
+    "hr": "neon_2.5m_linearized/2021_CPER_8__2_2.tif",
+    "site": "CPER",
+    "landcover": "Rural",
+    "lr_sha256": "00ecfa9a854aef3c993beb83e86c05b12aaf5a19f682d2207728af758990fdf7",
+    "hr_sha256": "914a3bf7ed7fe18b3454c461c048366a7d2b71edb8ffb084d821c1c68613457b",
+    "bounds_wgs84": [
+      -104.74953775175314,
+      40.82456187003227,
+      -104.71908168862556,
+      40.84769329815036
+    ]
+  },
+  {
+    "id": "2023_UKFS_7__1_3",
+    "lr": "s2_l2a_10m/2023_UKFS_7__1_3.tif",
+    "hr": "neon_2.5m_linearized/2023_UKFS_7__1_3.tif",
+    "site": "UKFS",
+    "landcover": "Forest",
+    "lr_sha256": "281f029aacd35cbb517ff6bea84ad243884a4e40de3a78d5bd5aae9277beb78a",
+    "hr_sha256": "c92a946ac91fd13f5a6680530bbda0289b6a8d3478876ac2abf19ceb21040a08",
+    "bounds_wgs84": [
+      -95.18884305220688,
+      39.06131976586238,
+      -95.15856237526675,
+      39.08492341982782
+    ]
+  },
+  {
+    "id": "2022_GRSM_7__6_2",
+    "lr": "s2_l2a_10m/2022_GRSM_7__6_2.tif",
+    "hr": "neon_2.5m_linearized/2022_GRSM_7__6_2.tif",
+    "site": "GRSM",
+    "landcover": "Forest",
+    "lr_sha256": "75d2b4fa23af64144bd5a300b90cac9f170966a7de10eb52c81b5c281b1da02c",
+    "hr_sha256": "aa60f7d6105e43a96b774628ff14b671f11bbce29d052fb1bfbec05447691447",
+    "bounds_wgs84": [
+      -83.60414400283788,
+      35.594371749293316,
+      -83.57516511672492,
+      35.61803763944379
+    ]
+  },
+  {
+    "id": "2022_HARV_7__3_2",
+    "lr": "s2_l2a_10m/2022_HARV_7__3_2.tif",
+    "hr": "neon_2.5m_linearized/2022_HARV_7__3_2.tif",
+    "site": "HARV",
+    "landcover": "Forest",
+    "lr_sha256": "689f43df6d07fe4e7d58d5a356e062dc6f164095636594a2f56676f34985d9bb",
+    "hr_sha256": "f30a870e051254557030cf2ce91ba1080929f65f255f58da39378bd43de333ba",
+    "bounds_wgs84": [
+      -72.2358714380186,
+      42.506305370428684,
+      -72.20372114088374,
+      42.5300889156261
+    ]
+  },
+  {
+    "id": "2022_UKFS_6__3_3",
+    "lr": "s2_l2a_10m/2022_UKFS_6__3_3.tif",
+    "hr": "neon_2.5m_linearized/2022_UKFS_6__3_3.tif",
+    "site": "UKFS",
+    "landcover": "Rural",
+    "lr_sha256": "5c2caba00db92074376cdb197470b46dd2ba87932ee7db0dd4d97ded74fe526f",
+    "hr_sha256": "a7ad78e5dd93f12197cafb6ffa7f8d8ba15848fc6f72800030ab9c230ec3fd5f",
+    "bounds_wgs84": [
+      -95.17537682410243,
+      39.00679117265951,
+      -95.1451243531615,
+      39.03039119887421
+    ]
+  },
+  {
+    "id": "2021_JORN_4__3_2",
+    "lr": "s2_l2a_10m/2021_JORN_4__3_2.tif",
+    "hr": "neon_2.5m_linearized/2021_JORN_4__3_2.tif",
+    "site": "JORN",
+    "landcover": "Rural",
+    "lr_sha256": "70e25264295d3910a1cc115f6cdd4eee1120f31007b14cff9cc21e1284debd20",
+    "hr_sha256": "14410eb3cefaae84c7f48cd18e9c2fa8d19b5a04f06f8f43383524bccc319478",
+    "bounds_wgs84": [
+      -106.92939119954413,
+      32.65585940801728,
+      -106.90161148360515,
+      32.67935650610066
+    ]
+  },
+  {
+    "id": "2023_PRIN_6__1_1",
+    "lr": "s2_l2a_10m/2023_PRIN_6__1_1.tif",
+    "hr": "neon_2.5m_linearized/2023_PRIN_6__1_1.tif",
+    "site": "PRIN",
+    "landcover": "Rural",
+    "lr_sha256": "79586728b94beedcf0c17bc7a1ac5fb1b99f23bc8b76aec12dd15cee5bc29930",
+    "hr_sha256": "eeb79c9e4dda37a54a07ca16d46450c867100bfae07a4cce38a3375731fed606",
+    "bounds_wgs84": [
+      -97.87599692364856,
+      33.38805129506521,
+      -97.84817227095121,
+      33.41138983494758
+    ]
+  },
+  {
+    "id": "2024_SRER_6__5_2",
+    "lr": "s2_l2a_10m/2024_SRER_6__5_2.tif",
+    "hr": "neon_2.5m_linearized/2024_SRER_6__5_2.tif",
+    "site": "SRER",
+    "landcover": "Rural",
+    "lr_sha256": "00639e8df4c7c47576c69abbc01a8f712ea869cd0a50cce8fac18285a2ad661a",
+    "hr_sha256": "ec2e19cb6712fd71936ffdb5c5c7fe7b3ccc0d21c48d6b9a2e199ac07caa1c56",
+    "bounds_wgs84": [
+      -110.93534510157002,
+      31.80332723711741,
+      -110.90827711604668,
+      31.826440347763413
+    ]
+  },
+  {
+    "id": "2022_GRSM_7__3_10",
+    "lr": "s2_l2a_10m/2022_GRSM_7__3_10.tif",
+    "hr": "neon_2.5m_linearized/2022_GRSM_7__3_10.tif",
+    "site": "GRSM",
+    "landcover": "Forest",
+    "lr_sha256": "bc53529d31180b418245a4f905c80c29a40fd4d6a398edbe15f01902208c609f",
+    "hr_sha256": "b97184673ed06e0dbb79a755a08a2ccf92450aa4d59c05b8b798f1d6302e251d",
+    "bounds_wgs84": [
+      -83.38025892879078,
+      35.66822918753622,
+      -83.35131165195604,
+      35.691847235894066
+    ]
+  },
+  {
+    "id": "2024_MCDI_4__2_1",
+    "lr": "s2_l2a_10m/2024_MCDI_4__2_1.tif",
+    "hr": "neon_2.5m_linearized/2024_MCDI_4__2_1.tif",
+    "site": "MCDI",
+    "landcover": "Rural",
+    "lr_sha256": "39ee1cca7d58340b7fecbe820829caa977e97173ac034dde534ab85ab696ee85",
+    "hr_sha256": "26ecf4b25168eac61f55e8e1987a260c3c1795c4526b116bd70874908604cabc",
+    "bounds_wgs84": [
+      -96.50126619515622,
+      38.941639618118366,
+      -96.47093530976836,
+      38.965322765145885
+    ]
+  },
+  {
+    "id": "2024_JERC_8__3_2",
+    "lr": "s2_l2a_10m/2024_JERC_8__3_2.tif",
+    "hr": "neon_2.5m_linearized/2024_JERC_8__3_2.tif",
+    "site": "JERC",
+    "landcover": "Forest",
+    "lr_sha256": "531693bbd62c13bc3e23d090c728c368c2e87036dad5edc3b3ea7ee4780a5aee",
+    "hr_sha256": "1d5f7a153c94aa02203772ad3644d589025892f3be468d2847542637ffc04116",
+    "bounds_wgs84": [
+      -84.53062227883969,
+      31.256888474204267,
+      -84.50315137653715,
+      31.28048463721515
+    ]
+  },
+  {
+    "id": "2022_SRER_5__5_5",
+    "lr": "s2_l2a_10m/2022_SRER_5__5_5.tif",
+    "hr": "neon_2.5m_linearized/2022_SRER_5__5_5.tif",
+    "site": "SRER",
+    "landcover": "Rural",
+    "lr_sha256": "2e1aecbd1052f0a1a420fbd29406a973811ac9034e0a4bf503a66ee1c453458c",
+    "hr_sha256": "12096290e539338fb4cb76084c60416b018dc1bcf861aabe5167826d5930d762",
+    "bounds_wgs84": [
+      -110.85420970468181,
+      31.80324293979967,
+      -110.82712162617435,
+      31.82637322681377
+    ]
+  },
+  {
+    "id": "2022_ARIK_4__3_3",
+    "lr": "s2_l2a_10m/2022_ARIK_4__3_3.tif",
+    "hr": "neon_2.5m_linearized/2022_ARIK_4__3_3.tif",
+    "site": "ARIK",
+    "landcover": "Rural",
+    "lr_sha256": "bfb58dc286adc0934c2c246a1687dc4ee0335d8897bae62a5d37ae5b03319098",
+    "hr_sha256": "f034bde75504c9fbb65f1bece2dd55c3f1335a84d65962c8e50550deb2061270",
+    "bounds_wgs84": [
+      -102.5173329540716,
+      39.7567623179875,
+      -102.48663797939645,
+      39.78044946255016
+    ]
+  },
+  {
+    "id": "2023_MOAB_7__2_1",
+    "lr": "s2_l2a_10m/2023_MOAB_7__2_1.tif",
+    "hr": "neon_2.5m_linearized/2023_MOAB_7__2_1.tif",
+    "site": "MOAB",
+    "landcover": "Rural",
+    "lr_sha256": "90f84b7ef350c841135a7dd338073ca2ab2e115b56158b652d64e126583ece1a",
+    "hr_sha256": "cf5822155a950823e558529974ca9674a96d5705927a3d52819e8358dc7c6669",
+    "bounds_wgs84": [
+      -109.42840858216233,
+      38.23679543857449,
+      -109.39866130268626,
+      38.26025405706907
+    ]
+  },
+  {
+    "id": "2023_PRIN_6__2_2",
+    "lr": "s2_l2a_10m/2023_PRIN_6__2_2.tif",
+    "hr": "neon_2.5m_linearized/2023_PRIN_6__2_2.tif",
+    "site": "PRIN",
+    "landcover": "Rural",
+    "lr_sha256": "1319d4560b27b525f662b978138900548ece98c1c0dcfd6e2a471203c11013b7",
+    "hr_sha256": "ccc2d9ef0b0c232452e6f55af936eefbd6bef154355d3d777ffbcb873f2d7ddd",
+    "bounds_wgs84": [
+      -97.84878109346752,
+      33.3647070116534,
+      -97.82095713482019,
+      33.38805129506521
+    ]
+  },
+  {
+    "id": "2019_NIWO_3__4_4",
+    "lr": "s2_l2a_10m/2019_NIWO_3__4_4.tif",
+    "hr": "neon_2.5m_linearized/2019_NIWO_3__4_4.tif",
+    "site": "NIWO",
+    "landcover": "Forest",
+    "lr_sha256": "75b6727662565404262556bbfbad530b480ce2c35b365901b772609c6921f547",
+    "hr_sha256": "c6a52adb9401f953b16f932f440efa8d5cbb299785ec875fab939547ed9533c1",
+    "bounds_wgs84": [
+      -105.55971102057879,
+      40.029848049682634,
+      -105.52951998553712,
+      40.0530529779502
+    ]
+  },
+  {
+    "id": "2024_HARV_8__2_4",
+    "lr": "s2_l2a_10m/2024_HARV_8__2_4.tif",
+    "hr": "neon_2.5m_linearized/2024_HARV_8__2_4.tif",
+    "site": "HARV",
+    "landcover": "Forest",
+    "lr_sha256": "203ab6616c3240ea9d604a104a4bcea9cb86e32bd9fd560af3d4a4fc9c4749fa",
+    "hr_sha256": "c8971c48676018b9dd007d6255f44b98be01fe1031cd150608bf6ceed6c53a28",
+    "bounds_wgs84": [
+      -72.17219813520452,
+      42.536430207421716,
+      -72.14001008630831,
+      42.56023011040577
+    ]
+  },
+  {
+    "id": "2021_OSBS_6__4_3",
+    "lr": "s2_l2a_10m/2021_OSBS_6__4_3.tif",
+    "hr": "neon_2.5m_linearized/2021_OSBS_6__4_3.tif",
+    "site": "OSBS",
+    "landcover": "Forest",
+    "lr_sha256": "e526c5067803405e3b52577f83b5246fd746fb12bcbf6a5ff4b99ad5ba67983d",
+    "hr_sha256": "f49b49922e776901575e47fbb49e0a2c27c3f3dc6b35c0c6f8dc08471485017f",
+    "bounds_wgs84": [
+      -82.01593445324418,
+      29.65690691108056,
+      -81.98925396978478,
+      29.680207629636588
+    ]
+  },
+  {
+    "id": "2024_LENO_8__4_2",
+    "lr": "s2_l2a_10m/2024_LENO_8__4_2.tif",
+    "hr": "neon_2.5m_linearized/2024_LENO_8__4_2.tif",
+    "site": "LENO",
+    "landcover": "Water",
+    "lr_sha256": "66e74d52846b9691cd6b938db4fdba1508751b9fc469463c5672432d54417f7c",
+    "hr_sha256": "632f8178c79782a5d6afef420d8b2aa5f3a1634b74b7b246a5bbafb7b968ecfa",
+    "bounds_wgs84": [
+      -88.20322314515226,
+      31.79370754429608,
+      -88.17588729465984,
+      31.817051807514094
+    ]
+  },
+  {
+    "id": "2023_LENO_7__1_2",
+    "lr": "s2_l2a_10m/2023_LENO_7__1_2.tif",
+    "hr": "neon_2.5m_linearized/2023_LENO_7__1_2.tif",
+    "site": "LENO",
+    "landcover": "Forest",
+    "lr_sha256": "7d7f653bd32bad1365d146baff2b018c59da93800892a322fe78ef78bf89846a",
+    "hr_sha256": "f18c2c612486f4c96268aeaef65ed1e1161990db765dc5899c818049c8b741fd",
+    "bounds_wgs84": [
+      -88.21467168399117,
+      31.845019521498983,
+      -88.18731753992246,
+      31.868366297875234
+    ]
+  },
+  {
+    "id": "2023_PRIN_6__3_3",
+    "lr": "s2_l2a_10m/2023_PRIN_6__3_3.tif",
+    "hr": "neon_2.5m_linearized/2023_PRIN_6__3_3.tif",
+    "site": "PRIN",
+    "landcover": "Rural",
+    "lr_sha256": "135d8a0816145fb2cabd04d6a9214860f8131eaa2321c737efdd77f9b171e2ac",
+    "hr_sha256": "4394fd02b1aa4bc9a71ea3dc21cc1be0bf09af9f1cc0c3315ced20c3c80f772f",
+    "bounds_wgs84": [
+      -97.82157978894514,
+      33.34135700060515,
+      -97.79375654015666,
+      33.3647070116534
+    ]
+  },
+  {
+    "id": "2023_LENO_7__1_1",
+    "lr": "s2_l2a_10m/2023_LENO_7__1_1.tif",
+    "hr": "neon_2.5m_linearized/2023_LENO_7__1_1.tif",
+    "site": "LENO",
+    "landcover": "Water",
+    "lr_sha256": "720740db3f86da0587e43511a72616211737da1a22db4794faa8bf5510b11fec",
+    "hr_sha256": "7c83d35c523ceac6b41e444ebb3f5070bdd787cf2b8285e9d98b62041485f361",
+    "bounds_wgs84": [
+      -88.24172949128894,
+      31.844758382066427,
+      -88.21436895491283,
+      31.868110680352938
+    ]
+  },
+  {
+    "id": "2024_OAES_8__5_4",
+    "lr": "s2_l2a_10m/2024_OAES_8__5_4.tif",
+    "hr": "neon_2.5m_linearized/2024_OAES_8__5_4.tif",
+    "site": "OAES",
+    "landcover": "Rural",
+    "lr_sha256": "d900a4fc89d553b48fd4ef13058c8a6678ff598991cb9af121c3785cafd0552c",
+    "hr_sha256": "1c94bcc7ab32140f64bcaa4afd9eafb8e3f1c44d0b17d9ec4ed13b0023374417",
+    "bounds_wgs84": [
+      -99.07438513801647,
+      35.3117646009866,
+      -99.04620249508591,
+      35.33486204827504
+    ]
+  },
+  {
+    "id": "2022_SCBI_5__3_1",
+    "lr": "s2_l2a_10m/2022_SCBI_5__3_1.tif",
+    "hr": "neon_2.5m_linearized/2022_SCBI_5__3_1.tif",
+    "site": "SCBI",
+    "landcover": "Forest",
+    "lr_sha256": "52600f46546fb79277d64ca309a8cebb34626a5c61ca8c31815e3d2a460f2790",
+    "hr_sha256": "c9783d1837d107c1b8a7520c165e966226584710265f576ba22e58cfc24cd76d",
+    "bounds_wgs84": [
+      -78.19382083953877,
+      38.83907454022693,
+      -78.16344352711653,
+      38.86282849418362
+    ]
+  },
+  {
+    "id": "2020_CPER_5__2_1",
+    "lr": "s2_l2a_10m/2020_CPER_5__2_1.tif",
+    "hr": "neon_2.5m_linearized/2020_CPER_5__2_1.tif",
+    "site": "CPER",
+    "landcover": "Rural",
+    "lr_sha256": "fe43854022ff994f8960f8f7aad9f1b791b7f25c17dbdedfc444bb177f236ace",
+    "hr_sha256": "f4e581aa62b3b2ce99de0a076108da725b759dc232cb91db70578789551ad1a2",
+    "bounds_wgs84": [
+      -104.76780047546542,
+      40.82460487625854,
+      -104.73735067998996,
+      40.84773152980454
+    ]
+  },
+  {
+    "id": "2023_NOGP_6__2_3",
+    "lr": "s2_l2a_10m/2023_NOGP_6__2_3.tif",
+    "hr": "neon_2.5m_linearized/2023_NOGP_6__2_3.tif",
+    "site": "NOGP",
+    "landcover": "Rural",
+    "lr_sha256": "d24d4c2c258f070cb12ea0ae6cfc951efc9e74a95540266abca6ced32f732794",
+    "hr_sha256": "adeac4673fc064c60aefa3e92ef5f43c5f605e1fd1076679bdfdf23a464ec6ed",
+    "bounds_wgs84": [
+      -100.89134824401938,
+      46.7788106678721,
+      -100.85702460905513,
+      46.80238515950354
+    ]
+  },
+  {
+    "id": "2023_SCBI_6__1_3",
+    "lr": "s2_l2a_10m/2023_SCBI_6__1_3.tif",
+    "hr": "neon_2.5m_linearized/2023_SCBI_6__1_3.tif",
+    "site": "SCBI",
+    "landcover": "Forest",
+    "lr_sha256": "66282792f711cd5115e168553b180461210545cef0b133f1c37253fd6c4b183a",
+    "hr_sha256": "4542890ae5d7ebb66cda414d21ccc76ba6eab15cbbc6cc8dc68370f8ccb3cc13",
+    "bounds_wgs84": [
+      -78.13304723897826,
+      38.88370842383128,
+      -78.10263195608528,
+      38.907477014419705
+    ]
+  },
+  {
+    "id": "2020_RMNP_3__6_1",
+    "lr": "s2_l2a_10m/2020_RMNP_3__6_1.tif",
+    "hr": "neon_2.5m_linearized/2020_RMNP_3__6_1.tif",
+    "site": "RMNP",
+    "landcover": "Forest",
+    "lr_sha256": "e8a245d7312f84571130fab2653d819dd685289a0df96f8b92032ab48e827a27",
+    "hr_sha256": "260e5bb28215ee38099f57a3821dc3e6e916ee9c13d2839afae10f3428f33ca9",
+    "bounds_wgs84": [
+      -105.55721068486358,
+      40.154552759958875,
+      -105.52696484277664,
+      40.17775690543087
+    ]
+  },
+  {
+    "id": "2021_SOAP_5__5_2",
+    "lr": "s2_l2a_10m/2021_SOAP_5__5_2.tif",
+    "hr": "neon_2.5m_linearized/2021_SOAP_5__5_2.tif",
+    "site": "SOAP",
+    "landcover": "Forest",
+    "lr_sha256": "87040d4aa6f25b7060724acadbd1ffc0124716c0f79b9cc4a2099740c280ef8e",
+    "hr_sha256": "b72017087257f6f560406b29abaf3aeff792eaaeb3f22b22544368dc5aa699c9",
+    "bounds_wgs84": [
+      -119.28001863593326,
+      36.98521055687905,
+      -119.25058618040785,
+      37.00881833581411
+    ]
+  },
+  {
+    "id": "2023_JERC_7__5_3",
+    "lr": "s2_l2a_10m/2023_JERC_7__5_3.tif",
+    "hr": "neon_2.5m_linearized/2023_JERC_7__5_3.tif",
+    "site": "JERC",
+    "landcover": "Rural",
+    "lr_sha256": "d8b5f6a5d4471529b56d25c5522c1e496eaecb7ae33ea2d7138e0980d7bb46f0",
+    "hr_sha256": "1bf1e91b45dce436cba54f72dd96aba5320a7be9522048064e5c64bcbd6fb8cb",
+    "bounds_wgs84": [
+      -84.50521477409079,
+      31.201016899426193,
+      -84.47775535907182,
+      31.224617287568893
+    ]
+  },
+  {
+    "id": "2022_GRSM_7__5_2",
+    "lr": "s2_l2a_10m/2022_GRSM_7__5_2.tif",
+    "hr": "neon_2.5m_linearized/2022_GRSM_7__5_2.tif",
+    "site": "GRSM",
+    "landcover": "Forest",
+    "lr_sha256": "66ef926155121a776ba54eef4d9ecb494d7d63177049b2728b263c28fc661a6e",
+    "hr_sha256": "9c67dc19599a38824e8aa131084e81e1e2c963376d12775be21de254cf754b82",
+    "bounds_wgs84": [
+      -83.60489241221079,
+      35.61743018194719,
+      -83.57590459192762,
+      35.641096483443306
+    ]
+  },
+  {
+    "id": "2021_SRER_4__8_6",
+    "lr": "s2_l2a_10m/2021_SRER_4__8_6.tif",
+    "hr": "neon_2.5m_linearized/2021_SRER_4__8_6.tif",
+    "site": "SRER",
+    "landcover": "Forest",
+    "lr_sha256": "1d6d6f08c101e23cb7ae572fd0df9ee4adc64e39c9793aa3ca6ebef94c9b954e",
+    "hr_sha256": "7b606993c8e12c8862a6b5393df873decb578c7132dc2823b0b29a259a45aca4",
+    "bounds_wgs84": [
+      -110.82727633132981,
+      31.743116289012363,
+      -110.80019919520576,
+      31.766252417333007
+    ]
+  },
+  {
+    "id": "2023_DSNY_7__2_3",
+    "lr": "s2_l2a_10m/2023_DSNY_7__2_3.tif",
+    "hr": "neon_2.5m_linearized/2023_DSNY_7__2_3.tif",
+    "site": "DSNY",
+    "landcover": "Water",
+    "lr_sha256": "1aec2f1523aa71c537477e22fdb2c1316ce7a5f1954423ee86149a140fc6eca3",
+    "hr_sha256": "59cca75bffbaa5648c1c7468422de89746dd7a790df773b153fee380b23e07fa",
+    "bounds_wgs84": [
+      -81.42048733852299,
+      28.09087074137484,
+      -81.39433925381414,
+      28.114057095404416
+    ]
+  },
+  {
+    "id": "2023_DEJU_5__1_3",
+    "lr": "s2_l2a_10m/2023_DEJU_5__1_3.tif",
+    "hr": "neon_2.5m_linearized/2023_DEJU_5__1_3.tif",
+    "site": "DEJU",
+    "landcover": "Unknown",
+    "lr_sha256": "6f33ceb036792356b8f0a629add3edd24b26de7a0f63cc758bb7339e722b81df",
+    "hr_sha256": "326a8c2f9bdfd791ac842c8e5caee1215d95f7f592f424f7594156d829af230a",
+    "bounds_wgs84": [
+      -145.66090666724278,
+      63.92014542519724,
+      -145.6075920205306,
+      63.94360447145112
+    ]
+  },
+  {
+    "id": "2020_CPER_5__1_3",
+    "lr": "s2_l2a_10m/2020_CPER_5__1_3.tif",
+    "hr": "neon_2.5m_linearized/2020_CPER_5__1_3.tif",
+    "site": "CPER",
+    "landcover": "Rural",
+    "lr_sha256": "49147d09114426fd222099fd3c0d82f9e7c858932ddf6a81efae96fab32dc1c8",
+    "hr_sha256": "bd430dae87890f0a2f24142649f4bf5756f4c3e90aae79c15dc188495a4843ef",
+    "bounds_wgs84": [
+      -104.70698146991113,
+      40.847512105787615,
+      -104.67650020213553,
+      40.87065459693275
+    ]
+  },
+  {
+    "id": "2022_GUAN_2__3_3",
+    "lr": "s2_l2a_10m/2022_GUAN_2__3_3.tif",
+    "hr": "neon_2.5m_linearized/2022_GUAN_2__3_3.tif",
+    "site": "GUAN",
+    "landcover": "Unknown",
+    "lr_sha256": "ee52f57d704a67e5550a2780406539efd270ca4333aebf1ce7955b914996a65f",
+    "hr_sha256": "b282f5c4e57df700f7df4badcd90f53f59197590e029aa7d2cb5878c9d07b87c",
+    "bounds_wgs84": [
+      -66.8502206270801,
+      17.956681091437485,
+      -66.82577857262334,
+      17.98007281170522
+    ]
+  },
+  {
+    "id": "2024_CPER_10__1_2",
+    "lr": "s2_l2a_10m/2024_CPER_10__1_2.tif",
+    "hr": "neon_2.5m_linearized/2024_CPER_10__1_2.tif",
+    "site": "CPER",
+    "landcover": "Rural",
+    "lr_sha256": "3ac406de305be9d360e41435dee9cd69d25909bfc3706711801660bd987f7699",
+    "hr_sha256": "85eecb6322cb2aaaf8fae295282391f5ad9a34b7b00c3621c03237ea5c20de0b",
+    "bounds_wgs84": [
+      -104.74948554244297,
+      40.83843479797679,
+      -104.71902308330039,
+      40.86156620435678
+    ]
+  },
+  {
+    "id": "2022_GRSM_7__5_4",
+    "lr": "s2_l2a_10m/2022_GRSM_7__5_4.tif",
+    "hr": "neon_2.5m_linearized/2022_GRSM_7__5_4.tif",
+    "site": "GRSM",
+    "landcover": "Forest",
+    "lr_sha256": "174009237639fef2d4fd9e5f7aa2989cd011194b116d20e41a35685d5fee6a2a",
+    "hr_sha256": "4bc07f8f4c1a3ffd84c4b55c42cf9fc01e34130e75a892c6049728edc0b8a2ff",
+    "bounds_wgs84": [
+      -83.54839656150062,
+      35.618638486826754,
+      -83.51942325804566,
+      35.64229257758115
+    ]
+  },
+  {
+    "id": "2023_ONAQ_5__3_4",
+    "lr": "s2_l2a_10m/2023_ONAQ_5__3_4.tif",
+    "hr": "neon_2.5m_linearized/2023_ONAQ_5__3_4.tif",
+    "site": "ONAQ",
+    "landcover": "Rural",
+    "lr_sha256": "4f7c1747d5ef3fb5934da4b283acc0991497b5ba456d9693d4b339e2129417b9",
+    "hr_sha256": "a7931b7a9f66f64361699b4053781c8494e442628d3ce860192646870348d80b",
+    "bounds_wgs84": [
+      -112.4661418475635,
+      40.18012980840681,
+      -112.43558501507933,
+      40.203563596493176
+    ]
+  },
+  {
+    "id": "2023_DEJU_5__3_2",
+    "lr": "s2_l2a_10m/2023_DEJU_5__3_2.tif",
+    "hr": "neon_2.5m_linearized/2023_DEJU_5__3_2.tif",
+    "site": "DEJU",
+    "landcover": "Unknown",
+    "lr_sha256": "e5a777614a2c58be4c4a8028b91a0d9b85355a7fc1a4ca9e5fe7b04371af8f5f",
+    "hr_sha256": "3c6adafdf16eb02f58bac6eb78364cba7ca2606fa1d91d399299e70d933ec4ad",
+    "bounds_wgs84": [
+      -145.71518595296138,
+      63.87470192240048,
+      -145.6620011545656,
+      63.89814187445885
+    ]
+  },
+  {
+    "id": "2024_RMNP_6__6_2",
+    "lr": "s2_l2a_10m/2024_RMNP_6__6_2.tif",
+    "hr": "neon_2.5m_linearized/2024_RMNP_6__6_2.tif",
+    "site": "RMNP",
+    "landcover": "Forest",
+    "lr_sha256": "5cf350c9f04942061cbc60e4e5565e859fc09413308870d83867acb1cfc29914",
+    "hr_sha256": "819867ef05410de55cbe7312c0f228017d75b384adba798eed27ee545c92a06d",
+    "bounds_wgs84": [
+      -105.52714321792942,
+      40.1546934518556,
+      -105.4969073431795,
+      40.17788990340819
+    ]
+  },
+  {
+    "id": "2021_OSBS_6__5_3",
+    "lr": "s2_l2a_10m/2021_OSBS_6__5_3.tif",
+    "hr": "neon_2.5m_linearized/2021_OSBS_6__5_3.tif",
+    "site": "OSBS",
+    "landcover": "Water",
+    "lr_sha256": "0e7bfdc00f8217630065b6ab77b7dac45c08be957a823a4422bc7e215dc5930a",
+    "hr_sha256": "c3727291c0349f1d36c22908a7e1fd8458de9e5c1e487e3cc03f1da85560489d",
+    "bounds_wgs84": [
+      -82.0157023008687,
+      29.633806309403642,
+      -81.98902812333758,
+      29.657106923517258
+    ]
+  },
+  {
+    "id": "2023_DEJU_5__3_1",
+    "lr": "s2_l2a_10m/2023_DEJU_5__3_1.tif",
+    "hr": "neon_2.5m_linearized/2023_DEJU_5__3_1.tif",
+    "site": "DEJU",
+    "landcover": "Unknown",
+    "lr_sha256": "919845986cf40c311158448e1c4bfd3cd9e9262bf7a390d178d9a935c769042f",
+    "hr_sha256": "866e8d0801270dc292758e991cdf937bc4ba636bf9390a0c5365b062e8f7fd14",
+    "bounds_wgs84": [
+      -145.76728018461205,
+      63.87517379758913,
+      -145.71413600672886,
+      63.898595460191416
+    ]
+  },
+  {
+    "id": "2021_SJER_5__1_3",
+    "lr": "s2_l2a_10m/2021_SJER_5__1_3.tif",
+    "hr": "neon_2.5m_linearized/2021_SJER_5__1_3.tif",
+    "site": "SJER",
+    "landcover": "Rural",
+    "lr_sha256": "3dbce6a732929ef3670457ef69d1ad665c5a442fb56b7c456de3a560f542ebe6",
+    "hr_sha256": "47e459e8817b55284af8ae1d890fb364fb9822b6701e7d09042280dc32942dea",
+    "bounds_wgs84": [
+      -119.7166627026866,
+      37.10398597551834,
+      -119.68705960872141,
+      37.12769315140619
+    ]
+  },
+  {
+    "id": "2023_UKFS_7__3_1",
+    "lr": "s2_l2a_10m/2023_UKFS_7__3_1.tif",
+    "hr": "neon_2.5m_linearized/2023_UKFS_7__3_1.tif",
+    "site": "UKFS",
+    "landcover": "Rural",
+    "lr_sha256": "317d3f868187177ecbd2b7178f529af41c5e00f9322d2fc885d450c8ac0d8a73",
+    "hr_sha256": "3c07833f024643ab0b43cfa93086a2ad18aa1696b1e47719e31e67199625b553",
+    "bounds_wgs84": [
+      -95.24653427079001,
+      39.01409242025808,
+      -95.21625687758687,
+      39.03770942663692
+    ]
+  },
+  {
+    "id": "2021_SJER_5__3_1",
+    "lr": "s2_l2a_10m/2021_SJER_5__3_1.tif",
+    "hr": "neon_2.5m_linearized/2021_SJER_5__3_1.tif",
+    "site": "SJER",
+    "landcover": "Rural",
+    "lr_sha256": "436754c1f91308ebab8d1290d8fe45c071a5c7a6280d937e9f5c00f4e193524d",
+    "hr_sha256": "54fa1c5adb5347e52d91427ae886b371a8b0785b9dc5d9ad7015339a7fce4666",
+    "bounds_wgs84": [
+      -119.77255356996037,
+      37.05655368932168,
+      -119.74295424188801,
+      37.08027281578247
+    ]
+  },
+  {
+    "id": "2021_JORN_4__2_2",
+    "lr": "s2_l2a_10m/2021_JORN_4__2_2.tif",
+    "hr": "neon_2.5m_linearized/2021_JORN_4__2_2.tif",
+    "site": "JORN",
+    "landcover": "Rural",
+    "lr_sha256": "e376f2a8de31d31936e47ac43229868a2604f77af56545a206feba60932a345e",
+    "hr_sha256": "a988cd59704672f41cf1c640284a514da7dfae3a82ab2e1343c324973901beb2",
+    "bounds_wgs84": [
+      -106.92988785922834,
+      32.67893967233344,
+      -106.90210056957986,
+      32.70243704619823
+    ]
+  },
+  {
+    "id": "2024_CHEQ_8__2_2",
+    "lr": "s2_l2a_10m/2024_CHEQ_8__2_2.tif",
+    "hr": "neon_2.5m_linearized/2024_CHEQ_8__2_2.tif",
+    "site": "CHEQ",
+    "landcover": "Forest",
+    "lr_sha256": "70774a0adb60fc5198848144f9a8fe219a03999f8b7f01081a14bd5efa7fb86b",
+    "hr_sha256": "4bd8ed4525e3a01c521829fec0e9a981efb98b1ea96bd4cf4a903bbf0cc0a80c",
+    "bounds_wgs84": [
+      -90.07789447851434,
+      45.7933965533104,
+      -90.04378090398691,
+      45.81725495344123
+    ]
+  },
+  {
+    "id": "2023_LENO_7__3_3",
+    "lr": "s2_l2a_10m/2023_LENO_7__3_3.tif",
+    "hr": "neon_2.5m_linearized/2023_LENO_7__3_3.tif",
+    "site": "LENO",
+    "landcover": "Water",
+    "lr_sha256": "5b73b1e236f553bbc9b7a9dad103292c842e577d07c58eadc1a8b62e9450ab98",
+    "hr_sha256": "5249985a309fce5860bf09a334a2ca3e1cb92d2d8cb914731f21450435721c6a",
+    "bounds_wgs84": [
+      -88.18702188989438,
+      31.799091876804056,
+      -88.15968828149808,
+      31.822432852090543
+    ]
+  },
+  {
+    "id": "2019_JORN_3__9_7",
+    "lr": "s2_l2a_10m/2019_JORN_3__9_7.tif",
+    "hr": "neon_2.5m_linearized/2019_JORN_3__9_7.tif",
+    "site": "JORN",
+    "landcover": "Rural",
+    "lr_sha256": "fba239ede73e7b9c7144d1e8766a770871651804b3775a1d9a59a50f0fd1b0cd",
+    "hr_sha256": "eece771ac2e5b257055a0fdd9497fef258dd1d800f67ad9bc3395f57d84d1706",
+    "bounds_wgs84": [
+      -106.79052862322685,
+      32.53724122851705,
+      -106.76282048563425,
+      32.56070914316644
+    ]
+  },
+  {
+    "id": "2022_BLAN_5__1_2",
+    "lr": "s2_l2a_10m/2022_BLAN_5__1_2.tif",
+    "hr": "neon_2.5m_linearized/2022_BLAN_5__1_2.tif",
+    "site": "BLAN",
+    "landcover": "Rural",
+    "lr_sha256": "cd5eebd0c017392e8cc4844da07a002ff796e2b90677fcbb4a396cba2d990175",
+    "hr_sha256": "585174c0ac51b40c8eaad42470053fd6eeda3adc5e87ae85b70cd67e025d2ecb",
+    "bounds_wgs84": [
+      -78.04916611162749,
+      39.116182698137685,
+      -78.01862126369282,
+      39.139973569654245
+    ]
+  },
+  {
+    "id": "2023_LENO_7__1_3",
+    "lr": "s2_l2a_10m/2023_LENO_7__1_3.tif",
+    "hr": "neon_2.5m_linearized/2023_LENO_7__1_3.tif",
+    "site": "LENO",
+    "landcover": "Water",
+    "lr_sha256": "3a1d8ad880a2e4b9479105070a5303fd032a02361e9c14c4cb81b9abd8c957d6",
+    "hr_sha256": "fa2af4ce843180785b5c74a869024703fe603af924633b07517aa53a4f70b0f3",
+    "bounds_wgs84": [
+      -88.18761352928198,
+      31.84527491056135,
+      -88.16026578560079,
+      31.86861615963184
+    ]
+  },
+  {
+    "id": "2023_DELA_7__1_4",
+    "lr": "s2_l2a_10m/2023_DELA_7__1_4.tif",
+    "hr": "neon_2.5m_linearized/2023_DELA_7__1_4.tif",
+    "site": "DELA",
+    "landcover": "Water",
+    "lr_sha256": "c45c35f60c54eebdb82d7f5cc87f344780755e22527f4ab08b7bdfcc916b94d5",
+    "hr_sha256": "8116cd7d384f6a2a6e20cc78cf402bde184f656657ececdd1a8cfad670d571e9",
+    "bounds_wgs84": [
+      -87.80729865476505,
+      32.56976543440052,
+      -87.77982157650872,
+      32.59302915974503
+    ]
+  },
+  {
+    "id": "2023_OSBS_7__4_1",
+    "lr": "s2_l2a_10m/2023_OSBS_7__4_1.tif",
+    "hr": "neon_2.5m_linearized/2023_OSBS_7__4_1.tif",
+    "site": "OSBS",
+    "landcover": "Rural",
+    "lr_sha256": "0a658193747eb4abe30e998df3673b1dbee5d9598c58e23022a087e3b95b5e62",
+    "hr_sha256": "0a313d62262a43e1bddfcc200067e43d636e17966a4dc0d65db2ce162bcd3e79",
+    "bounds_wgs84": [
+      -82.06884238213199,
+      29.656491061197457,
+      -82.04215036167571,
+      29.67980195146227
+    ]
+  },
+  {
+    "id": "2024_JERC_8__7_5",
+    "lr": "s2_l2a_10m/2024_JERC_8__7_5.tif",
+    "hr": "neon_2.5m_linearized/2024_JERC_8__7_5.tif",
+    "site": "JERC",
+    "landcover": "Rural",
+    "lr_sha256": "ac84eadc4afe1f4f7e42ce7e1fd4608d4299d3b6a14b0b16be0f0116fceac042",
+    "hr_sha256": "fc102b5df78797b2ed917862b05d955249577ad76009db71cc2026d41452de0a",
+    "bounds_wgs84": [
+      -84.45251273736443,
+      31.162996075467294,
+      -84.42505328248106,
+      31.1866060739834
+    ]
+  },
+  {
+    "id": "2021_SJER_5__2_2",
+    "lr": "s2_l2a_10m/2021_SJER_5__2_2.tif",
+    "hr": "neon_2.5m_linearized/2021_SJER_5__2_2.tif",
+    "site": "SJER",
+    "landcover": "Rural",
+    "lr_sha256": "086e7ad5fee6d50b4c67506d4e2e2fac4351f3a241effef544efb80bc73bc849",
+    "hr_sha256": "2a7e97cbaa2ab3e4eb1f7d97d09d9a0947b79bc6e017c364d17008dae5da1f99",
+    "bounds_wgs84": [
+      -119.7446168357902,
+      37.08027281578247,
+      -119.71501561602099,
+      37.10398597551834
+    ]
+  },
+  {
+    "id": "2019_HEAL_3__3_1",
+    "lr": "s2_l2a_10m/2019_HEAL_3__3_1.tif",
+    "hr": "neon_2.5m_linearized/2019_HEAL_3__3_1.tif",
+    "site": "HEAL",
+    "landcover": "Unknown",
+    "lr_sha256": "0cc7ae394b50f3bef22edfa5bef72570aec1f589c68488cada464510862604c4",
+    "hr_sha256": "269dccac30ac984c550dff9bab901e1c64be991bd606b52d0ffad6ce56e60fd9",
+    "bounds_wgs84": [
+      -149.2879915351192,
+      63.84503773676285,
+      -149.23411524431765,
+      63.868807449987294
+    ]
+  },
+  {
+    "id": "2022_SCBI_5__1_1",
+    "lr": "s2_l2a_10m/2022_SCBI_5__1_1.tif",
+    "hr": "neon_2.5m_linearized/2022_SCBI_5__1_1.tif",
+    "site": "SCBI",
+    "landcover": "Forest",
+    "lr_sha256": "dcc78ce0ba7ab1393aae45d3cc84acbb0a2572ed3e90f06827a33ddc9a1aee59",
+    "hr_sha256": "c54d2501c001b6b1afb916432d270fd06b13ffeba175c052348557ce1f349b43",
+    "bounds_wgs84": [
+      -78.1920074034817,
+      38.88515711088129,
+      -78.16160901548021,
+      38.90891201241831
+    ]
+  },
+  {
+    "id": "2020_RMNP_3__3_3",
+    "lr": "s2_l2a_10m/2020_RMNP_3__3_3.tif",
+    "hr": "neon_2.5m_linearized/2020_RMNP_3__3_3.tif",
+    "site": "RMNP",
+    "landcover": "Forest",
+    "lr_sha256": "e9ea86cedbf8675dc5b4b041f23eb3646997569ba8a5ad4fb4463dff1e399602",
+    "hr_sha256": "68c23fc672023565a0c58149843bfaef52f790e79971f4cb82d14a73b047bf7f",
+    "bounds_wgs84": [
+      -105.49758131685523,
+      40.22401674802041,
+      -105.46732428229039,
+      40.2472055258791
+    ]
+  },
+  {
+    "id": "2024_TALL_8__2_3",
+    "lr": "s2_l2a_10m/2024_TALL_8__2_3.tif",
+    "hr": "neon_2.5m_linearized/2024_TALL_8__2_3.tif",
+    "site": "TALL",
+    "landcover": "Forest",
+    "lr_sha256": "f592816ed948310ec5ddf0c753b55bacdec0b0e160582840f40b04bbc1dcbce0",
+    "hr_sha256": "4729a3435090f3777de66a6dbacccd1c7a133e1933d750461cdb27f625e0596d",
+    "bounds_wgs84": [
+      -87.3995746149605,
+      32.94535669482464,
+      -87.37208384350878,
+      32.96853309101962
+    ]
+  },
+  {
+    "id": "2024_SRER_6__1_4",
+    "lr": "s2_l2a_10m/2024_SRER_6__1_4.tif",
+    "hr": "neon_2.5m_linearized/2024_SRER_6__1_4.tif",
+    "site": "SRER",
+    "landcover": "Rural",
+    "lr_sha256": "f212c5c6f6743866ddb1c7962656b40dda06180079398e074753930cde2a9325",
+    "hr_sha256": "f05acf182cc3329398c072b3fd186fca006d3a52347b7acba9702ecf4bac9d05",
+    "bounds_wgs84": [
+      -110.88113637761973,
+      31.895662050207495,
+      -110.85402784945443,
+      31.918786381612755
+    ]
+  },
+  {
+    "id": "2023_DEJU_5__4_1",
+    "lr": "s2_l2a_10m/2023_DEJU_5__4_1.tif",
+    "hr": "neon_2.5m_linearized/2023_DEJU_5__4_1.tif",
+    "site": "DEJU",
+    "landcover": "Unknown",
+    "lr_sha256": "063cdc36c1acb9f30de75ad6733e3dcebae61b3bd2b7f9aa67d7a617f6e5acd7",
+    "hr_sha256": "3289b07bef189d6b0ee92a525ec3b5aba4377f67e093ff8ad8c3eea55de93a3c",
+    "bounds_wgs84": [
+      -145.76828574531348,
+      63.852205637791265,
+      -145.71518595296138,
+      63.87562692541203
+    ]
+  },
+  {
+    "id": "2024_CPER_10__2_3",
+    "lr": "s2_l2a_10m/2024_CPER_10__2_3.tif",
+    "hr": "neon_2.5m_linearized/2024_CPER_10__2_3.tif",
+    "site": "CPER",
+    "landcover": "Rural",
+    "lr_sha256": "2e198eff966f5d0c132e323d51013a9ed55af061e2b815f65f36d447b915bb83",
+    "hr_sha256": "0300317ccb7ea7ae5ca7d89a7be38eef724eb4a66ede9c38e64f47f67e9d503b",
+    "bounds_wgs84": [
+      -104.71921776920743,
+      40.815295426298995,
+      -104.68875553566501,
+      40.83843479797679
+    ]
+  },
+  {
+    "id": "2023_KONZ_8__8_2",
+    "lr": "s2_l2a_10m/2023_KONZ_8__8_2.tif",
+    "hr": "neon_2.5m_linearized/2023_KONZ_8__8_2.tif",
+    "site": "KONZ",
+    "landcover": "Rural",
+    "lr_sha256": "86351a349cdd83447b9496b51b5d91820c057422199ea957f9e4aac34f4fbe91",
+    "hr_sha256": "8439034db754ba6702652759faab67e664ddf09862f25770f3fc7f81cc6bc58b",
+    "bounds_wgs84": [
+      -96.60627566139864,
+      39.05738897505934,
+      -96.5759250786517,
+      39.08104843925857
+    ]
+  },
+  {
+    "id": "2024_STER_5__3_3",
+    "lr": "s2_l2a_10m/2024_STER_5__3_3.tif",
+    "hr": "neon_2.5m_linearized/2024_STER_5__3_3.tif",
+    "site": "STER",
+    "landcover": "Rural",
+    "lr_sha256": "214860999d9101b9cf90f2e0097cc088ae2a31b7170e328bd8f65a99344df4d1",
+    "hr_sha256": "7448d64b1044a2a208788ad9dba703cc29a8218fdb49818e147c917be210a4fb",
+    "bounds_wgs84": [
+      -103.0223172717856,
+      40.460082363370255,
+      -102.99145420983506,
+      40.483652226059675
+    ]
+  },
+  {
+    "id": "2021_ABBY_4__3_4",
+    "lr": "s2_l2a_10m/2021_ABBY_4__3_4.tif",
+    "hr": "neon_2.5m_linearized/2021_ABBY_4__3_4.tif",
+    "site": "ABBY",
+    "landcover": "Forest",
+    "lr_sha256": "268cfe2150ef746958ad6ef9ee73491c3cf9b622634670e0fcf0854063f51029",
+    "hr_sha256": "eab838a0dfd57025105c67e9b653d79d01b7dfa3ffec81e94d4c45772acc7041",
+    "bounds_wgs84": [
+      -122.29036322325803,
+      45.72516268779909,
+      -122.25716173272893,
+      45.74841193213551
+    ]
+  },
+  {
+    "id": "2023_LENO_7__3_1",
+    "lr": "s2_l2a_10m/2023_LENO_7__3_1.tif",
+    "hr": "neon_2.5m_linearized/2023_LENO_7__3_1.tif",
+    "site": "LENO",
+    "landcover": "Forest",
+    "lr_sha256": "4a577fd1ebe8cae2adc335a4e2f593d035cd26b59e8603224457efc3e0af9fbf",
+    "hr_sha256": "5966af628a8144ddc6999dcd405b2f09b24e336d14c58727c24e0ca4ff5abbe3",
+    "bounds_wgs84": [
+      -88.24111090918561,
+      31.798576271758765,
+      -88.21376453756544,
+      31.821928276144977
+    ]
+  },
+  {
+    "id": "2024_ARIK_6__3_2",
+    "lr": "s2_l2a_10m/2024_ARIK_6__3_2.tif",
+    "hr": "neon_2.5m_linearized/2024_ARIK_6__3_2.tif",
+    "site": "ARIK",
+    "landcover": "Rural",
+    "lr_sha256": "e3a229a376001ae4e2b311c25d7dc486035a964adb227e8b8a24ea72ee0d9b89",
+    "hr_sha256": "b40177d81421cee630697816bed83491f7abaa9bb3ffc59f2de0f54636c99bae",
+    "bounds_wgs84": [
+      -102.47819848748578,
+      39.72888268977738,
+      -102.44750423465754,
+      39.75257894117028
+    ]
+  },
+  {
+    "id": "2023_LENO_7__2_3",
+    "lr": "s2_l2a_10m/2023_LENO_7__2_3.tif",
+    "hr": "neon_2.5m_linearized/2023_LENO_7__2_3.tif",
+    "site": "LENO",
+    "landcover": "Water",
+    "lr_sha256": "f3ea3773446495f9ad89576818677fc3c079762fde0559b332553b7b6105c16f",
+    "hr_sha256": "accf178651ceaa3e21fa46b23bfce1ff7f799be62f110742d447629b5dbefd0d",
+    "bounds_wgs84": [
+      -88.18731753992246,
+      31.822183436858797,
+      -88.15997686791587,
+      31.84552454900108
+    ]
+  },
+  {
+    "id": "2021_HEAL_4__4_1",
+    "lr": "s2_l2a_10m/2021_HEAL_4__4_1.tif",
+    "hr": "neon_2.5m_linearized/2021_HEAL_4__4_1.tif",
+    "site": "HEAL",
+    "landcover": "Unknown",
+    "lr_sha256": "572e05bd4bde83ef08302ae61f363cf38572b8951d2056414cf0b2273bce0760",
+    "hr_sha256": "7f4101c36083222a0411ae42ecfda99c8bca71b666216394191e9818ed4be5c4",
+    "bounds_wgs84": [
+      -149.30830380256447,
+      63.839507672569084,
+      -149.25442234933544,
+      63.86328434717392
+    ]
+  },
+  {
+    "id": "2018_MLBS_3__2_3",
+    "lr": "s2_l2a_10m/2018_MLBS_3__2_3.tif",
+    "hr": "neon_2.5m_linearized/2018_MLBS_3__2_3.tif",
+    "site": "MLBS",
+    "landcover": "Forest",
+    "lr_sha256": "6b521c952709aa01cf9fd0e0d32ba44b5f2d0215c88bafe8a6cb71ceb7ec7b4e",
+    "hr_sha256": "3eec84d8b7b00c6d647d11e1b8668ebe8ca7c380d9651182662346d20a80aaba",
+    "bounds_wgs84": [
+      -80.5291406812648,
+      37.390586498804225,
+      -80.50006804314641,
+      37.4137797766339
+    ]
+  },
+  {
+    "id": "2023_NOGP_6__3_1",
+    "lr": "s2_l2a_10m/2023_NOGP_6__3_1.tif",
+    "hr": "neon_2.5m_linearized/2023_NOGP_6__3_1.tif",
+    "site": "NOGP",
+    "landcover": "Rural",
+    "lr_sha256": "403222f7a0a086b19c20d0575e1a3c534a2102a5f32c2c4c289de2529ba2abca",
+    "hr_sha256": "f75751d86c198ff62e2686ab9573d6b34c662a0b5b4f2f6afa374fb80637ef1e",
+    "bounds_wgs84": [
+      -100.95757245941061,
+      46.75465905045503,
+      -100.92323755506352,
+      46.7782519248644
+    ]
+  },
+  {
+    "id": "2021_CLBJ_5__4_1",
+    "lr": "s2_l2a_10m/2021_CLBJ_5__4_1.tif",
+    "hr": "neon_2.5m_linearized/2021_CLBJ_5__4_1.tif",
+    "site": "CLBJ",
+    "landcover": "Rural",
+    "lr_sha256": "db05490b9737929f83adf783decf11a339a2b0b8df60ba3cc9d46585f621c643",
+    "hr_sha256": "578fd1a38300deb206d4ca39da5fbaf7702c61ce3cca18855b56692960028020",
+    "bounds_wgs84": [
+      -97.65119226140071,
+      33.32515534741168,
+      -97.62333117196668,
+      33.34854150210263
+    ]
+  },
+  {
+    "id": "2022_BLAN_5__2_1",
+    "lr": "s2_l2a_10m/2022_BLAN_5__2_1.tif",
+    "hr": "neon_2.5m_linearized/2022_BLAN_5__2_1.tif",
+    "site": "BLAN",
+    "landcover": "Rural",
+    "lr_sha256": "046308f46f28b50edb48765ac612990deb17273d2b0be932d6229843523f4dc3",
+    "hr_sha256": "61b1333b6454b9e6e1425b22d5f03cc857731acc21a8014b9ce0c00ee05d11d2",
+    "bounds_wgs84": [
+      -78.07969174975311,
+      39.09389767204168,
+      -78.04916611162749,
+      39.1176811644263
+    ]
+  },
+  {
+    "id": "2019_SOAP_4__3_1",
+    "lr": "s2_l2a_10m/2019_SOAP_4__3_1.tif",
+    "hr": "neon_2.5m_linearized/2019_SOAP_4__3_1.tif",
+    "site": "SOAP",
+    "landcover": "Rural",
+    "lr_sha256": "7b0e22b7e7d91b458629acedd039d2d50a4958f776b2c0a6b6d1695ac2a97666",
+    "hr_sha256": "4a9a28093fce1a5ad9c8ed96f2ba868581a1199ecdc53b0e9e87937f1243383b",
+    "bounds_wgs84": [
+      -119.30988878886588,
+      37.02158398336009,
+      -119.28043329531587,
+      37.045198837327625
+    ]
+  },
+  {
+    "id": "2024_OAES_8__2_4",
+    "lr": "s2_l2a_10m/2024_OAES_8__2_4.tif",
+    "hr": "neon_2.5m_linearized/2024_OAES_8__2_4.tif",
+    "site": "OAES",
+    "landcover": "Rural",
+    "lr_sha256": "b81bf0fd51ceeda93f5f2642744f88282f4804a08beea57c55a4a516607cc94d",
+    "hr_sha256": "4949c816c02d34cb2ba60e583df48c8a87b90f1b9aff28aa56884ce70fd4db62",
+    "bounds_wgs84": [
+      -99.07444870018537,
+      35.38101452647667,
+      -99.04624194153573,
+      35.404111744512
+    ]
+  },
+  {
+    "id": "2023_UKFS_7__2_2",
+    "lr": "s2_l2a_10m/2023_UKFS_7__2_2.tif",
+    "hr": "neon_2.5m_linearized/2023_UKFS_7__2_2.tif",
+    "site": "UKFS",
+    "landcover": "Forest",
+    "lr_sha256": "638358b7c49c3dde7e8976bf13489efc271c1b4906c2a9bd0de466ea015b8fc9",
+    "hr_sha256": "64e211a739e6e634f6631700051e79ad34b3b03c2386c5c60c3e4f8dc4aa9f96",
+    "bounds_wgs84": [
+      -95.21769826180925,
+      39.03770942663692,
+      -95.18741921678841,
+      39.06131976586238
+    ]
+  },
+  {
+    "id": "2022_BART_6__2_1",
+    "lr": "s2_l2a_10m/2022_BART_6__2_1.tif",
+    "hr": "neon_2.5m_linearized/2022_BART_6__2_1.tif",
+    "site": "BART",
+    "landcover": "Forest",
+    "lr_sha256": "989c6dd71f5c7ef04df7fd65c9a2417b4d8e652bd8a476e6820b9335a04a0283",
+    "hr_sha256": "fb1a7b264c15eb42d26daebd4374e522a5edb4213cf2f2b762ad5c57cfd8c684",
+    "bounds_wgs84": [
+      -71.31517964847149,
+      44.03442237921845,
+      -71.2823589481432,
+      44.05809533930537
+    ]
+  },
+  {
+    "id": "2021_JORN_4__7_5",
+    "lr": "s2_l2a_10m/2021_JORN_4__7_5.tif",
+    "hr": "neon_2.5m_linearized/2021_JORN_4__7_5.tif",
+    "site": "JORN",
+    "landcover": "Rural",
+    "lr_sha256": "043603134679f192df2286bf4e9170eceab4225d12fea16b05655f97d24db5e4",
+    "hr_sha256": "1202063db5a855509c989389da46081b57f214389bab0e779edfdaf16ffc920b",
+    "bounds_wgs84": [
+      -106.84562060962146,
+      32.564764715037754,
+      -106.8178903843956,
+      32.58824406311468
+    ]
+  }
+]

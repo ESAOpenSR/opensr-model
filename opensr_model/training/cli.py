@@ -18,14 +18,14 @@ from pytorch_lightning.callbacks import (
 )
 from pytorch_lightning.loggers import CSVLogger
 
-from .autoencoder_module import AutoencoderTrainingModule
-from .callbacks import (
+from .modules.autoencoder import AutoencoderTrainingModule
+from .runtime.callbacks import (
     NativeCheckpointCallback,
     NvidiaPowerCostLogger,
     ReconstructionImageLogger,
 )
-from .checkpoints import load_checkpoint_payload
-from .config import (
+from .runtime.checkpoints import load_checkpoint_payload
+from .runtime.config import (
     as_plain_dict,
     load_model_config,
     load_training_config,
@@ -33,13 +33,14 @@ from .config import (
     save_resolved_config,
 )
 from .data import OpenSRDataModule
-from .diffusion_module import DiffusionTrainingModule
+from .modules.diffusion import DiffusionTrainingModule
 
 
 def run_training(
     config: DictConfig,
     *,
     validate_only: bool = False,
+    prepare_only: bool = False,
 ) -> None:
     """Construct and run one fully configured Lightning stage."""
 
@@ -55,13 +56,32 @@ def run_training(
     resume_checkpoint = config.get("resume_checkpoint")
     if resume_checkpoint:
         _validate_resume_checkpoint(resume_checkpoint)
+    validation = config.training.get("validation", {})
+    prepared = None
+    if stage == "diffusion" and ("sen2neon" in validation or "raw_s2" in validation):
+        from .validation.data import prepare_transfer
+        prepared = prepare_transfer(config, run_dir)
+        config.data.preparation_manifest = str(run_dir / "data_manifest.json")
+        if prepared["sen2neon_root"]:
+            if not bool(config.trainer.get("enable_checkpointing", True)):
+                raise ValueError("SEN2NEON checkpoint selection requires enable_checkpointing=true")
+            config.checkpoint.monitor = "val/sen2neon/rgb_lpips"
+            config.checkpoint.mode = "min"
+        if prepare_only:
+            return
+    elif prepare_only:
+        raise ValueError("--prepare-only requires the transfer-validation preset")
     model_config = load_model_config(config.model.architecture_config)
     datamodule = OpenSRDataModule(**as_plain_dict(config.data))
     resolved_config = OmegaConf.create(OmegaConf.to_container(config, resolve=True))
     # Freeze directory discovery in the run record. Reusing this resolved config
     # on resume retains the exact parts even if later uploads have completed.
     resolved_config.data.taco_path = [str(path) for path in datamodule.taco_paths]
-    save_resolved_config(resolved_config, run_dir / "resolved_config.yaml")
+    if int(os.environ.get("LOCAL_RANK", "0")) == 0:
+        save_resolved_config(resolved_config, run_dir / "resolved_config.yaml")
+    if prepared is not None:
+        from .runtime.provenance import record_provenance
+        record_provenance(config, run_dir)
     if stage == "diffusion" and datamodule.factor != 4:
         raise ValueError(
             "The current OpenSR inference architecture requires data.factor=4"
@@ -69,10 +89,32 @@ def run_training(
     module = _build_module(
         stage, model_config, config, resuming=bool(resume_checkpoint)
     )
+    if prepared is not None and prepared["sen2neon_root"]:
+        # Internal validation still scores epsilon MSE; external EMA sampling
+        # supplies selection metrics and full reconstructions.
+        module.validation_num_samples = 0
     logger = _build_logger(config.logging, run_dir)
-    callbacks = _build_callbacks(stage, config, run_dir, logger is not False)
+    callback_config = OmegaConf.create(OmegaConf.to_container(config, resolve=True))
+    if prepared is not None and prepared["sen2neon_root"]:
+        # TransferValidation owns guarded best/last; leave rolling snapshots independent.
+        callback_config.checkpoint.save_top_k = 0
+        callback_config.checkpoint.save_last = False
+        callback_config.checkpoint.native.enabled = False
+        if callback_config.checkpoint.get("early_stopping", {}).get("enabled", False):
+            raise ValueError("Disable generic early stopping when using spectral-guarded selection")
+    callbacks = _build_callbacks(stage, callback_config, run_dir, logger is not False)
+    if prepared is not None:
+        from .validation.callback import TransferValidation
+        callbacks.insert(0, TransferValidation(prepared, as_plain_dict(validation), run_dir))
 
     trainer_kwargs = as_plain_dict(config.trainer)
+    if prepared is not None:
+        accumulation = trainer_kwargs.get("accumulate_grad_batches", 1)
+        if not isinstance(accumulation, int):
+            raise ValueError("Transfer validation requires fixed integer gradient accumulation")
+        trainer_kwargs["val_check_interval"] = int(validation.get("every_n_train_steps", 500)) * accumulation
+        trainer_kwargs["check_val_every_n_epoch"] = None
+        trainer_kwargs["num_sanity_val_steps"] = 0
     _prepare_trainer_kwargs(stage, module, trainer_kwargs)
     trainer_kwargs["default_root_dir"] = str(run_dir)
     trainer_kwargs["logger"] = logger
@@ -241,6 +283,8 @@ def _build_logger(config: DictConfig, run_dir: Path) -> Any:
                 name=name,
                 save_dir=str(save_dir),
                 log_model=bool(config.get("log_model", False)),
+                **{key: config[key] for key in ("entity", "group", "id", "resume", "tags", "mode")
+                   if config.get(key) is not None},
             )
         except ImportError as exc:  # pragma: no cover
             raise ImportError("Install opensr-model[wandb] for W&B logging") from exc
@@ -438,6 +482,7 @@ def _parser(stage: Optional[str] = None) -> argparse.ArgumentParser:
     parser.add_argument("--pretrained", type=Path, default=None)
     parser.add_argument("--resume", type=Path, default=None)
     parser.add_argument("--validate-only", action="store_true")
+    parser.add_argument("--prepare-only", action="store_true", help="Audit/freeze transfer data without loading a model")
     parser.add_argument("--print-config", action="store_true")
     return parser
 
@@ -459,7 +504,9 @@ def _run_from_args(args: argparse.Namespace, stage: str) -> None:
     if args.print_config:
         print(OmegaConf.to_yaml(config, resolve=True))
         return
-    run_training(config, validate_only=bool(args.validate_only))
+    if args.prepare_only and args.validate_only:
+        raise ValueError("--prepare-only and --validate-only are mutually exclusive")
+    run_training(config, validate_only=bool(args.validate_only), prepare_only=bool(args.prepare_only))
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:

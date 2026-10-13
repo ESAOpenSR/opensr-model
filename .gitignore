@@ -27,6 +27,8 @@ old/*
 *.ipynb
 *.JSON
 *.json
+!opensr_model/configs/training_configs/sen2neon_clean192.json
+!opensr_model/configs/training_configs/raw_s2_examples.json
 ablation.py
 images/
 images/*
@@ -38,7 +40,7 @@ training_runs
 opensr_model/ablations/outputs
 opensr_model/ablations/samples
 .ruff_cache
-opensr_model/configs/training_configs/
+opensr_model/configs/training_configs/finetune_worldwide_v1_0_0.yaml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

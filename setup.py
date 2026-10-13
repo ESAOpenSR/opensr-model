@@ -67,7 +67,8 @@ setup(
         ],
     },
     package_data={
-        "opensr_model": ["configs/*.yaml"],
+        "opensr_model": ["configs/*.yaml", "configs/training_configs/train_*.yaml",
+                         "configs/training_configs/*.json"],
         "deployment.opensr_hpc": ["slurm/*.sh"],
     },
 )

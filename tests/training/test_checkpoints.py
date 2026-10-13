@@ -7,11 +7,11 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-import opensr_model.training.callbacks as callback_helpers
+import opensr_model.training.runtime.callbacks as callback_helpers
 from opensr_model.autoencoder.autoencoder import AutoencoderKL
 from opensr_model.diffusion.latentdiffusion import LatentDiffusion
-from opensr_model.training.callbacks import NativeCheckpointCallback
-from opensr_model.training.checkpoints import (
+from opensr_model.training.runtime.callbacks import NativeCheckpointCallback
+from opensr_model.training.runtime.checkpoints import (
     CheckpointCompatibilityError,
     build_native_diffusion_state_spec,
     load_autoencoder_weights,
@@ -22,7 +22,7 @@ from opensr_model.training.checkpoints import (
     remap_state_dict,
     save_native_checkpoint,
 )
-from opensr_model.training.config import load_model_config
+from opensr_model.training.runtime.config import load_model_config
 
 
 def _autoencoder(config: dict) -> AutoencoderKL:

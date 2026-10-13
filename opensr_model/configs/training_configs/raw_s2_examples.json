@@ -1,0 +1,17 @@
+[
+  {
+    "id": "urban-example",
+    "path": "/path/to/observed_s2.tif",
+    "bands": [
+      4,
+      3,
+      2,
+      8
+    ],
+    "scale": 0.0001,
+    "zoom_center_hr": [
+      256,
+      256
+    ]
+  }
+]

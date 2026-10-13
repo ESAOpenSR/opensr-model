@@ -1,0 +1,170 @@
+# Cross-sensor fine-tuning; optional SEN2NEON guarded EMA selection.
+# See docs/training.md. Set dataset paths via environment or --set.
+stage: diffusion
+seed: 42
+float32_matmul_precision: high
+run_dir: training_runs/sen2naip
+resume_checkpoint: null
+model:
+  architecture_config: config_10m.yaml
+  pretrained_checkpoint: ${oc.env:OPENSR_CHECKPOINT,opensr-ldsrs2_v1_0_0.ckpt}
+  autoencoder_checkpoint: null
+  allow_random_first_stage: false
+data:
+  taco_path: ${oc.env:SEN2NAIP_ROOT,data/SEN2NAIP/v2/crosssensor}
+  lr_asset_id: lrharm
+  hr_asset_id: hrharm
+  raw_lr_asset_id: lr
+  rgb_bands:
+  - 1
+  - 2
+  - 3
+  nir_band: 8
+  hr_nir_strategy: synthetic_sidecar
+  synthetic_hr_nir_dir: null
+  reflectance_scale: 0.0001
+  val_fraction: 0.1
+  split_seed: ${seed}
+  factor: 4
+  train_patch_size: 512
+  validation_patch_size: 512
+  value_range:
+  - 0.0
+  - 1.0
+  horizontal_flip_probability: 0.5
+  vertical_flip_probability: 0.5
+  rotate_90: true
+  batch_size: 4
+  val_batch_size: 1
+  val_shuffle: false
+  num_workers: 4
+  pin_memory: true
+  persistent_workers: true
+  prefetch_factor: 2
+  drop_last: false
+  strict_full_validity: true
+  preparation_manifest: null
+training:
+  optimizer:
+    learning_rate: 1.0e-05
+    betas:
+    - 0.9
+    - 0.999
+    weight_decay: 0.0
+  sharpness:
+    p2_gamma: 0.0
+    p2_k: 1.0
+    latent_detail_weight: 0.0
+    latent_detail_max_timestep_fraction: 0.25
+    decoded_reconstruction_weight: 0.0
+    decoded_detail_weight: 0.0
+    decoded_perceptual_weight: 0.0
+    decoded_max_timestep_fraction: 0.2
+    decoded_every_n_batches: 4
+    decoded_max_batch_size: 2
+    decoded_rgb_only: false
+    perceptual_backbone: vgg
+  scheduler:
+    name: constant
+    factor: 0.5
+    patience: 10
+    min_lr: 1.0e-06
+  validation:
+    num_samples: 1
+    image_batches: 4
+    every_n_epochs: 1
+    sampling_steps: 100
+    sampling_eta: 0.95
+    temperature: 1.0
+    seed: ${seed}
+    use_ema: true
+    detail_crop_size: 64
+    every_n_train_steps: 1000
+    sen2neon:
+      enabled: auto
+      root: ${oc.env:SEN2NEON_ROOT,null}
+      manifest: null
+      subset_size: 48
+      spectral_tolerance: 0.1
+      final_assessment: true
+      # Score all 48, but retain images only for a fixed subset at routine checks.
+      preview_count: 8
+      save_all_reconstructions: false
+    raw_s2:
+      manifest: null
+trainer:
+  accelerator: auto
+  devices: 1
+  strategy: auto
+  precision: 16-mixed
+  max_epochs: -1
+  accumulate_grad_batches: 2
+  gradient_clip_val: 1.0
+  gradient_clip_algorithm: norm
+  log_every_n_steps: 20
+  check_val_every_n_epoch: null
+  val_check_interval: 2000
+  limit_val_batches: 5
+  num_sanity_val_steps: 0
+  deterministic: false
+  enable_checkpointing: true
+  max_steps: 5000
+checkpoint:
+  monitor: val/sr_ema_psnr
+  mode: max
+  resume_dir: checkpoints/resume
+  save_top_k: 1
+  save_last: true
+  every_n_epochs: 1
+  rolling:
+    enabled: true
+    dir: checkpoints/rolling
+    every_n_train_steps: 500
+    save_top_k: 1
+  native:
+    enabled: true
+    dir: checkpoints/native
+    save_best: true
+    save_last: true
+    every_n_epochs: 1
+    weight_source: ema
+    autoencoder_base_checkpoint: null
+  early_stopping:
+    enabled: false
+    patience: 30
+    min_delta: 0.0
+logging:
+  type: wandb
+  save_dir: logs
+  name: sen2naip-crosssensor
+  version: null
+  project: opensr-finetuning
+  log_model: false
+  cost:
+    enabled: true
+    electricity_eur_per_kwh: 0.3
+    overhead_watts: 200
+    every_n_steps: 20
+  images:
+    enabled: true
+    output_dir: images
+    max_images: 5
+    every_n_epochs: 1
+    rgb_bands:
+    - 0
+    - 1
+    - 2
+    nir_band: 3
+    value_min: 0.0
+    value_max: 0.3
+    stretch_percentiles:
+    - 2.0
+    - 98.0
+  entity: null
+  group: sen2naip-transfer
+  id: null
+  resume: allow
+  mode: offline
+  tags:
+  - sen2naipv2-crosssensor
+  - vanilla-epsilon-mse

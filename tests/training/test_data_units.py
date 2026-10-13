@@ -4,7 +4,7 @@ import pickle
 
 import torch
 
-from opensr_model.training.data import TacoPairedDataset, _aligned_crop, _augment
+from opensr_model.training.data.taco import TacoPairedDataset, _aligned_crop, _augment
 
 
 def test_aligned_crop_preserves_hr_lr_and_mask_coordinates() -> None:

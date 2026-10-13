@@ -7,7 +7,7 @@ import pytest
 import torch
 from rasterio.transform import from_origin
 
-from opensr_model.training.data import (
+from opensr_model.training.data.taco import (
     OpenSRDataModule,
     TacoPairedDataset,
     resolve_taco_paths,

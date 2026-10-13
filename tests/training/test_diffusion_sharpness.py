@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 import torch
 
-from opensr_model.training.diffusion_module import DiffusionTrainingModule
+from opensr_model.training.modules.diffusion import DiffusionTrainingModule
 
 
 def _module(tiny_model_config, **sharpness) -> DiffusionTrainingModule:

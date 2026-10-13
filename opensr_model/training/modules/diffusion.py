@@ -343,7 +343,7 @@ class DiffusionTrainingModule(pl.LightningModule):
         if pretrained_checkpoint is not None:
             self.load_pretrained(pretrained_checkpoint, strict=True)
         if autoencoder_checkpoint is not None:
-            from .checkpoints import load_autoencoder_weights
+            from ..runtime.checkpoints import load_autoencoder_weights
 
             load_autoencoder_weights(
                 self.first_stage_model, autoencoder_checkpoint, strict=True
@@ -456,7 +456,7 @@ class DiffusionTrainingModule(pl.LightningModule):
     ) -> Any:
         """Load a native OpenSR checkpoint through the shared helper."""
 
-        from .checkpoints import load_diffusion_weights
+        from ..runtime.checkpoints import load_diffusion_weights
 
         result = load_diffusion_weights(self.diffusion, checkpoint_path, strict=strict)
         self._freeze_first_stage()

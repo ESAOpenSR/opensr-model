@@ -9,10 +9,14 @@ from typing import Any, Iterable, Optional
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
 _STAGES = {"autoencoder", "diffusion"}
+_TRAINING_PRESETS = {"train_autoencoder.yaml", "train_diffusion.yaml", "train_sen2naip.yaml"}
 
 
 def package_config_path(name: str) -> Path:
-    candidate = files("opensr_model").joinpath("configs", name)
+    directory = files("opensr_model").joinpath("configs")
+    candidate = directory.joinpath(name)
+    if not candidate.is_file():
+        candidate = directory.joinpath("training_configs", name)
     return Path(str(candidate))
 
 
@@ -32,7 +36,8 @@ def load_training_config(
     package_directory = package_config_path(path.name).parent.resolve()
     # The built-in templates are commonly invoked directly with --set. In that
     # case relative user paths belong to the launch directory, not site-packages.
-    base_directory = Path.cwd() if path.parent == package_directory else path.parent
+    packaged_preset = path.name in _TRAINING_PRESETS and path.parent == package_directory
+    base_directory = Path.cwd() if packaged_preset else path.parent
     _resolve_known_paths(config, base_directory)
     validate_training_config(config, expected_stage=expected_stage)
     return config
@@ -111,6 +116,10 @@ def _resolve_known_paths(config: DictConfig, base_dir: Path) -> None:
         "model.autoencoder_checkpoint",
         "checkpoint.native.autoencoder_base_checkpoint",
         "data.synthetic_hr_nir_dir",
+        "data.preparation_manifest",
+        "training.validation.sen2neon.root",
+        "training.validation.sen2neon.manifest",
+        "training.validation.raw_s2.manifest",
     )
     for dotted in path_fields:
         value = OmegaConf.select(config, dotted)
@@ -204,8 +213,8 @@ def _validate_taco_data_config(data: DictConfig) -> None:
             "data.hr_nir_strategy must be 'synthetic_sidecar'; interpolated LR NIR "
             "is not an allowed HR target"
         )
-    if not str(data.get("synthetic_hr_nir_dir", "")).strip():
-        raise ValueError("data.synthetic_hr_nir_dir is required")
+    # Direct RGBN pairs need no sidecar. The worldwide reader checks the
+    # synthetic collection when its asset schema is encountered.
     val_fraction = float(data.get("val_fraction", 0.0))
     if not 0.0 < val_fraction < 1.0:
         raise ValueError("data.val_fraction must be strictly between 0 and 1")

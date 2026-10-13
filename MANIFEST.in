@@ -1,2 +1,5 @@
 include opensr_model/configs/*.yaml
+include opensr_model/configs/training_configs/train_*.yaml
+include opensr_model/configs/training_configs/sen2neon_clean192.json
+include opensr_model/configs/training_configs/raw_s2_examples.json
 include docs/changelog.md docs/training.md

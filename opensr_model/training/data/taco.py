@@ -216,6 +216,8 @@ def _text(value: Any) -> str | None:
 def _group_key(row: Any, sample_id: str) -> str:
     """Keep imagery-provider variants of one spatial tile in one split."""
 
+    if re.match(r"^NA\d+_E\d+N\d+__", sample_id):
+        return f"tile:{sample_id.split('__', 1)[0]}"
     product = _text(_row_get(row, "hr_product"))
     if product and sample_id.endswith(f"_{product}"):
         return f"tile:{sample_id[: -(len(product) + 1)]}"
@@ -474,16 +476,16 @@ def _validate_pair_alignment(
 ) -> None:
     expected_hr = (lr.shape[0] * factor, lr.shape[1] * factor)
     if hr.shape != expected_hr:
-        raise ValueError(
+        raise InvalidPairError(
             f"Sample {sample_id!r} is not exactly {factor}x: "
             f"LR={lr.shape}, HR={hr.shape}"
         )
     if lr.crs != hr.crs:
-        raise ValueError(f"Sample {sample_id!r} LR/HR assets do not share a CRS")
+        raise InvalidPairError(f"Sample {sample_id!r} LR/HR assets do not share a CRS")
     expected_lr_transform = hr.transform * Affine.scale(factor, factor)
     # SEN2NAIPv2 contains sub-millimetre origin roundoff between paired files.
-    if not _affine_close(lr.transform, expected_lr_transform, atol=1e-4):
-        raise ValueError(
+    if not _affine_close(lr.transform, expected_lr_transform, atol=1e-3):
+        raise InvalidPairError(
             f"Sample {sample_id!r} HR/LR transforms are not on an exact {factor}x grid"
         )
 
@@ -754,6 +756,10 @@ def _augment(
     return tensors[0], tensors[1], tensors[2]
 
 
+class InvalidPairError(ValueError):
+    """A pair fails pixel-validity or spatial-alignment requirements."""
+
+
 class TacoPairedDataset(Dataset[TrainingSample]):
     """Lazy TACO reader for worldwide and SEN2NAIPv2 paired imagery."""
 
@@ -778,6 +784,7 @@ class TacoPairedDataset(Dataset[TrainingSample]):
         horizontal_flip_probability: float = 0.5,
         vertical_flip_probability: float = 0.5,
         rotate_90: bool = True,
+        strict_full_validity: bool = False,
         _records: Sequence[TacoSampleRecord] | None = None,
         _resolved_paths: Sequence[Path] | None = None,
     ) -> None:
@@ -855,6 +862,7 @@ class TacoPairedDataset(Dataset[TrainingSample]):
         self.horizontal_flip_probability = horizontal_flip_probability
         self.vertical_flip_probability = vertical_flip_probability
         self.rotate_90 = rotate_90
+        self.strict_full_validity = strict_full_validity
         self._reader_pid: int | None = None
         self._readers: dict[Path, Any] = {}
 
@@ -989,6 +997,13 @@ class TacoPairedDataset(Dataset[TrainingSample]):
                 f"{sorted(CROSSSENSOR_ASSET_IDS)}"
             )
 
+        if self.strict_full_validity and not (
+            bool(lr_valid.all()) and bool(hr_valid.all())
+            and bool(torch.isfinite(lr).all()) and bool(torch.isfinite(hr).all())
+            and bool((lr > 0).all()) and bool((hr > 0).all())
+        ):
+            raise InvalidPairError(f"Invalid or zero RGBN pixel in full pair {record.sample_id}")
+
         lr, lr_clipped, lr_total = _clamp_and_count(
             lr, lr_valid, self.value_range, sample_id=record.sample_id, name="LR"
         )
@@ -1078,6 +1093,8 @@ class OpenSRDataModule(LightningDataModule):
         persistent_workers: bool = False,
         prefetch_factor: int | None = None,
         drop_last: bool = False,
+        strict_full_validity: bool = False,
+        preparation_manifest: str | Path | None = None,
     ) -> None:
         super().__init__()
         if not 0.0 < val_fraction < 1.0:
@@ -1136,6 +1153,8 @@ class OpenSRDataModule(LightningDataModule):
         self.persistent_workers = persistent_workers
         self.prefetch_factor = prefetch_factor
         self.drop_last = drop_last
+        self.strict_full_validity = strict_full_validity
+        self.preparation_manifest = preparation_manifest
         self.sample_records: tuple[TacoSampleRecord, ...] | None = None
         self.train_dataset: TacoPairedDataset | None = None
         self.val_dataset: TacoPairedDataset | None = None
@@ -1158,6 +1177,13 @@ class OpenSRDataModule(LightningDataModule):
         if self.train_dataset is not None and self.val_dataset is not None:
             return
         self.sample_records = scan_taco_catalog(self.taco_paths)
+        if self.preparation_manifest is not None:
+            manifest = json.loads(Path(self.preparation_manifest).read_text())
+            eligible = set(manifest["eligible_ids"])
+            found = {r.sample_id for r in self.sample_records}
+            if not eligible <= found:
+                raise ValueError("Prepared sample IDs are missing from the TACO catalog")
+            self.sample_records = tuple(r for r in self.sample_records if r.sample_id in eligible)
         if self.synthetic_hr_nir_dir is not None:
             _validate_synthetic_collection(
                 self.synthetic_hr_nir_dir,
@@ -1193,6 +1219,7 @@ class OpenSRDataModule(LightningDataModule):
             "nodata": self.nodata,
             "value_range": self.value_range,
             "_resolved_paths": self.taco_paths,
+            "strict_full_validity": self.strict_full_validity,
         }
         self.train_dataset = TacoPairedDataset(
             training=True,
