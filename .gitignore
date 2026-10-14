@@ -14,7 +14,11 @@ client_secret.json
 test_slurm.sh
 runs/
 playground/
-benchmarks
+# Local evaluation and release preparation
+/benchmarks/
+/scripts/
+/tests/diagnostics/
+/docs/training_diagnostics.md
 
 
 *.svg
