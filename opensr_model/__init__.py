@@ -21,7 +21,8 @@ def get_version() -> str:
     except importlib_metadata.PackageNotFoundError:  # pragma: no cover
         return "unknown"
 
+
 # make __version__ available at package level
 version: str = get_version()
-__version__ = version 
+__version__ = version
 __all__ = ["__version__"]

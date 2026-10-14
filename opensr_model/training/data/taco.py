@@ -998,11 +998,16 @@ class TacoPairedDataset(Dataset[TrainingSample]):
             )
 
         if self.strict_full_validity and not (
-            bool(lr_valid.all()) and bool(hr_valid.all())
-            and bool(torch.isfinite(lr).all()) and bool(torch.isfinite(hr).all())
-            and bool((lr > 0).all()) and bool((hr > 0).all())
+            bool(lr_valid.all())
+            and bool(hr_valid.all())
+            and bool(torch.isfinite(lr).all())
+            and bool(torch.isfinite(hr).all())
+            and bool((lr > 0).all())
+            and bool((hr > 0).all())
         ):
-            raise InvalidPairError(f"Invalid or zero RGBN pixel in full pair {record.sample_id}")
+            raise InvalidPairError(
+                f"Invalid or zero RGBN pixel in full pair {record.sample_id}"
+            )
 
         lr, lr_clipped, lr_total = _clamp_and_count(
             lr, lr_valid, self.value_range, sample_id=record.sample_id, name="LR"
@@ -1182,8 +1187,12 @@ class OpenSRDataModule(LightningDataModule):
             eligible = set(manifest["eligible_ids"])
             found = {r.sample_id for r in self.sample_records}
             if not eligible <= found:
-                raise ValueError("Prepared sample IDs are missing from the TACO catalog")
-            self.sample_records = tuple(r for r in self.sample_records if r.sample_id in eligible)
+                raise ValueError(
+                    "Prepared sample IDs are missing from the TACO catalog"
+                )
+            self.sample_records = tuple(
+                r for r in self.sample_records if r.sample_id in eligible
+            )
         if self.synthetic_hr_nir_dir is not None:
             _validate_synthetic_collection(
                 self.synthetic_hr_nir_dir,

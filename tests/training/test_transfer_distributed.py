@@ -1,4 +1,5 @@
 """Small real process-group test: uneven/empty shards and propagated errors."""
+
 import json
 from pathlib import Path
 
@@ -10,11 +11,16 @@ from opensr_model.training.validation.callback import gather_records
 
 
 def _worker(rank, directory):
-    dist.init_process_group("gloo", init_method=f"file://{directory}/init", rank=rank, world_size=2)
+    dist.init_process_group(
+        "gloo", init_method=f"file://{directory}/init", rank=rank, world_size=2
+    )
     try:
         results = []
         for size in (5, 1):
-            local = [{"id": str(i), "metrics": {"mae": float(i)}} for i in range(rank, size, 2)]
+            local = [
+                {"id": str(i), "metrics": {"mae": float(i)}}
+                for i in range(rank, size, 2)
+            ]
             records = gather_records(local)
             results.append({"count": len(records), "mean": aggregate(records)["mae"]})
         try:

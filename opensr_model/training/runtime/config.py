@@ -9,7 +9,11 @@ from typing import Any, Iterable, Optional
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
 _STAGES = {"autoencoder", "diffusion"}
-_TRAINING_PRESETS = {"train_autoencoder.yaml", "train_diffusion.yaml", "train_sen2naip.yaml"}
+_TRAINING_PRESETS = {
+    "train_autoencoder.yaml",
+    "train_diffusion.yaml",
+    "train_sen2naip.yaml",
+}
 
 
 def package_config_path(name: str) -> Path:
@@ -36,7 +40,9 @@ def load_training_config(
     package_directory = package_config_path(path.name).parent.resolve()
     # The built-in templates are commonly invoked directly with --set. In that
     # case relative user paths belong to the launch directory, not site-packages.
-    packaged_preset = path.name in _TRAINING_PRESETS and path.parent == package_directory
+    packaged_preset = (
+        path.name in _TRAINING_PRESETS and path.parent == package_directory
+    )
     base_directory = Path.cwd() if packaged_preset else path.parent
     _resolve_known_paths(config, base_directory)
     validate_training_config(config, expected_stage=expected_stage)

@@ -24,6 +24,7 @@ back-projection**. See the [release notes and migration example](docs/changelog.
 - [🛠️ 2. Install and Usage - Local](#2-install-and-usage---local)
   - [🧱 2.1 Weights and Checkpoints](#21-weights-and-checkpoints)
   - [🖥️ 2.2 HPC and Slurm Launcher](#22-hpc-and-slurm-launcher)
+  - [2.3 Development, tests, and coverage](#23-development-tests-and-coverage)
 - [🖼️ 3. Super-Resolution Examples](#3-super-resolution-examples)
   - [🛰️ 3.1 Example SR Image](#31-example-sr-image)
   - [🔎 3.2 Demo File and Uncertainty Calculation](#32-demo-file-and-uncertainty-calculation)
@@ -149,6 +150,62 @@ opensr-hpc submit aoi \
 ```
 
 See `deployment/README.md` for the full run layout, config schema, AOI settings, and Slurm entrypoint details.
+
+### 2.3 Development, tests, and coverage
+
+Use Python 3.12 or newer and install the training dependencies to run the full
+test suite. From the repository root:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e '.[train,dev]'
+python -m pre_commit install
+python -m pre_commit run --all-files --hook-stage pre-push
+```
+
+On Windows, activate the environment with `.venv\Scripts\Activate.ps1` in
+PowerShell. Keep the environment active when pushing: both checks use its
+Python and installed dependencies. Hook installation is required once per clone.
+
+Each push checks Black formatting on the Python files included in the push and
+runs the full pytest suite with line and branch coverage, including the distributed
+tests. Formatting or test failures block the push. Fix formatting with
+`python -m black .`, commit the changes, and push again. Commits do not run these
+checks. To migrate an existing installation:
+
+```bash
+python -m pre_commit uninstall --hook-type pre-commit
+python -m pre_commit install
+```
+
+GitHub Actions runs these checks when a GitHub release is published, and PyPI
+publishing waits for them to pass. The GitHub release itself is already published
+when these checks start. Ordinary pushes and pull requests do not run CI checks.
+You can also run the Code quality and tests workflow manually from the Actions tab.
+CI saves the coverage reports as a downloadable artifact.
+
+Useful manual commands:
+
+```bash
+python -m black .                       # Format Python files
+python -m black --check .               # Check formatting without editing
+python -m pytest                       # Full suite and coverage reports
+python -m pytest tests/diffusion --no-cov  # Focused tests without coverage
+```
+
+Coverage includes `opensr_model`, including modules the tests do not import.
+The external HPC tooling in `deployment/` is outside the coverage scope.
+The terminal shows missing lines; open `htmlcov/index.html` for
+the browsable report or use `coverage.xml` with coverage tools. Reports are
+Git-ignored. Coverage is reported without an initial minimum percentage; set
+`fail_under` in `[tool.coverage.report]` in `pyproject.toml` to enforce a target.
+
+Tests use small CPU models and limit PyTorch threads to keep push checks
+practical. The CUDA comparison and released-checkpoint test skip when their
+resources are unavailable. Git-ignored `tests/diagnostics` experiments are
+excluded from the shared suite. The `test` extra includes pytest and coverage
+tools; the `dev` extra also includes the pinned Black formatter and pre-commit.
 
 
 # 3. 🖼️ Super-Resolution Examples

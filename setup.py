@@ -1,5 +1,11 @@
 from setuptools import setup, find_packages
 
+TEST_REQUIREMENTS = [
+    "pytest>=8.0.0,<10.0",
+    "pytest-cov>=7.0.0,<8.0",
+    "coverage[toml]>=7.10.6,<8.0",
+]
+
 # read the contents of README file
 with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
@@ -45,8 +51,11 @@ setup(
         "wandb": [
             "wandb>=0.17.0",
         ],
-        "test": [
-            "pytest>=8.0.0",
+        "test": TEST_REQUIREMENTS,
+        "dev": [
+            *TEST_REQUIREMENTS,
+            "black==26.10.1",
+            "pre-commit>=4.0.0,<5.0",
         ],
         "hpc": [
             "PyYAML>=6.0",
@@ -67,8 +76,11 @@ setup(
         ],
     },
     package_data={
-        "opensr_model": ["configs/*.yaml", "configs/training_configs/train_*.yaml",
-                         "configs/training_configs/*.json"],
+        "opensr_model": [
+            "configs/*.yaml",
+            "configs/training_configs/train_*.yaml",
+            "configs/training_configs/*.json",
+        ],
         "deployment.opensr_hpc": ["slurm/*.sh"],
     },
 )

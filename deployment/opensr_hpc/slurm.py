@@ -65,10 +65,14 @@ def parse_job_id(stdout: str) -> str:
     return parts[-1]
 
 
-def submit_job(spec: SlurmJobSpec, submission_dir: Path, dry_run: bool = False) -> dict[str, str]:
+def submit_job(
+    spec: SlurmJobSpec, submission_dir: Path, dry_run: bool = False
+) -> dict[str, str]:
     cmd = build_sbatch_command(spec)
     submission_dir.mkdir(parents=True, exist_ok=True)
-    (submission_dir / "sbatch_command.txt").write_text(" ".join(cmd) + "\n", encoding="utf-8")
+    (submission_dir / "sbatch_command.txt").write_text(
+        " ".join(cmd) + "\n", encoding="utf-8"
+    )
 
     if dry_run:
         payload = {"mode": "dry-run", "command": " ".join(cmd)}
@@ -94,6 +98,10 @@ def submit_job(spec: SlurmJobSpec, submission_dir: Path, dry_run: bool = False) 
         ) from exc
 
     job_id = parse_job_id(result.stdout)
-    payload = {"job_id": job_id, "stdout": result.stdout.strip(), "stderr": result.stderr.strip()}
+    payload = {
+        "job_id": job_id,
+        "stdout": result.stdout.strip(),
+        "stderr": result.stderr.strip(),
+    }
     write_json(submission_dir / "slurm_job_ids.json", payload)
     return payload

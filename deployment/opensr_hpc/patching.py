@@ -23,11 +23,15 @@ def meters_to_lat_deg(distance_m: float) -> float:
 def meters_to_lon_deg(distance_m: float, latitude_deg: float) -> float:
     meters_per_degree_lon = 111_320.0 * math.cos(math.radians(latitude_deg))
     if meters_per_degree_lon <= 0:
-        raise ValueError(f"Cannot compute longitude degrees at latitude {latitude_deg:.6f}")
+        raise ValueError(
+            f"Cannot compute longitude degrees at latitude {latitude_deg:.6f}"
+        )
     return distance_m / meters_per_degree_lon
 
 
-def clamp_center(suggested_center: float, min_value: float, max_value: float, half_extent: float) -> float:
+def clamp_center(
+    suggested_center: float, min_value: float, max_value: float, half_extent: float
+) -> float:
     lower_limit = min_value + half_extent
     upper_limit = max_value - half_extent
     if lower_limit > upper_limit:
@@ -35,7 +39,9 @@ def clamp_center(suggested_center: float, min_value: float, max_value: float, ha
     return max(lower_limit, min(suggested_center, upper_limit))
 
 
-def compute_centers(min_value: float, max_value: float, patch_deg: float, step_deg: float) -> list[float]:
+def compute_centers(
+    min_value: float, max_value: float, patch_deg: float, step_deg: float
+) -> list[float]:
     if patch_deg <= 0 or step_deg <= 0:
         raise ValueError("patch_deg and step_deg must be positive")
 
@@ -56,7 +62,11 @@ def compute_centers(min_value: float, max_value: float, patch_deg: float, step_d
         centers.append(candidate)
 
     if not centers:
-        centers.append(clamp_center((min_value + max_value) / 2.0, min_value, max_value, half_extent))
+        centers.append(
+            clamp_center(
+                (min_value + max_value) / 2.0, min_value, max_value, half_extent
+            )
+        )
 
     return centers
 

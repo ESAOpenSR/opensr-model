@@ -31,21 +31,25 @@ Notes
 
 # Imports
 import opensr_model
-import torch,os
+import torch, os
 from omegaconf import OmegaConf
-os.environ["CUDA_VISIBLE_DEVICES"]="0" # run only on GPU 0
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # run only on GPU 0
 
 # Import and Instanciate SR Model
-device = "cuda" if torch.cuda.is_available() else "cpu" # Select GPU device
-config = OmegaConf.load("opensr_model/configs/config_10m.yaml") # load config
-model = opensr_model.SRLatentDiffusion(config, device=device) # create model
-model.load_pretrained(config.ckpt_version) # load checkpoint
+device = "cuda" if torch.cuda.is_available() else "cpu"  # Select GPU device
+config = OmegaConf.load("opensr_model/configs/config_10m.yaml")  # load config
+model = opensr_model.SRLatentDiffusion(config, device=device)  # create model
+model.load_pretrained(config.ckpt_version)  # load checkpoint
 
 import opensr_utils
+
 print("Using opensr-utils version:", opensr_utils.__version__)
 
 # Define path to S2 tile
-path = "/path/to/folder/S2A_MSIL2A_XXXXXXXXTXXXXXX_XXXXX_XXXX_XXXXXX_XXXXXXXXTXXXXXX.SAFE/"
+path = (
+    "/path/to/folder/S2A_MSIL2A_XXXXXXXXTXXXXXX_XXXXX_XXXX_XXXXXX_XXXXXXXXTXXXXXX.SAFE/"
+)
 # The `.SAFE` folder must contain the expected Sentinel-2 structure (GRANULE/, IMG_DATA/,
 # metadata XMLs, etc.). `opensr-utils` will resolve band paths, handle georeferencing,
 # and stream windows directly from disk to avoid loading the whole tile at once.
@@ -53,14 +57,14 @@ path = "/path/to/folder/S2A_MSIL2A_XXXXXXXXTXXXXXX_XXXXX_XXXX_XXXXXX_XXXXXXXXTXX
 
 # Create and run SR on .SAFE S2 format
 sr_object = opensr_utils.large_file_processing(
-    root=path,                 # File or Folder path (SAFE, S2GM, or single GeoTIFF)
-    model=model,               # your SR model (forward(x) -> SR), already on `device`
-    window_size=(128, 128),    # LR window size for patching; 128 @ x4 → 512px HR tiles
-    factor=4,                  # SR factor (10m → 2.5m); used to scale & stitch outputs
-    overlap=12,                # LR overlap for seam-free blending (x4 → 48px in SR space)
-    eliminate_border_px=2,     # trim LR-space borders per patch before blending
-    device=device,             # "cuda" or "cpu"; `opensr-utils` dispatches tensors here
-    gpus=0,                    # pass a GPU ID (int) or list of IDs for multi-GPU setups
+    root=path,  # File or Folder path (SAFE, S2GM, or single GeoTIFF)
+    model=model,  # your SR model (forward(x) -> SR), already on `device`
+    window_size=(128, 128),  # LR window size for patching; 128 @ x4 → 512px HR tiles
+    factor=4,  # SR factor (10m → 2.5m); used to scale & stitch outputs
+    overlap=12,  # LR overlap for seam-free blending (x4 → 48px in SR space)
+    eliminate_border_px=2,  # trim LR-space borders per patch before blending
+    device=device,  # "cuda" or "cpu"; `opensr-utils` dispatches tensors here
+    gpus=0,  # pass a GPU ID (int) or list of IDs for multi-GPU setups
 )
 # `sr_object` exposes:
 #   • paths to intermediate & final outputs (e.g., stitched SR GeoTIFF/COG),

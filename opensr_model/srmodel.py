@@ -160,17 +160,24 @@ class SRLatentDiffusion(torch.nn.Module):
 
         return ddim, latent, time_range
 
-    def _resolve_correction(self, spectral_correction, histogram_matching, back_projection):
+    def _resolve_correction(
+        self, spectral_correction, histogram_matching, back_projection
+    ):
         if spectral_correction is None:
             spectral_correction = (
                 getattr(self.config, "spectral_correction", "back_projection")
-                if histogram_matching else "none"
+                if histogram_matching
+                else "none"
             )
         if spectral_correction not in ("none", "histogram", "back_projection"):
-            raise ValueError("spectral_correction must be 'none', 'histogram' or 'back_projection'")
+            raise ValueError(
+                "spectral_correction must be 'none', 'histogram' or 'back_projection'"
+            )
         if spectral_correction != "back_projection":
             if back_projection is not None:
-                raise ValueError("back_projection options require spectral_correction='back_projection'")
+                raise ValueError(
+                    "back_projection options require spectral_correction='back_projection'"
+                )
             return spectral_correction, None
         options = back_projection
         if options is None:
@@ -178,7 +185,9 @@ class SRLatentDiffusion(torch.nn.Module):
         if isinstance(options, Mapping):
             options = BackProjectionConfig(**dict(options))
         if not isinstance(options, BackProjectionConfig):
-            raise ValueError("back_projection must be a mapping or BackProjectionConfig")
+            raise ValueError(
+                "back_projection must be a mapping or BackProjectionConfig"
+            )
         if options.scale != 4:
             raise ValueError("OpenSR inference back_projection scale must be 4")
         options.sigmas(4)
@@ -209,7 +218,9 @@ class SRLatentDiffusion(torch.nn.Module):
         verbose: bool = False,
         *,
         sampler: Literal["ddim", "dpm_solver++"] | None = None,
-        spectral_correction: Literal["none", "histogram", "back_projection"] | None = None,
+        spectral_correction: (
+            Literal["none", "histogram", "back_projection"] | None
+        ) = None,
         back_projection: BackProjectionConfig | Mapping[str, Any] | None = None,
     ):
         """Obtain the super resolution of the given image.
@@ -267,7 +278,9 @@ class SRLatentDiffusion(torch.nn.Module):
             if sampling_eta is None:
                 sampling_eta = self.config.denoiser_settings.sampling_eta
             if sampling_temperature is None:
-                sampling_temperature = self.config.denoiser_settings.sampling_temperature
+                sampling_temperature = (
+                    self.config.denoiser_settings.sampling_temperature
+                )
         else:
             if sampling_eta is not None and sampling_eta != 0.0:
                 raise ValueError("DPM-Solver++ requires sampling_eta=0 or None")
@@ -727,8 +740,15 @@ class SRLatentDiffusion(torch.nn.Module):
         print("Loaded pretrained weights from: ", weights_file)
 
     def uncertainty_map(
-        self, x, n_variations=15, sampling_steps=None, *, sampler=None,
-        spectral_correction=None, back_projection=None, histogram_matching=True,
+        self,
+        x,
+        n_variations=15,
+        sampling_steps=None,
+        *,
+        sampler=None,
+        spectral_correction=None,
+        back_projection=None,
+        histogram_matching=True,
     ):
         """
         Estimates uncertainty maps for each sample in the input batch using repeated stochastic forward passes.
@@ -939,8 +959,14 @@ class SRLatentDiffusionLightning(LightningModule):
 
     @torch.no_grad()
     def uncertainty_map(
-        self, x, n_variations=15, sampling_steps=None, custom_steps=None, *,
-        sampler=None, **correction_kwargs,
+        self,
+        x,
+        n_variations=15,
+        sampling_steps=None,
+        custom_steps=None,
+        *,
+        sampler=None,
+        **correction_kwargs,
     ):
         if custom_steps is not None:
             sampling_steps = custom_steps

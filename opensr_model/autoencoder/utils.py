@@ -392,8 +392,8 @@ class AttnBlock(nn.Module):
             values = v.reshape(b, c, h * w).transpose(1, 2)
             chunks = []
             for start in range(0, h * w, self.query_chunk_size):
-                weights = torch.bmm(q[:, start:start + self.query_chunk_size], k)
-                weights = torch.softmax(weights * (c ** -0.5), dim=-1)
+                weights = torch.bmm(q[:, start : start + self.query_chunk_size], k)
+                weights = torch.softmax(weights * (c**-0.5), dim=-1)
                 chunks.append(torch.bmm(weights, values))
             attended = torch.cat(chunks, dim=1).transpose(1, 2).reshape(b, c, h, w)
             return x + self.proj_out(attended)

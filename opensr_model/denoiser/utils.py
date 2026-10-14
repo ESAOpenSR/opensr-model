@@ -4,7 +4,7 @@ from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from einops import einsum, rearrange, repeat
+from einops import rearrange, repeat
 from torch import nn
 from torch.nn import functional as F
 
@@ -549,7 +549,7 @@ class CrossAttention(nn.Module):
         q, k, v = map(lambda t: rearrange(t, "b n (h d) -> (b h) n d", h=h), (q, k, v))
 
         # Aggregated attention weights
-        sim = einsum("bid, bjd -> bij", q, k) * self.scale
+        sim = torch.einsum("bid, bjd -> bij", q, k) * self.scale
 
         if exists(mask):
             mask = rearrange(mask, "b ... -> b (...)")
@@ -560,7 +560,7 @@ class CrossAttention(nn.Module):
         # attention, what we cannot get enough of
         attn = sim.softmax(dim=-1)
 
-        out = einsum("b i j, b j d -> b i d", attn, v)
+        out = torch.einsum("b i j, b j d -> b i d", attn, v)
         out = rearrange(out, "(b h) n d -> b n (h d)", h=h)
 
         return self.to_out(out)
@@ -830,7 +830,7 @@ class BasicTransformerBlock(nn.Module):
             torch.Tensor: The output tensor of shape `(batch_size, seq_len, dim)`.
         """
         return checkpoint(
-            self._forward, (x, context), self.parameters(), False#self.checkpoint
+            self._forward, (x, context), self.parameters(), False  # self.checkpoint
         )
 
     def _forward(

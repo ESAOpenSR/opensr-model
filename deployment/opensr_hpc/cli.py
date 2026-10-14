@@ -16,7 +16,9 @@ def build_parser() -> argparse.ArgumentParser:
     validate_parser.add_argument("--config", required=True)
 
     submit_parser = subparsers.add_parser("submit")
-    submit_subparsers = submit_parser.add_subparsers(dest="submit_command", required=True)
+    submit_subparsers = submit_parser.add_subparsers(
+        dest="submit_command", required=True
+    )
 
     patch_parser = submit_subparsers.add_parser("patch")
     _add_submit_common_args(patch_parser)
@@ -113,7 +115,12 @@ def _handle_submit_patch(args: argparse.Namespace) -> int:
         dry_run=args.dry_run,
     )
     logger.info("submitted patch run_id=%s run_dir=%s", run_id, run_dir)
-    print(json.dumps({"run_id": run_id, "run_dir": str(run_dir), "submission": submission}, indent=2))
+    print(
+        json.dumps(
+            {"run_id": run_id, "run_dir": str(run_dir), "submission": submission},
+            indent=2,
+        )
+    )
     return 0
 
 
@@ -143,8 +150,20 @@ def _handle_submit_grid(args: argparse.Namespace) -> int:
         script_path=_resolve_script_path(args.script_path),
         dry_run=args.dry_run,
     )
-    logger.info("submitted grid run_id=%s run_dir=%s patches=%d", run_id, run_dir, len(patches))
-    print(json.dumps({"run_id": run_id, "run_dir": str(run_dir), "patches": len(patches), "submission": submission}, indent=2))
+    logger.info(
+        "submitted grid run_id=%s run_dir=%s patches=%d", run_id, run_dir, len(patches)
+    )
+    print(
+        json.dumps(
+            {
+                "run_id": run_id,
+                "run_dir": str(run_dir),
+                "patches": len(patches),
+                "submission": submission,
+            },
+            indent=2,
+        )
+    )
     return 0
 
 
@@ -214,7 +233,9 @@ def _handle_run_task(args: argparse.Namespace) -> int:
 def _handle_collect(args: argparse.Namespace) -> int:
     from deployment.opensr_hpc.collect import collect_outputs
 
-    destination, copied = collect_outputs(Path(args.run_dir).resolve(), Path(args.dest).resolve() if args.dest else None)
+    destination, copied = collect_outputs(
+        Path(args.run_dir).resolve(), Path(args.dest).resolve() if args.dest else None
+    )
     print(json.dumps({"destination": str(destination), "copied": copied}, indent=2))
     return 0
 
@@ -226,7 +247,11 @@ def _handle_status(args: argparse.Namespace) -> int:
         "resolved_config": str(run_dir / "resolved_config.yaml"),
         "run_manifest": str(run_dir / "run_manifest.yaml"),
         "logs_dir": str(run_dir / "logs"),
-        "patch_count": len(list((run_dir / "patches").glob("patch_*"))) if (run_dir / "patches").exists() else 0,
+        "patch_count": (
+            len(list((run_dir / "patches").glob("patch_*")))
+            if (run_dir / "patches").exists()
+            else 0
+        ),
     }
     print(json.dumps(payload, indent=2))
     return 0

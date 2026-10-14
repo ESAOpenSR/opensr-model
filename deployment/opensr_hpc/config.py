@@ -6,7 +6,6 @@ from typing import Any
 
 import yaml
 
-
 DEFAULT_RATE_LIMIT_RETRY_DELAYS_SECONDS = [15, 30, 60, 120, 120, 120]
 
 
@@ -182,7 +181,9 @@ def validate_runtime_config(config: RuntimeConfig) -> None:
     if config.staging.overlap_meters < 0:
         raise ValueError("staging.overlap_meters must be non-negative")
     if any(delay <= 0 for delay in config.staging.rate_limit_retry_delays_seconds):
-        raise ValueError("staging.rate_limit_retry_delays_seconds must contain positive integers")
+        raise ValueError(
+            "staging.rate_limit_retry_delays_seconds must contain positive integers"
+        )
     if config.inference.factor <= 0:
         raise ValueError("inference.factor must be positive")
     if len(config.inference.window_size) != 2 or min(config.inference.window_size) <= 0:
@@ -214,6 +215,8 @@ def runtime_config_to_dict(config: RuntimeConfig) -> dict[str, Any]:
     data["config_path"] = str(config.config_path) if config.config_path else None
     data["model"]["config_path"] = str(resolve_model_config_path(config))
     if config.model.checkpoint_path is not None:
-        data["model"]["checkpoint_path"] = str(Path(config.model.checkpoint_path).expanduser().resolve())
+        data["model"]["checkpoint_path"] = str(
+            Path(config.model.checkpoint_path).expanduser().resolve()
+        )
     data["inference"]["window_size"] = list(config.inference.window_size)
     return data

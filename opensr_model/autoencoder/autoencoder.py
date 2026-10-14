@@ -2,8 +2,14 @@ from typing import Tuple
 
 import numpy as np
 import torch
-from opensr_model.autoencoder.utils import (Downsample, Normalize, ResnetBlock,
-                                            Upsample, make_attn, nonlinearity)
+from opensr_model.autoencoder.utils import (
+    Downsample,
+    Normalize,
+    ResnetBlock,
+    Upsample,
+    make_attn,
+    nonlinearity,
+)
 from torch import nn
 
 

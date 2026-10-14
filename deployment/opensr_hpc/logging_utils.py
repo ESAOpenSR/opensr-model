@@ -4,7 +4,9 @@ import logging
 from pathlib import Path
 
 
-def configure_logging(log_path: Path | None = None, verbose: bool = False) -> logging.Logger:
+def configure_logging(
+    log_path: Path | None = None, verbose: bool = False
+) -> logging.Logger:
     logger = logging.getLogger("opensr-hpc")
     logger.setLevel(logging.DEBUG if verbose else logging.INFO)
     logger.handlers.clear()

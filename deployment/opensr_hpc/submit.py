@@ -18,7 +18,7 @@ def _patch_manifest(
     start_date: str,
     end_date: str,
     config: RuntimeConfig,
-    ) -> dict[str, Any]:
+) -> dict[str, Any]:
     return {
         "run_id": run_id,
         "patch_id": patch.patch_id,
@@ -124,7 +124,11 @@ def submit_patch_run(
                     "skipped": [{"patch_id": patch.patch_id, "reason": exc.reason}],
                 },
             )
-            return run_id, run_dir, {"mode": "skipped", "reason": exc.reason, **exc.details}
+            return (
+                run_id,
+                run_dir,
+                {"mode": "skipped", "reason": exc.reason, **exc.details},
+            )
     else:
         input_tif.parent.mkdir(parents=True, exist_ok=True)
 
@@ -141,7 +145,12 @@ def submit_patch_run(
             "run_id": run_id,
             "mode": "patch",
             "patch_count": 1,
-            "tasks": [{"patch_id": patch.patch_id, "manifest": f"patches/{patch.patch_id}/manifest.yaml"}],
+            "tasks": [
+                {
+                    "patch_id": patch.patch_id,
+                    "manifest": f"patches/{patch.patch_id}/manifest.yaml",
+                }
+            ],
         },
     )
     manifest_path = patch_root / "manifest.yaml"
@@ -215,7 +224,9 @@ def _submit_patch_collection(
                     start_date=start_date,
                     end_date=end_date,
                 )
-                skipped.append({"patch_id": patch.patch_id, "reason": exc.reason, **exc.details})
+                skipped.append(
+                    {"patch_id": patch.patch_id, "reason": exc.reason, **exc.details}
+                )
                 continue
         else:
             input_tif.parent.mkdir(parents=True, exist_ok=True)
@@ -239,7 +250,10 @@ def _submit_patch_collection(
         "end_date": end_date,
         "skipped_count": len(skipped),
         "tasks": [
-            {"patch_id": str(task["patch_id"]), "manifest": f"patches/{task['patch_id']}/manifest.yaml"}
+            {
+                "patch_id": str(task["patch_id"]),
+                "manifest": f"patches/{task['patch_id']}/manifest.yaml",
+            }
             for task in tasks
         ],
         "skipped": skipped,
@@ -251,7 +265,15 @@ def _submit_patch_collection(
     write_yaml(run_dir / "run_manifest.yaml", run_manifest)
 
     if not tasks:
-        return run_id, run_dir, {"mode": "skipped", "reason": "no_submittable_patches", "skipped": len(skipped)}
+        return (
+            run_id,
+            run_dir,
+            {
+                "mode": "skipped",
+                "reason": "no_submittable_patches",
+                "skipped": len(skipped),
+            },
+        )
 
     spec = SlurmJobSpec(
         job_name=f"opensr_{run_id}",

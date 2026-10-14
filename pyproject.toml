@@ -1,0 +1,35 @@
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+required-version = "26.10.1"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "-ra",
+    "--cov",
+    "--cov-config=pyproject.toml",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-report=xml",
+    "--cov-report=html",
+    # Local diagnostics and their scripts are intentionally Git-ignored.
+    "--ignore=tests/diagnostics",
+]
+
+[tool.coverage.run]
+source = ["opensr_model"]
+branch = true
+relative_files = true
+# Include work performed by the distributed tests and Python subprocesses.
+concurrency = ["multiprocessing"]
+patch = ["subprocess"]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"

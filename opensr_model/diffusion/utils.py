@@ -637,7 +637,6 @@ class DDIMSampler(object):
             )
             img, pred_x0 = outs
 
-
             # Append the intermediate results to the intermediates dictionary
             if index % log_every_t == 0 or index == total_steps - 1:
                 intermediates["x_inter"].append(img)
@@ -653,7 +652,7 @@ class DDIMSampler(object):
         index: int,
         repeat_noise: bool = False,
         use_original_steps: bool = False,
-        temperature: float = 1.0
+        temperature: float = 1.0,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Samples from the model using DDIM sampling.
@@ -683,12 +682,12 @@ class DDIMSampler(object):
             Tuple[torch.Tensor, torch.Tensor]: Tuple containing the generated samples and intermediate results.
         """
         t = torch.full((x.shape[0],), t, device=x.device, dtype=torch.long)
-                
+
         # get batch size and device
         b, *_, device = *x.shape, x.device
 
         # apply model with or without unconditional conditioning
-        e_t = self.model.apply_model(x, t, c) 
+        e_t = self.model.apply_model(x, t, c)
 
         # get alphas, alphas_prev, sqrt_one_minus_alphas, and sigmas
         alphas = self.model.alphas_cumprod if use_original_steps else self.ddim_alphas
@@ -818,9 +817,11 @@ class LitEma(nn.Module):
         self.register_buffer("decay", torch.tensor(decay, dtype=torch.float32))
         self.register_buffer(
             "num_updates",
-            torch.tensor(0, dtype=torch.int)
-            if use_num_upates
-            else torch.tensor(-1, dtype=torch.int),
+            (
+                torch.tensor(0, dtype=torch.int)
+                if use_num_upates
+                else torch.tensor(-1, dtype=torch.int)
+            ),
         )
 
         for name, p in model.named_parameters():

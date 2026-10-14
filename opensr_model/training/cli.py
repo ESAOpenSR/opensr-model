@@ -60,11 +60,14 @@ def run_training(
     prepared = None
     if stage == "diffusion" and ("sen2neon" in validation or "raw_s2" in validation):
         from .validation.data import prepare_transfer
+
         prepared = prepare_transfer(config, run_dir)
         config.data.preparation_manifest = str(run_dir / "data_manifest.json")
         if prepared["sen2neon_root"]:
             if not bool(config.trainer.get("enable_checkpointing", True)):
-                raise ValueError("SEN2NEON checkpoint selection requires enable_checkpointing=true")
+                raise ValueError(
+                    "SEN2NEON checkpoint selection requires enable_checkpointing=true"
+                )
             config.checkpoint.monitor = "val/sen2neon/rgb_lpips"
             config.checkpoint.mode = "min"
         if prepare_only:
@@ -81,6 +84,7 @@ def run_training(
         save_resolved_config(resolved_config, run_dir / "resolved_config.yaml")
     if prepared is not None:
         from .runtime.provenance import record_provenance
+
         record_provenance(config, run_dir)
     if stage == "diffusion" and datamodule.factor != 4:
         raise ValueError(
@@ -101,18 +105,27 @@ def run_training(
         callback_config.checkpoint.save_last = False
         callback_config.checkpoint.native.enabled = False
         if callback_config.checkpoint.get("early_stopping", {}).get("enabled", False):
-            raise ValueError("Disable generic early stopping when using spectral-guarded selection")
+            raise ValueError(
+                "Disable generic early stopping when using spectral-guarded selection"
+            )
     callbacks = _build_callbacks(stage, callback_config, run_dir, logger is not False)
     if prepared is not None:
         from .validation.callback import TransferValidation
-        callbacks.insert(0, TransferValidation(prepared, as_plain_dict(validation), run_dir))
+
+        callbacks.insert(
+            0, TransferValidation(prepared, as_plain_dict(validation), run_dir)
+        )
 
     trainer_kwargs = as_plain_dict(config.trainer)
     if prepared is not None:
         accumulation = trainer_kwargs.get("accumulate_grad_batches", 1)
         if not isinstance(accumulation, int):
-            raise ValueError("Transfer validation requires fixed integer gradient accumulation")
-        trainer_kwargs["val_check_interval"] = int(validation.get("every_n_train_steps", 500)) * accumulation
+            raise ValueError(
+                "Transfer validation requires fixed integer gradient accumulation"
+            )
+        trainer_kwargs["val_check_interval"] = (
+            int(validation.get("every_n_train_steps", 500)) * accumulation
+        )
         trainer_kwargs["check_val_every_n_epoch"] = None
         trainer_kwargs["num_sanity_val_steps"] = 0
     _prepare_trainer_kwargs(stage, module, trainer_kwargs)
@@ -283,8 +296,11 @@ def _build_logger(config: DictConfig, run_dir: Path) -> Any:
                 name=name,
                 save_dir=str(save_dir),
                 log_model=bool(config.get("log_model", False)),
-                **{key: config[key] for key in ("entity", "group", "id", "resume", "tags", "mode")
-                   if config.get(key) is not None},
+                **{
+                    key: config[key]
+                    for key in ("entity", "group", "id", "resume", "tags", "mode")
+                    if config.get(key) is not None
+                },
             )
         except ImportError as exc:  # pragma: no cover
             raise ImportError("Install opensr-model[wandb] for W&B logging") from exc
@@ -482,7 +498,11 @@ def _parser(stage: Optional[str] = None) -> argparse.ArgumentParser:
     parser.add_argument("--pretrained", type=Path, default=None)
     parser.add_argument("--resume", type=Path, default=None)
     parser.add_argument("--validate-only", action="store_true")
-    parser.add_argument("--prepare-only", action="store_true", help="Audit/freeze transfer data without loading a model")
+    parser.add_argument(
+        "--prepare-only",
+        action="store_true",
+        help="Audit/freeze transfer data without loading a model",
+    )
     parser.add_argument("--print-config", action="store_true")
     return parser
 
@@ -506,7 +526,11 @@ def _run_from_args(args: argparse.Namespace, stage: str) -> None:
         return
     if args.prepare_only and args.validate_only:
         raise ValueError("--prepare-only and --validate-only are mutually exclusive")
-    run_training(config, validate_only=bool(args.validate_only), prepare_only=bool(args.prepare_only))
+    run_training(
+        config,
+        validate_only=bool(args.validate_only),
+        prepare_only=bool(args.prepare_only),
+    )
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:

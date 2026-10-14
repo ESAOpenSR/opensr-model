@@ -23,22 +23,44 @@ class BackProjectionConfig:
     def __post_init__(self):
         for name, minimum in (("scale", 1), ("max_iterations", 0)):
             value = getattr(self, name)
-            if isinstance(value, bool) or not isinstance(value, Integral) or value < minimum:
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, Integral)
+                or value < minimum
+            ):
                 raise ValueError(f"{name} must be an integer >= {minimum}")
         for name in ("tolerance", "relaxation"):
             value = getattr(self, name)
-            if isinstance(value, bool) or not isinstance(value, Real) or not math.isfinite(value):
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, Real)
+                or not math.isfinite(value)
+            ):
                 raise ValueError(f"{name} must be finite and numeric")
         if self.tolerance < 0 or not 0 < self.relaxation <= 1:
             raise ValueError("tolerance must be >= 0 and relaxation must be in (0, 1]")
-        sigmas = (self.blur_sigma,) if isinstance(self.blur_sigma, Real) else tuple(self.blur_sigma)
-        if not sigmas or any(isinstance(s, bool) or not isinstance(s, Real) or not math.isfinite(s) or s < 0 for s in sigmas):
+        sigmas = (
+            (self.blur_sigma,)
+            if isinstance(self.blur_sigma, Real)
+            else tuple(self.blur_sigma)
+        )
+        if not sigmas or any(
+            isinstance(s, bool)
+            or not isinstance(s, Real)
+            or not math.isfinite(s)
+            or s < 0
+            for s in sigmas
+        ):
             raise ValueError("blur_sigma must contain finite nonnegative numbers")
         if not isinstance(self.blur_sigma, Real):
             object.__setattr__(self, "blur_sigma", tuple(float(s) for s in sigmas))
 
     def sigmas(self, channels):
-        values = (float(self.blur_sigma),) * channels if isinstance(self.blur_sigma, Real) else self.blur_sigma
+        values = (
+            (float(self.blur_sigma),) * channels
+            if isinstance(self.blur_sigma, Real)
+            else self.blur_sigma
+        )
         if len(values) != channels:
             raise ValueError("blur_sigma needs one value per image band")
         return values
@@ -54,12 +76,16 @@ class BlurDownsample(torch.nn.Module):
 
     def __init__(self, channels=4, scale=4, blur_sigma=0.0):
         super().__init__()
-        if isinstance(channels, bool) or not isinstance(channels, Integral) or channels < 1:
+        if (
+            isinstance(channels, bool)
+            or not isinstance(channels, Integral)
+            or channels < 1
+        ):
             raise ValueError("channels must be a positive integer")
         config = BackProjectionConfig(scale=scale, blur_sigma=blur_sigma)
         sigmas = config.sigmas(channels)
         self.scale, self.channels = scale, channels
-        radii = [int(4 * s + .5) for s in sigmas]
+        radii = [int(4 * s + 0.5) for s in sigmas]
         self.radius = max(radii)
         positions = torch.arange(-self.radius, self.radius + 1, dtype=torch.float64)
         kernels = []
@@ -67,7 +93,7 @@ class BlurDownsample(torch.nn.Module):
             if sigma == 0:
                 kernel = (positions == 0).double()
             else:
-                kernel = torch.exp(-.5 * (positions / sigma).square())
+                kernel = torch.exp(-0.5 * (positions / sigma).square())
                 kernel = kernel * (positions.abs() <= radius)
                 kernel = kernel / kernel.sum()
             kernels.append(kernel)
@@ -85,7 +111,11 @@ class BlurDownsample(torch.nn.Module):
         x = torch.arange(-self.radius, w + self.radius, device=image.device) % w
         y = torch.arange(-self.radius, h + self.radius, device=image.device) % h
         image = F.conv2d(image.index_select(-1, x), self.kernel, groups=self.channels)
-        return F.conv2d(image.index_select(-2, y), self.kernel.transpose(-1, -2), groups=self.channels)
+        return F.conv2d(
+            image.index_select(-2, y),
+            self.kernel.transpose(-1, -2),
+            groups=self.channels,
+        )
 
     def forward(self, image):
         self._check(image)
@@ -97,7 +127,9 @@ class BlurDownsample(torch.nn.Module):
 
     def adjoint(self, residual):
         self._check(residual)
-        expanded = residual.repeat_interleave(self.scale, -2).repeat_interleave(self.scale, -1)
+        expanded = residual.repeat_interleave(self.scale, -2).repeat_interleave(
+            self.scale, -1
+        )
         return self._blur(expanded / self.scale**2)
 
 
@@ -113,8 +145,15 @@ def _mask(value, reference, name):
 
 
 @torch.no_grad()
-def back_projection(source, observed, config=None, *, valid_mask=None,
-                    output_mask=None, return_info=False):
+def back_projection(
+    source,
+    observed,
+    config=None,
+    *,
+    valid_mask=None,
+    output_mask=None,
+    return_info=False,
+):
     """Correct CHW/BCHW SR using x <- x + alpha D* M(y-Dx).
 
     `valid_mask` marks usable LR measurements. Optional `output_mask` marks HR
@@ -142,8 +181,14 @@ def back_projection(source, observed, config=None, *, valid_mask=None,
     unbatched = source.ndim == 3
     if unbatched:
         source, observed = source.unsqueeze(0), observed.unsqueeze(0)
-    if min(source.shape) < 1 or min(observed.shape) < 1 or source.shape[:2] != observed.shape[:2]:
-        raise ValueError("source and observed need matching nonempty batch/band dimensions")
+    if (
+        min(source.shape) < 1
+        or min(observed.shape) < 1
+        or source.shape[:2] != observed.shape[:2]
+    ):
+        raise ValueError(
+            "source and observed need matching nonempty batch/band dimensions"
+        )
     if source.shape[-2:] != tuple(n * config.scale for n in observed.shape[-2:]):
         raise ValueError("source spatial shape must equal observed shape times scale")
     dtype = torch.float64 if source.dtype == torch.float64 else torch.float32
@@ -153,14 +198,14 @@ def back_projection(source, observed, config=None, *, valid_mask=None,
         support = _mask(output_mask, x, "output_mask")
         if not torch.isfinite(x[support]).all() or not torch.isfinite(y[valid]).all():
             raise ValueError("valid source/observation values must be finite")
-        x = torch.where(support, x, 0.)
-        y = torch.where(valid, y, 0.)
+        x = torch.where(support, x, 0.0)
+        y = torch.where(valid, y, 0.0)
         operator = BlurDownsample(x.shape[1], config.scale, config.blur_sigma).to(x)
         counts = valid.sum(dim=(1, 2, 3))
         iterations = torch.zeros(x.shape[0], dtype=torch.long, device=x.device)
         history = []
         for step in range(config.max_iterations + 1):
-            residual = torch.where(valid, y - operator(x), 0.)
+            residual = torch.where(valid, y - operator(x), 0.0)
             errors = (residual.square().sum(dim=(1, 2, 3)) / counts.clamp_min(1)).sqrt()
             if return_info:
                 history.append(errors)
@@ -168,11 +213,15 @@ def back_projection(source, observed, config=None, *, valid_mask=None,
             if step == config.max_iterations or not active.any():
                 break
             update = config.relaxation * config.scale**2 * operator.adjoint(residual)
-            x = x + torch.where(support & active[:, None, None, None], update, 0.)
+            x = x + torch.where(support & active[:, None, None, None], update, 0.0)
             iterations += active.long()
         output = x.squeeze(0) if unbatched else x
         if not return_info:
             return output
-        return output, {"lr_rmse": errors, "iterations": iterations,
-                        "converged": (counts > 0) & (errors <= config.tolerance),
-                        "valid_measurements": counts, "residual_history": torch.stack(history)}
+        return output, {
+            "lr_rmse": errors,
+            "iterations": iterations,
+            "converged": (counts > 0) & (errors <= config.tolerance),
+            "valid_measurements": counts,
+            "residual_history": torch.stack(history),
+        }

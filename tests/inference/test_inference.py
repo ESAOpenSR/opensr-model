@@ -25,8 +25,11 @@ def _stub_inference_model() -> tuple[SRLatentDiffusion, _Sampler]:
     model.config = SimpleNamespace(
         spectral_correction="histogram",
         denoiser_settings=SimpleNamespace(
-            sampler="ddim", sampling_eta=0.25, sampling_temperature=0.75, sampling_steps=2
-        )
+            sampler="ddim",
+            sampling_eta=0.25,
+            sampling_temperature=0.75,
+            sampling_steps=2,
+        ),
     )
     model.device = torch.device("cpu")
     sampler = _Sampler()
@@ -172,7 +175,8 @@ def test_histogram_matching_supports_images_and_rejects_invalid_rank() -> None:
 
 @pytest.mark.parametrize("sampling_steps", [None, 3])
 def test_uncertainty_map_returns_twice_channel_mean_standard_deviation(
-    monkeypatch, sampling_steps,
+    monkeypatch,
+    sampling_steps,
 ) -> None:
     model = SRLatentDiffusion.__new__(SRLatentDiffusion)
     torch.nn.Module.__init__(model)
@@ -212,7 +216,13 @@ def test_uncertainty_map_returns_twice_channel_mean_standard_deviation(
 @pytest.mark.parametrize("save_iterations", [False, True])
 @pytest.mark.parametrize(
     "selection",
-    ["configured_count", "config_sampler", "call_sampler", "call_count", "missing_count"],
+    [
+        "configured_count",
+        "config_sampler",
+        "call_sampler",
+        "call_count",
+        "missing_count",
+    ],
 )
 def test_dpm_forward_uses_config_and_resets_history(
     monkeypatch, save_iterations, selection
@@ -325,7 +335,9 @@ def test_lightning_wrapper_forwards_sampling_arguments():
     assert uncertainty_counts[-1] == 7
 
 
-@pytest.mark.parametrize("sampler, expected_steps", [("ddim", 100), ("dpm_solver++", 3)])
+@pytest.mark.parametrize(
+    "sampler, expected_steps", [("ddim", 100), ("dpm_solver++", 3)]
+)
 def test_bundled_config_uses_sampler_specific_default_steps(
     monkeypatch, sampler, expected_steps
 ):
@@ -356,7 +368,9 @@ def test_bundled_config_uses_sampler_specific_default_steps(
     monkeypatch.setattr(
         srmodel_module, "assert_tensor_validity", lambda x: (x, (0, 0, 0, 0))
     )
-    monkeypatch.setattr(srmodel_module, "create_no_data_mask", lambda x, target_size: None)
+    monkeypatch.setattr(
+        srmodel_module, "create_no_data_mask", lambda x, target_size: None
+    )
     monkeypatch.setattr(srmodel_module, "apply_no_data_mask", lambda x, mask: x)
     monkeypatch.setattr(srmodel_module, "revert_padding", lambda x, padding: x)
     model(torch.ones(1, 4, 8, 8), sampler=sampler, histogram_matching=False)

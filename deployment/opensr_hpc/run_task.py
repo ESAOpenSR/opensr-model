@@ -10,7 +10,6 @@ from deployment.opensr_hpc.manifests import read_yaml, write_json
 from deployment.opensr_hpc.metadata import write_software_metadata
 from deployment.opensr_hpc.raster import raster_validity_stats
 
-
 LOGGER = logging.getLogger("opensr-hpc")
 
 
@@ -35,14 +34,22 @@ def run_task(manifest_path: Path, task_index: int | None = None) -> Path | None:
     if "tasks" in root_manifest:
         if task_index is None:
             raise ValueError("Array task manifest requires task index")
-        manifest_path = (manifest_path.parent / Path(root_manifest["tasks"][task_index]["manifest"])).resolve()
+        manifest_path = (
+            manifest_path.parent / Path(root_manifest["tasks"][task_index]["manifest"])
+        ).resolve()
     manifest = _resolve_patch_manifest(manifest_path, None)
     config = manifest["config"]
-    output_dir = _resolve_manifest_local_path(manifest_path, manifest["paths"]["output_dir"])
-    metadata_dir = _resolve_manifest_local_path(manifest_path, manifest["paths"]["metadata_dir"])
+    output_dir = _resolve_manifest_local_path(
+        manifest_path, manifest["paths"]["output_dir"]
+    )
+    metadata_dir = _resolve_manifest_local_path(
+        manifest_path, manifest["paths"]["metadata_dir"]
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
     metadata_dir.mkdir(parents=True, exist_ok=True)
-    input_tif = _resolve_manifest_local_path(manifest_path, manifest["paths"]["input_tif"])
+    input_tif = _resolve_manifest_local_path(
+        manifest_path, manifest["paths"]["input_tif"]
+    )
     patch_id = str(manifest.get("patch_id", "unknown"))
 
     LOGGER.info("starting worker task patch_id=%s manifest=%s", patch_id, manifest_path)
@@ -50,7 +57,11 @@ def run_task(manifest_path: Path, task_index: int | None = None) -> Path | None:
 
     validity = raster_validity_stats(input_tif)
     if validity["valid_pixels"] == 0 or validity["nonzero_pixels"] == 0:
-        LOGGER.info("skipping patch_id=%s because input raster is empty or all-zero stats=%s", patch_id, validity)
+        LOGGER.info(
+            "skipping patch_id=%s because input raster is empty or all-zero stats=%s",
+            patch_id,
+            validity,
+        )
         write_json(
             metadata_dir / "result.json",
             {

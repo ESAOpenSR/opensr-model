@@ -11,7 +11,6 @@ from deployment.opensr_hpc.config import InferenceConfig
 from deployment.opensr_hpc.naming import patch_output_name
 from deployment.opensr_hpc.raster import compress_geotiff, compute_centroid_lat_lon
 
-
 LOGGER = logging.getLogger("opensr-hpc")
 
 
@@ -55,7 +54,7 @@ def run_inference(
         import opensr_utils
     except ImportError as exc:  # pragma: no cover
         raise ImportError(
-            "opensr-hpc inference requires optional dependencies. Install with `pip install \"opensr-model[hpc]\"`."
+            'opensr-hpc inference requires optional dependencies. Install with `pip install "opensr-model[hpc]"`.'
         ) from exc
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -100,7 +99,9 @@ def run_inference(
 
     latitude, longitude = compute_centroid_lat_lon(final_sr_path)
     compressed_path = output_dir / patch_output_name(latitude, longitude)
-    LOGGER.info("compressing SR GeoTIFF input=%s output=%s", final_sr_path, compressed_path)
+    LOGGER.info(
+        "compressing SR GeoTIFF input=%s output=%s", final_sr_path, compressed_path
+    )
     compress_geotiff(final_sr_path, compressed_path)
     final_sr_path.unlink(missing_ok=True)
     return compressed_path

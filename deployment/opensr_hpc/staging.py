@@ -9,7 +9,6 @@ import numpy as np
 from deployment.opensr_hpc.config import StagingConfig
 from deployment.opensr_hpc.raster import ensure_proj_env, parse_epsg, scale_to_uint16
 
-
 LOGGER = logging.getLogger("opensr-hpc")
 
 
@@ -72,7 +71,7 @@ def create_cube_with_retry(
         import rioxarray  # noqa: F401
     except ImportError as exc:  # pragma: no cover
         raise ImportError(
-            "opensr-hpc staging requires optional dependencies. Install with `pip install \"opensr-model[hpc]\"`."
+            'opensr-hpc staging requires optional dependencies. Install with `pip install "opensr-model[hpc]"`.'
         ) from exc
 
     for attempt, delay in enumerate(config.rate_limit_retry_delays_seconds, start=1):
@@ -141,7 +140,9 @@ def stage_cutout(
         cube = cube.isel(time=config.image_index)
     cube = cube.transpose("band", "y", "x")
     stats = ensure_cube_has_valid_data(cube)
-    LOGGER.info("validated staged cutout lat=%s lon=%s stats=%s", latitude, longitude, stats)
+    LOGGER.info(
+        "validated staged cutout lat=%s lon=%s stats=%s", latitude, longitude, stats
+    )
 
     epsg_text = str(cube.attrs.get("epsg", "") or cube.coords.get("epsg", ""))
     epsg_code = parse_epsg(epsg_text, latitude, longitude)
@@ -160,5 +161,7 @@ def stage_cutout(
         blockysize=512,
         BIGTIFF="YES",
     )
-    LOGGER.info("wrote staged cutout lat=%s lon=%s output=%s", latitude, longitude, output_path)
+    LOGGER.info(
+        "wrote staged cutout lat=%s lon=%s output=%s", latitude, longitude, output_path
+    )
     return output_path.resolve()
