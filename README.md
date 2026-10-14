@@ -161,21 +161,20 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e '.[train,dev]'
 python -m pre_commit install
-python -m pre_commit run --all-files --hook-stage pre-push
+python -m pre_commit run --all-files
 ```
 
 On Windows, activate the environment with `.venv\Scripts\Activate.ps1` in
-PowerShell. Keep the environment active when pushing: both checks use its
+PowerShell. Keep the environment active when committing and pushing: both checks use its
 Python and installed dependencies. Hook installation is required once per clone.
 
-Each push checks Black formatting on the Python files included in the push and
-runs the full pytest suite with line and branch coverage, including the distributed
-tests. Formatting or test failures block the push. Fix formatting with
-`python -m black .`, commit the changes, and push again. Commits do not run these
-checks. To migrate an existing installation:
+Every commit checks Black formatting on staged Python files and runs the full
+pytest suite with line and branch coverage, including the distributed tests.
+Every push runs the same checks for the files included in the push. Formatting
+or test failures block the commit or push. Fix formatting with `python -m black .`,
+stage the changes, and commit again. To update an existing hook installation:
 
 ```bash
-python -m pre_commit uninstall --hook-type pre-commit
 python -m pre_commit install
 ```
 
