@@ -106,8 +106,9 @@ def test_packaged_training_paths_stay_relative_to_launch_directory(
         assert load_model_config(config.model.architecture_config).first_stage_config
 
 
+@pytest.mark.parametrize("storage_dtype", ["float16", "float32"])
 def test_reconstruction_retention_preserves_scoring_and_final_reuse(
-    tmp_path, monkeypatch, tiny_model_config
+    tmp_path, monkeypatch, tiny_model_config, storage_dtype
 ):
     import lpips
     from opensr_model.training.validation import callback as callbacks
@@ -122,7 +123,13 @@ def test_reconstruction_retention_preserves_scoring_and_final_reuse(
     }
     cb = TransferValidation(
         prepared,
-        {"sen2neon": {"preview_count": 1, "save_all_reconstructions": False}},
+        {
+            "sen2neon": {
+                "preview_count": 1,
+                "save_all_reconstructions": False,
+                "storage_dtype": storage_dtype,
+            }
+        },
         tmp_path,
     )
     trainer = types.SimpleNamespace(
@@ -177,6 +184,12 @@ def test_reconstruction_retention_preserves_scoring_and_final_reuse(
     assert all(r["file"] for r in final)
     assert [r["metrics"] for r in final] == [r["metrics"] for r in first]
     assert len(list((tmp_path / "validation/final").glob("*.npz"))) == 3
+    summary = json.loads((tmp_path / "validation/final/summary.json").read_text())
+    assert len(summary["preview_ids"]) == 1
+    assert summary["retained_reconstructions"] == 3
+    for path in (tmp_path / "validation/final").glob("*.npz"):
+        with np.load(path) as archive:
+            assert str(archive["sr"].dtype) == storage_dtype
 
 
 def test_strict_filter_rejects_full_pair_before_crop(fake_taco_factory):

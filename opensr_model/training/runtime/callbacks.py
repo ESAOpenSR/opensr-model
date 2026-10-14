@@ -155,7 +155,10 @@ class NvidiaPowerCostLogger(Callback):
             }
         )
         for logger in trainer.loggers:
-            if logger.__class__.__name__.lower().startswith("wandb"):
+            if (
+                logger.__class__.__name__.lower().startswith("wandb")
+                or logger.__class__.__name__ == "CampaignLogger"
+            ):
                 logger.log_metrics(metrics, step=int(trainer.global_step))
 
     def _read_gpu_power_watts(self) -> list[float]:

@@ -308,6 +308,21 @@ def prepare_transfer(config, run_dir: Path) -> dict[str, Any]:
     dm = OpenSRDataModule(**data_args)
     data_args["taco_path"] = [str(p) for p in dm.taco_paths]
     signatures = [file_signature(p) for p in dm.taco_paths]
+    mixture_signatures = []
+    if dm.sources:
+        from ..data.taco import resolve_taco_paths
+
+        for name, source in sorted(dm.sources.items()):
+            mixture_signatures.append(
+                {
+                    "name": name,
+                    "archives": [
+                        file_signature(p)
+                        for p in resolve_taco_paths(source["taco_path"])
+                    ],
+                    "train_ids_sha256": digest_file(source["train_ids"]),
+                }
+            )
     validity_key = digest_json(
         {
             "version": PROTOCOL_VERSION,
@@ -341,6 +356,7 @@ def prepare_transfer(config, run_dir: Path) -> dict[str, Any]:
             "sources": signatures,
             "neon": neon_signatures,
             "raw": raw_signatures,
+            **({"mixture_sources": mixture_signatures} if mixture_signatures else {}),
         }
     )
     path = run_dir / "data_manifest.json"

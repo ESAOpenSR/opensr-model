@@ -1100,6 +1100,9 @@ class OpenSRDataModule(LightningDataModule):
         drop_last: bool = False,
         strict_full_validity: bool = False,
         preparation_manifest: str | Path | None = None,
+        sources: Mapping | None = None,
+        sampling_proportions: Mapping | None = None,
+        sampling_seed: int | None = None,
     ) -> None:
         super().__init__()
         if not 0.0 < val_fraction < 1.0:
@@ -1160,6 +1163,16 @@ class OpenSRDataModule(LightningDataModule):
         self.drop_last = drop_last
         self.strict_full_validity = strict_full_validity
         self.preparation_manifest = preparation_manifest
+        self.sources = dict(sources or {})
+        self.sampling_proportions = dict(sampling_proportions or {})
+        self.sampling_seed = int(split_seed if sampling_seed is None else sampling_seed)
+        if self.sources and set(self.sampling_proportions) != {
+            "observed",
+            *self.sources,
+        }:
+            raise ValueError(
+                "Mixture proportions must name observed and every added source"
+            )
         self.sample_records: tuple[TacoSampleRecord, ...] | None = None
         self.train_dataset: TacoPairedDataset | None = None
         self.val_dataset: TacoPairedDataset | None = None
@@ -1251,6 +1264,31 @@ class OpenSRDataModule(LightningDataModule):
         # the optimizer starts. Remaining samples are validated lazily on use.
         self.train_dataset.validate_sample(0)
         self.val_dataset.validate_sample(0)
+        if self.sources:
+            from .mixture import SourceMixtureDataset
+
+            datasets = {"observed": self.train_dataset}
+            forbidden = {r.split_group for r in self.sample_records}
+            for name, source in self.sources.items():
+                paths = resolve_taco_paths(source["taco_path"])
+                ids = set(json.loads(Path(source["train_ids"]).read_text()))
+                records = tuple(
+                    r for r in scan_taco_catalog(paths) if r.sample_id in ids
+                )
+                if {r.sample_id for r in records} != ids:
+                    raise ValueError(f"Missing prepared mixture IDs for {name}")
+                if any(r.split_group in forbidden for r in records):
+                    raise ValueError("Added source overlaps an observed spatial group")
+                datasets[name] = TacoPairedDataset(
+                    **(common | {"taco_path": paths, "_resolved_paths": paths}),
+                    _records=records,
+                    training=True,
+                    horizontal_flip_probability=self.horizontal_flip_probability,
+                    vertical_flip_probability=self.vertical_flip_probability,
+                    rotate_90=self.rotate_90,
+                )
+                datasets[name].validate_sample(0)
+            self.train_dataset = SourceMixtureDataset(datasets)
 
     def _loader(
         self,
@@ -1260,7 +1298,9 @@ class OpenSRDataModule(LightningDataModule):
         shuffle: bool,
         drop_last: bool,
     ) -> DataLoader[dict[str, Tensor | list[str]]]:
-        generator = torch.Generator().manual_seed(self.split_seed + int(not shuffle))
+        generator = torch.Generator().manual_seed(
+            (self.sampling_seed if shuffle else self.split_seed) + int(not shuffle)
+        )
         kwargs: dict[str, Any] = {
             "dataset": dataset,
             "batch_size": batch_size,
@@ -1280,6 +1320,30 @@ class OpenSRDataModule(LightningDataModule):
         if self.train_dataset is None:
             self.setup("fit")
         assert self.train_dataset is not None
+        if self.sources:
+            from .mixture import MixtureBatchSampler
+
+            rank = self.trainer.global_rank if self.trainer else 0
+            world = self.trainer.world_size if self.trainer else 1
+            sampler = MixtureBatchSampler(
+                self.train_dataset.sizes,
+                [self.sampling_proportions[n] for n in self.train_dataset.names],
+                self.batch_size,
+                seed=self.sampling_seed,
+                rank=rank,
+                world_size=world,
+            )
+            options = dict(
+                batch_sampler=sampler,
+                num_workers=self.num_workers,
+                pin_memory=self.pin_memory,
+                persistent_workers=self.persistent_workers,
+                worker_init_fn=_seed_worker,
+                generator=torch.Generator().manual_seed(self.sampling_seed + rank),
+            )
+            if self.prefetch_factor is not None:
+                options["prefetch_factor"] = self.prefetch_factor
+            return DataLoader(self.train_dataset, **options)
         return self._loader(
             self.train_dataset,
             batch_size=self.batch_size,

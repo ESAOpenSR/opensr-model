@@ -109,6 +109,10 @@ def run_training(
                 "Disable generic early stopping when using spectral-guarded selection"
             )
     callbacks = _build_callbacks(stage, callback_config, run_dir, logger is not False)
+    if str(config.logging.get("type")) == "campaign":
+        from .runtime.campaign_logging import SourceExposure
+
+        callbacks.append(SourceExposure())
     if prepared is not None:
         from .validation.callback import TransferValidation
 
@@ -117,6 +121,8 @@ def run_training(
         )
 
     trainer_kwargs = as_plain_dict(config.trainer)
+    if config.data.get("sources"):
+        trainer_kwargs["use_distributed_sampler"] = False
     if prepared is not None:
         accumulation = trainer_kwargs.get("accumulate_grad_batches", 1)
         if not isinstance(accumulation, int):
@@ -278,6 +284,10 @@ def _build_logger(config: DictConfig, run_dir: Path) -> Any:
         common["version"] = str(version)
     if logger_type == "csv":
         return CSVLogger(**common)
+    if logger_type == "campaign":
+        from .runtime.campaign_logging import CampaignLogger
+
+        return CampaignLogger(run_dir)
     if logger_type == "tensorboard":
         try:
             from pytorch_lightning.loggers import TensorBoardLogger
@@ -358,7 +368,7 @@ def _build_callbacks(
     cost = config.logging.get("cost", {})
     if (
         has_logger
-        and str(config.logging.get("type", "csv")).lower() == "wandb"
+        and str(config.logging.get("type", "csv")).lower() in {"wandb", "campaign"}
         and bool(cost.get("enabled", True))
     ):
         callbacks.append(

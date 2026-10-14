@@ -14,10 +14,12 @@ client_secret.json
 test_slurm.sh
 runs/
 playground/
-# Local evaluation and release preparation
+# Private local experiments, campaigns, evaluations, and release preparation.
+# Keep these on disk; do not force-add their scripts, settings, or results.
 /benchmarks/
 /scripts/
 /tests/diagnostics/
+/tests/training/test_mixture_campaign.py
 /docs/training_diagnostics.md
 
 

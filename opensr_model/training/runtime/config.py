@@ -169,6 +169,20 @@ def _resolve_known_paths(config: DictConfig, base_dir: Path) -> None:
             ),
             merge=False,
         )
+    for source in config.data.get("sources", {}).values():
+        for field in ("taco_path", "train_ids"):
+            value = source[field]
+            sequence = isinstance(value, (list, tuple, ListConfig))
+            values = list(value) if sequence else [value]
+            resolved = [
+                str(
+                    Path(str(v)).expanduser()
+                    if Path(str(v)).expanduser().is_absolute()
+                    else (base_dir / str(v)).resolve()
+                )
+                for v in values
+            ]
+            source[field] = resolved if sequence else resolved[0]
 
 
 def _validate_taco_data_config(data: DictConfig) -> None:

@@ -29,6 +29,29 @@ unchanged. Older module import paths remain aliases for existing scripts.
 
 Each run writes complete Lightning checkpoints for optimizer/loop resume and separate native checkpoints for the existing strict inference loader.
 
+## Public repository and private experiment work
+
+The public repository provides reusable training functionality, general usage
+guidance, portable example configurations, and tests for those public features.
+Research campaigns and ablations are private local work by default.
+
+Keep campaign supervisors, experiment scripts, run-specific settings and
+manifests, research-only tests, experiment records, results, imagery, logs,
+checkpoints, and release-candidate packages in Git-ignored local locations.
+Use `scripts/`, `benchmarks/`, and `training_runs/` for this work; local
+diagnostic tests and notes are also excluded by `.gitignore`. Copy public
+example configurations into an ignored run directory before adding private
+paths, account details, or experiment settings.
+
+Do not commit or force-add these local files, or add Git-ignore exceptions to
+publish them. General functions developed during an experiment may remain in
+`opensr_model`, with public tests and documentation that do not depend on local
+scripts, private datasets, or campaign settings. Document the reusable
+capability in public guidance; keep the experiment design and operational
+instructions in the ignored local record. Publication of research artifacts
+requires a separate explicit decision. Authorized experiment-tracking uploads
+do not authorize committing those artifacts to the public repository.
+
 ## Installation
 
 ```bash
@@ -399,3 +422,21 @@ the exported DDIM settings and disable optional decoded spectral correction
 Resume preserves model, optimizer, baseline, and selection state, but data
 worker shuffle/augmentation streams are not guaranteed bitwise-identical after
 relaunch.
+
+### Named training sources and validation storage
+
+`data.sources` adds named, spatially isolated TACO training pools. Each source
+specifies `taco_path` and a JSON list at `train_ids`. The original source is
+named `observed`; its validation split stays unchanged.
+`data.sampling_proportions` specifies the proportion for each named source,
+including `observed`. Proportions must sum to one and produce integer
+per-GPU batch quotas. `data.sampling_seed` controls training draws
+independently of `data.split_seed`. Omitting sources preserves the existing
+single-source loader.
+
+Under `training.validation.sen2neon`, `guardrail_baseline` can pin selection
+to an explicit spectral reference instead of the branch's starting metrics.
+`storage_dtype` controls reconstruction-array precision, while
+`save_all_reconstructions` controls quantitative retention. `preview_count`
+independently limits the visible scene cohort. Retaining more quantitative
+arrays does not require expanding the imagery dashboard.

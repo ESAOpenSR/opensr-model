@@ -95,6 +95,10 @@ class TransferValidation(pl.Callback):
         self.tolerance = float(neon.get("spectral_tolerance", 0.10))
         self.preview_count = int(neon.get("preview_count", 8))
         self.save_all_reconstructions = bool(neon.get("save_all_reconstructions", True))
+        self.storage_dtype = str(neon.get("storage_dtype", "float16"))
+        if self.storage_dtype not in {"float16", "float32"}:
+            raise ValueError("sen2neon.storage_dtype must be float16 or float32")
+        self.guardrail_baseline = neon.get("guardrail_baseline")
         if self.preview_count < 0:
             raise ValueError("sen2neon.preview_count must be nonnegative")
         self.every_n_steps = int(validation.get("every_n_train_steps", 500))
@@ -244,6 +248,30 @@ class TransferValidation(pl.Callback):
         label = f"sen2neon_step{step:08d}"
         records = self._evaluate(trainer, module, self.selection_rows, label)
         scores = aggregate(records)
+        reference = self.options.get("sen2neon", {}).get("initial_reference_dir")
+        if initial and reference:
+            with rank_zero_section(trainer) as writer:
+                if writer:
+                    source = Path(reference)
+                    previous = json.loads((source / "metrics.json").read_text())
+                    if {r["id"] for r in previous} != {r["id"] for r in records}:
+                        raise ValueError("Initial parity cohort mismatch")
+                    for row in records:
+                        filename = f"{safe_id(row['id'])}.npz"
+                        with (
+                            np.load(source / filename) as a,
+                            np.load(
+                                self.run_dir / "validation" / label / filename
+                            ) as b,
+                        ):
+                            if not np.array_equal(a["sr"], b["sr"]):
+                                raise ValueError(
+                                    "Initial checkpoint prediction parity failed"
+                                )
+                    write_json(
+                        self.run_dir / "initial_parity.json",
+                        {"passed": True, "tiles": len(records)},
+                    )
         # Missing selection metrics on even one tile must not disappear in averaging.
         if any(
             any(r["metrics"].get(k) is None for k in ("rgb_lpips", "nir_mae", "sam"))
@@ -253,7 +281,7 @@ class TransferValidation(pl.Callback):
                 "Nonfinite SEN2NEON selection metric; no checkpoint selected"
             )
         if initial:
-            self.baseline = scores
+            self.baseline = dict(self.guardrail_baseline or scores)
             self.baseline_evaluation = label
         eligible, reasons = guardrail_decision(scores, self.baseline, self.tolerance)
         improved = eligible and scores["rgb_lpips"] < self.best_score
@@ -351,6 +379,9 @@ class TransferValidation(pl.Callback):
             if self.preview_count and rows
             else []
         )
+        fixed_previews = self.options.get("sen2neon", {}).get("preview_ids")
+        if fixed_previews is not None:
+            previews = [r for r in rows if r["id"] in set(fixed_previews)]
         preview_ids = {row["id"] for row in previews}
         retain_all = self.save_all_reconstructions if save_all is None else save_all
         reused = {}
@@ -376,6 +407,23 @@ class TransferValidation(pl.Callback):
                     row = rows[index]
                     file = output / f"{safe_id(row['id'])}.npz"
                     retain = retain_all or row["id"] in preview_ids
+                    journal = file.with_suffix(".record.json")
+                    if (
+                        self.options.get("resume_evaluation")
+                        and journal.exists()
+                        and file.exists()
+                    ):
+                        entry = json.loads(journal.read_text())
+                        checksum = hashlib.sha256(file.read_bytes()).hexdigest()
+                        if (
+                            entry["identity"] != self.identity
+                            or entry["sha256"] != checksum
+                        ):
+                            raise ValueError(
+                                "Saved evaluation identity/checksum changed"
+                            )
+                        local.append(entry["record"])
+                        continue
                     if row["id"] in reused:
                         record = dict(reused[row["id"]])
                         src = (
@@ -400,7 +448,7 @@ class TransferValidation(pl.Callback):
                     )
                     if retain:
                         np.savez_compressed(
-                            file, sr=sr[0].cpu().numpy().astype(np.float16)
+                            file, sr=sr[0].cpu().numpy().astype(self.storage_dtype)
                         )
                     local.append(
                         {
@@ -412,6 +460,15 @@ class TransferValidation(pl.Callback):
                             "clipped_fraction": sample["clipped_fraction"],
                         }
                     )
+                    if self.options.get("resume_evaluation") and retain:
+                        write_json(
+                            journal,
+                            {
+                                "identity": self.identity,
+                                "sha256": hashlib.sha256(file.read_bytes()).hexdigest(),
+                                "record": local[-1],
+                            },
+                        )
         except Exception as exc:
             error = f"rank {trainer.global_rank}: {type(exc).__name__}: {exc}"
         finally:
@@ -440,6 +497,8 @@ class TransferValidation(pl.Callback):
                         "retained_reconstructions": sum(
                             r["file"] is not None for r in records
                         ),
+                        "preview_ids": sorted(preview_ids),
+                        "storage_dtype": self.storage_dtype,
                     },
                 )
                 table = []
@@ -478,7 +537,7 @@ class TransferValidation(pl.Callback):
                         .numpy()
                     )
                     file = output / f"{safe_id(row['id'])}.npz"
-                    np.savez_compressed(file, sr=sr.astype(np.float16))
+                    np.savez_compressed(file, sr=sr.astype(self.storage_dtype))
                     local.append({"id": row["id"], "file": file.name})
         except Exception as exc:
             error = f"rank {trainer.global_rank}: {type(exc).__name__}: {exc}"
