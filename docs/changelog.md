@@ -1,5 +1,62 @@
 # Changelog
 
+## v1.2.1 — 2026-10-17
+
+This maintenance release improves the notebooks, documentation, test coverage,
+and training workflows introduced in v1.2.0.
+
+### Notebooks and sampler examples
+
+- Refresh the no-code, walkthrough, LDSR-S2/SEN2SR showcase, and sampling Colab
+  notebooks, with documentation images organized under `resources/images/`.
+- Add a reproducible DDIM/DPM-Solver++ comparison notebook, measured runtime
+  and quality tables, and example figures. Measurements describe their stated
+  evaluation subset and hardware, rather than a guaranteed speed or quality gain.
+- Include the public notebooks, figures, measurements, and tests in the source
+  distribution; keep model weights and local research artifacts separate.
+
+### Training and fixes
+
+- Organize training code into data, modules, runtime, and validation packages,
+  while retaining aliases for previous module imports and the existing CLI.
+- Package training presets under `configs/training_configs/`, with compatible
+  config-name lookup, a SEN2NAIP fine-tuning preset, SEN2NEON validation manifest,
+  and raw Sentinel-2 preview examples.
+- Improve training data validation, deterministic source mixing, provenance,
+  external validation, checkpoint selection, distributed metric aggregation,
+  and logging. Add a `--prepare-only` data-audit option for transfer validation.
+- Add optional query-chunked autoencoder attention without changing checkpoint
+  parameter keys, and apply consistent code formatting throughout the repository.
+
+### Tests and release checks
+
+- Expand regression coverage for samplers, inference, spectral correction,
+  training data, configuration, checkpoint contracts, and validation lifecycle.
+- Run Black and the CPU test suite with coverage through pre-commit/pre-push
+  hooks and the release workflow; PyPI publishing waits for those checks.
+- Validate distribution metadata and release-tag/version agreement, preserve
+  build artifacts, and attach the published wheel, source archive, and SHA-256
+  checksums to the GitHub release.
+
+### Upgrade and compatibility
+
+Python **3.12 or newer** is required:
+
+```bash
+pip install --upgrade 'opensr-model==1.2.1'
+# Include the optional training dependencies:
+pip install --upgrade 'opensr-model[train]==1.2.1'
+```
+
+Inference defaults remain **3-step DPM-Solver++ with back-projection**. DDIM and
+the other spectral-correction options remain available. V1 remains the canonical
+checkpoint and default for model loading; this package release does not change
+the model architecture or publish new weights. For scripts using training YAML
+paths directly, use `opensr_model/configs/training_configs/train_*.yaml`.
+
+See the [training guide](training.md), [public notebooks](../resources/notebooks/),
+and [full comparison with v1.2.0](https://github.com/ESAOpenSR/opensr-model/compare/v1.2.0...v1.2.1).
+
 ## v1.2.0 — 2026-10-12
 
 This release adds fast diffusion sampling, a complete two-stage training workflow,

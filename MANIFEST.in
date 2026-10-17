@@ -3,3 +3,10 @@ include opensr_model/configs/training_configs/train_*.yaml
 include opensr_model/configs/training_configs/sen2neon_clean192.json
 include opensr_model/configs/training_configs/raw_s2_examples.json
 include docs/changelog.md docs/training.md
+include .pre-commit-config.yaml
+recursive-include resources/images *.png
+recursive-include resources/notebooks *.ipynb
+recursive-include resources/sampler_info *.png *.csv
+recursive-include tests *.py
+prune tests/diagnostics
+exclude tests/training/test_mixture_campaign.py

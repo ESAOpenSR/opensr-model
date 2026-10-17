@@ -1,7 +1,11 @@
 # Development beyond the paper
 This repository continues development beyond the paper. The [`paper-release`](https://github.com/ESAOpenSR/opensr-model/tree/paper-release) branch preserves the previous `main` snapshot (v1.1.1).
 
-**v1.2.0** adds DPM-Solver++ sampling, two-stage training, and PyTorch spectral
+**v1.2.1** is a maintenance update with refreshed Colab notebooks, sampler
+comparisons, expanded tests, and training fixes and documentation. See the
+[1.2.1 release notes](docs/changelog.md#v121--2026-10-17).
+
+**v1.2.0** added DPM-Solver++ sampling, two-stage training, and PyTorch spectral
 back-projection. Inference now defaults to **3-step DPM-Solver++ with
 back-projection**. See the [release notes and migration example](docs/changelog.md#v120--2026-10-12).
 
@@ -228,7 +232,7 @@ Git-ignored. Coverage is reported without an initial minimum percentage; set
 
 Tests use small CPU models and limit PyTorch threads to keep push checks
 practical. The CUDA comparison and released-checkpoint test skip when their
-resources are unavailable. Git-ignored `tests/diagnostics` experiments are
+resources are unavailable. Git-ignored `tests/diagnostics` and campaign experiments are
 excluded from the shared suite. The `test` extra includes pytest and coverage
 tools; the `dev` extra also includes the pinned Black formatter and pre-commit.
 
