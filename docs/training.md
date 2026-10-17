@@ -158,7 +158,7 @@ configured under `training.sharpness`. Validation and native inference exports
 use EMA weights by default.
 
 Loading a full checkpoint also restores its diffusion noise schedule. Keep
-`apply_normalization: false` for the released v1 checkpoint.
+`apply_normalization: false` for the released v1 and v2 checkpoints.
 
 ## Checkpoints: resume versus inference
 
@@ -180,6 +180,49 @@ Use `resume/last.ckpt` only with `resume_checkpoint` or `--resume`. A resume doe
 Native diffusion exports load through `SRLatentDiffusion.load_pretrained`.
 They support single-device and replicated DDP training; sharded FSDP/DeepSpeed
 exports are not supported.
+
+### Canonical v1 and optional v2 research preview
+
+**V1 remains canonical and is the recommended fine-tuning initializer:**
+`opensr-ldsrs2_v1_0_0.ckpt`. Package, demo and HPC defaults select v1.
+
+The [v2 research preview on Hugging Face](https://huggingface.co/simon-donike/RS-SR-LTDF/tree/v2.0.0-preview)
+has not established better or equal quality overall compared with v1. It provides
+two optional files from the selected 21,000-step model:
+
+| File | Contents | When to use it |
+|---|---|---|
+| `opensr-ldsrs2_v2_0_0_preview.ckpt` (~676 MB) | Native model state with materialized EMA weights and inference configuration | Inference, or initialize a new fine-tune |
+| `opensr-ldsrs2_v2_0_0_preview_full.ckpt` (~2.04 GB) | Original Lightning state: raw weights, EMA, AdamW optimizer, mixed-precision scaler, loops and callbacks | Recover the original training state with a compatible run setup |
+
+**For fine-tuning on your own data, start from v1 with a fresh optimizer.**
+Adapt the diffusion training template to your dataset and set:
+
+```yaml
+resume_checkpoint: null
+model:
+  pretrained_checkpoint: /path/to/opensr-ldsrs2_v1_0_0.ckpt
+  autoencoder_checkpoint: null
+```
+
+Then run `opensr-train-diffusion --config /path/to/your-training.yaml`. This
+initializes from v1; it does not resume an old optimizer or training loop.
+To experiment with v2, explicitly substitute the smaller preview checkpoint
+as the initializer; it contains the selected EMA weights. Keep the expected RGBN channel order, reflectance scaling and
+normalization, and configure validation for your data.
+
+The `_full.ckpt` file is not accepted by `SRLatentDiffusion.load_pretrained`.
+Its raw training weights differ from its EMA weights; the latter match the
+release. It retains original run/path references, so it is not a portable resume
+bundle: restoring that run also requires compatible configuration, data and
+callback artifacts. Do not use `--resume` merely to fine-tune on a new dataset.
+
+The smaller file excludes training metrics and bookkeeping. It retains EMA key
+aliases required by the strict native loader, but those aliases share storage
+with the inference tensors. Removing training metadata saved only 1.7 KB because
+the original export was already deduplicated. Tensor values and precision are
+unchanged. Historical `v2.0.0` and `v2.0.0-inference` tags retain the earlier
+filenames for reproducibility, not as current stable-release recommendations.
 
 Both Lightning resume files and native diffusion exports also store
 `opensr_inference_config`: the live beta endpoints/timestep count,

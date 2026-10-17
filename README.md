@@ -5,11 +5,11 @@ This repository continues development beyond the paper. The [`paper-release`](ht
 back-projection. Inference now defaults to **3-step DPM-Solver++ with
 back-projection**. See the [release notes and migration example](docs/changelog.md#v120--2026-10-12).
 
-<img src="https://github.com/ESAOpenSR/opensr-model/blob/main/resources/opensr_logo.png?raw=true" width="250"/>
+<img src="https://github.com/ESAOpenSR/opensr-model/blob/main/resources/images/opensr_logo.png?raw=true" width="250"/>
 
 # Latent Diffusion Super-Resolution - Sentinel 2 (LDSR-S2)
 <p align="center">
-  <img src="https://github.com/ESAOpenSR/opensr-model/blob/main/resources/ldsr-s2_schema.png?raw=true" alt="S2 example" width="75%">
+  <img src="https://github.com/ESAOpenSR/opensr-model/blob/main/resources/images/ldsr-s2_schema.png?raw=true" alt="S2 example" width="75%">
 </p>
 
 **Description**: This repository contains the code of the paper [Trustworthy Super-Resolution of Multispectral Sentinel-2 Imagery with Latent Diffusion](https://ieeexplore.ieee.org/abstract/document/10887321). This package contains the latent-diffusion model and weights to super-resolute the RGB-NIR bands of Sentinel-2. It can be embedded in the "opensr-utils" package in order to create a data pipeline for SR products. 
@@ -42,9 +42,10 @@ Run LDSR-S2 directly in Google Colab within seconds! These notebooks let you fet
 
 | Notebook Name                  | Description                                                                                      | Link                                                                 |
 |-------------------------------|--------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
-| **LDSR-S2 No-Code**           | 🔘 No coding required — choose a point on a map and download SR results as GeoTIFFs               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1xhlVjGkHPF1znafSGrWtyZ0wzcogVRCe?usp=sharing) |
-| **LDSR-S2 Walkthrough**              | 🧪 Code-level walkthrough with uncertainty estimation and advanced plotting                       | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1onza61SP5IyiUQM85PtyVLz6JovvQ0TN?usp=sharing) |
-| **LDSR-S2 & SEN2SR**          | 🔄 Use LDSR-S2 alongside SEN2SR to compare results on 10m + 20m bands                             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1NJuyswsquOLMFc_AP93P_5QcZnbNhGuB?usp=sharing) |
+| **LDSR-S2 No-Code**           | 🔘 No coding required — choose a point on a map and download SR results as GeoTIFFs               | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ESAOpenSR/opensr-model/blob/main/resources/notebooks/%28public%29_LDSR_S2_No_Code.ipynb) |
+| **LDSR-S2 Walkthrough**              | 🧪 Code-level walkthrough with uncertainty estimation and advanced plotting                       | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ESAOpenSR/opensr-model/blob/main/resources/notebooks/%28public%29_LDSR_S2_Walkthrough.ipynb) |
+| **LDSR-S2 & SEN2SR**          | 🔄 Use LDSR-S2 alongside SEN2SR to compare results on 10m + 20m bands                             | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ESAOpenSR/opensr-model/blob/main/resources/notebooks/%28public%29_OpenSR_Showcase.ipynb) |
+| **LDSR-S2 Sampling**          | 📊 Compare sampler speed and RGB/NIR quality; export diagnostics and measurements                 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ESAOpenSR/opensr-model/blob/main/resources/notebooks/%28public%29_LDSR_S2_sampling.ipynb) |
 
 ---
 
@@ -115,7 +116,32 @@ nodata at zero and does not clamp corrected values. The legacy
 See the [inference changelog](docs/changelog.md) for settings and compatibility,
 and the [training guide](docs/training.md) for training instructions.
 
+### Sampler performance with v1
+
+Run the [sampling diagnostics notebook](https://colab.research.google.com/github/ESAOpenSR/opensr-model/blob/main/resources/notebooks/%28public%29_LDSR_S2_sampling.ipynb) to measure the speed/quality tradeoff on your own hardware.
+
+![Sentinel-2 input, v1 DDIM at 100 steps, and v1 DPM-Solver++ at 3 steps](resources/sampler_info/v1_sampler_comparison.png)
+
+SEN2NEON scene `2023_NOGP_6__1_3`, central 640 m detail. Both outputs use the
+canonical **v1 checkpoint**, the same seed, back-projection and a shared display
+stretch. DPM-Solver++ produces this result in three denoiser evaluations,
+very fine detail can differ from DDIM-100.
+
+![V1 sampler speedup versus step count and RGB SSIM versus speedup](resources/sampler_info/sampler_speed_quality.png)
+
+The step sweep uses **64 SEN2NAIP v2 pairs × 3 matched seeds**, with v1 weights
+and histogram matching for both samplers. At three steps, DPM-Solver++ averages
+**6.39× the speed of DDIM-100** (0.607 versus 3.875 seconds per image) in this
+128²→512² RTX 3090 benchmark. Speedup is the mean of matched runtime ratios;
+timing includes the full forward pass but excludes I/O and metrics.
+
+Higher RGB SSIM means closer agreement with the HR reference, it does not
+establish better perceptual detail. This is an exploratory evaluation subset,
+not a guaranteed unseen test set. [Measured values](resources/sampler_info/sampler_measurements.csv).
+
 ### 2.1 🧱 Weights and Checkpoints
+**V1 (`opensr-ldsrs2_v1_0_0.ckpt`) remains the canonical checkpoint and the default for model loading.** V2 is an optional [research preview](https://huggingface.co/simon-donike/RS-SR-LTDF/tree/v2.0.0-preview); it has not established better or equal quality overall.
+
 The model should load automatically with the `model.load_pretrained` command. Alternatively, the checkpoints can be found on [HuggingFace](https://huggingface.co/simon-donike/RS-SR-LTDF/tree/main).
 
 ### 2.2 🖥️ HPC and Slurm Launcher
@@ -211,18 +237,18 @@ tools; the `dev` extra also includes the pinned Black formatter and pre-commit.
 
 ## 3.1 🛰️ Example SR Image
 <p align="center">
-  <img src="resources/example2.png" alt="S2 example" width="80%">
+  <img src="resources/images/example2.png" alt="S2 example" width="80%">
 </p>
 
 ## 3.2 🔎 Demo File and Uncertainty Calculation
 Run the `demo.py` file to see how the package works. It super-resolves an example tensor and saves the corresponding uncertainty map.
 
 <p align="center">
-  <img src="resources/sr_example.png" alt="SR example" width="80%">
+  <img src="resources/images/sr_example.png" alt="SR example" width="80%">
 </p>
 
 <p align="center">
-  <img src="resources/uncertainty_map.png" alt="Uncertainty map" width="50%">
+  <img src="resources/images/uncertainty_map.png" alt="Uncertainty map" width="50%">
 </p>
 
 

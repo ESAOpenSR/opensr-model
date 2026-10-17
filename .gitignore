@@ -1,3 +1,4 @@
+hf_ckpt_release
 .vscode
 .vscode/*
 *.swp
@@ -21,7 +22,7 @@ playground/
 /tests/diagnostics/
 /tests/training/test_mixture_campaign.py
 /docs/training_diagnostics.md
-
+resources/readme_v2
 
 *.svg
 old/
@@ -38,6 +39,10 @@ old/*
 ablation.py
 images/
 images/*
+# Keep the reorganized documentation assets and public notebooks in Git.
+!resources/images/
+!resources/images/**
+!resources/notebooks/*.ipynb
 images_comparison
 images_comparison/*
 comp_s2_s2naip.py
