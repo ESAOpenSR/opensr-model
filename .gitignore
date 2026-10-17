@@ -1,20 +1,29 @@
-hf_ckpt_release
+# Editor and operating system files
 .vscode
 .vscode/*
 *.swp
+*.DS_Store
+
+# Local scripts and credentials
 other_uncertainty_2.py
 sr_of_s2_tile.py
-creating_usecase_data/
-other_stuff/
 austria.py
 upload_to_drive.py
 client_secret.json
-*.DS_Store
-example_images/
-client_secret.json
 test_slurm.sh
+ablation.py
+
+# Local data, experiments, and release artifacts
+hf_ckpt_release
+creating_usecase_data/
+other_stuff/
+example_images/
 runs/
 playground/
+resources/readme_v2
+old/
+old/*
+
 # Private local experiments, campaigns, evaluations, and release preparation.
 # Keep these on disk; do not force-add their scripts, settings, or results.
 /benchmarks/
@@ -22,11 +31,9 @@ playground/
 /tests/diagnostics/
 /tests/training/test_mixture_campaign.py
 /docs/training_diagnostics.md
-resources/readme_v2
 
+# Model weights, notebooks, and generated assets
 *.svg
-old/
-old/*
 *.safetensors
 *.ckpt
 *.pth
@@ -34,15 +41,23 @@ old/*
 *.ipynb
 *.JSON
 *.json
+
+# Keep the shared training configurations in Git.
 !opensr_model/configs/training_configs/sen2neon_clean192.json
 !opensr_model/configs/training_configs/raw_s2_examples.json
-ablation.py
+
+# Local images
 images/
 images/*
+
 # Keep the reorganized documentation assets and public notebooks in Git.
+# These exceptions must follow the file-type and images/ rules above.
 !resources/images/
 !resources/images/**
 !resources/notebooks/*.ipynb
+
+# Additional local analysis and training outputs
+# Keep these rules after the public asset exceptions to preserve their precedence.
 images_comparison
 images_comparison/*
 comp_s2_s2naip.py
@@ -50,18 +65,15 @@ TODO.md
 training_runs
 opensr_model/ablations/outputs
 opensr_model/ablations/samples
-.ruff_cache
 opensr_model/configs/training_configs/finetune_worldwide_v1_0_0.yaml
 
-# Byte-compiled / optimized / DLL files
+# Python bytecode and compiled extensions
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
 
-# Distribution / packaging
+# Python distribution and packaging
 .Python
 build/
 develop-eggs/
@@ -82,8 +94,7 @@ share/python-wheels/
 MANIFEST
 
 # PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+# Generated from templates before building executables.
 *.manifest
 *.spec
 
@@ -91,7 +102,7 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
+# Tests and coverage reports
 htmlcov/
 .tox/
 .nox/
@@ -110,17 +121,17 @@ cover/
 *.mo
 *.pot
 
-# Django stuff:
+# Logs and Django local state
 *.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
-# Flask stuff:
+# Flask local state
 instance/
 .webassets-cache
 
-# Scrapy stuff:
+# Scrapy local state
 .scrapy
 
 # Sphinx documentation
@@ -130,44 +141,28 @@ docs/_build/
 .pybuilder/
 target/
 
-# Jupyter Notebook
+# Jupyter and IPython
 .ipynb_checkpoints
-
-# IPython
 profile_default/
 ipython_config.py
 
-# pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
+# Optional environment and lockfile exclusions (currently tracked if present)
+# For libraries targeting multiple environments, .python-version may be ignored.
 # .python-version
+# Lockfiles are generally committed for reproducibility; libraries may omit them.
+# Pipenv: consider platform-specific dependencies (pypa/pipenv#598).
+# Poetry: https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
+# Pipfile.lock
+# poetry.lock
+# pdm.lock
 
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
-
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-#poetry.lock
-
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
-#   in version control.
-#   https://pdm.fming.dev/#use-with-ide
+# PDM local configuration and PEP 582 packages
+# https://pdm.fming.dev/#use-with-ide
 .pdm.toml
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+# Used by tools such as PDM and github.com/David-OConnor/pyflow.
 __pypackages__/
 
-# Celery stuff
+# Celery runtime state
 celerybeat-schedule
 celerybeat.pid
 
@@ -183,33 +178,23 @@ ENV/
 env.bak/
 venv.bak/
 
-# Spyder project settings
+# IDE and editor project settings
 .spyderproject
 .spyproject
-
-# Rope project settings
 .ropeproject
+.idea/
+# JetBrains template: https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
 
-# mkdocs documentation
+# MkDocs documentation
 /site
 
-# mypy
+# Linters and type checkers
+.ruff_cache
 .mypy_cache/
 .dmypy.json
 dmypy.json
-
-# Pyre type checker
 .pyre/
-
-# pytype static type analyzer
 .pytype/
 
 # Cython debug symbols
 cython_debug/
-
-# PyCharm
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#  and can be added to the global gitignore or merged into this file.  For a more nuclear
-#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-.idea/
