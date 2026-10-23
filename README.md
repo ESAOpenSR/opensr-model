@@ -1,9 +1,9 @@
 # Development beyond the paper
 This repository continues development beyond the paper. The [`paper-release`](https://github.com/ESAOpenSR/opensr-model/tree/paper-release) branch preserves the previous `main` snapshot (v1.1.1).
 
-**v1.2.1** is a maintenance update with refreshed Colab notebooks, sampler
-comparisons, expanded tests, and training fixes and documentation. See the
-[1.2.1 release notes](docs/changelog.md#v121--2026-10-17).
+**v1.2.2** fixes inference device handling, validates supported input patch
+sizes, and improves training validation image galleries. See the
+[1.2.2 release notes](docs/changelog.md#v122--2026-10-23).
 
 **v1.2.0** added DPM-Solver++ sampling, two-stage training, and PyTorch spectral
 back-projection. Inference now defaults to **3-step DPM-Solver++ with

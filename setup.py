@@ -12,7 +12,7 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name="opensr-model",
-    version="1.2.1",
+    version="1.2.2",
     author="Simon Donike, Cesar Aybar, Luis Gomez Chova, Freddie Kalaitzis",
     author_email="accounts@donike.net",
     description="ESA OpenSR Diffusion model package for Super-Resolution of Sentinel-2 Imagery",

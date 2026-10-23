@@ -1,5 +1,48 @@
 # Changelog
 
+## v1.2.2 — 2026-10-23
+
+This maintenance release improves inference device handling, input validation,
+and training validation figures. The model weights and inference defaults are
+unchanged: v1 remains the canonical checkpoint, with 3-step DPM-Solver++ and
+back-projection by default.
+
+### Inference fixes and compatibility
+
+- Move inputs to the actual model weights' device before conditioning encoding,
+  nodata masking, and spectral correction. This also follows later calls to
+  `model.to(...)`, avoiding stale constructor device settings. Outputs remain
+  on the model's device.
+- Enforce the checkpoint's supported LR patch dimensions: each spatial dimension
+  must be **100–128 pixels**, inclusive. Accepted patches below 128 are
+  reflect-padded to 128×128, with a printed message, and final SR outputs are
+  cropped back to 4× the original input dimensions.
+- **Compatibility change:** inputs smaller than 100 or larger than 128 pixels in
+  either spatial dimension now raise `ValueError`. Previously accepted 256×256
+  inputs must be processed through `opensr-utils` with 128×128 LR windows for
+  tiling, overlap blending, and stitching. The raw model does not perform tiling.
+- Correct channel-last axis ordering and expand regression coverage for input
+  sizes, padding/cropping, Lightning prediction, device moves, and postprocessing.
+
+### Training validation figures
+
+- Replace W&B image tables with stable RGB and NIR galleries per validation
+  cohort, showing aligned LR/SR/HR panels where references are available.
+- Add full-scene, 256-pixel, and 64-pixel detail views with crop outlines and
+  saved crop geometry, retaining a shared reference display stretch.
+
+### Upgrade
+
+Python **3.12 or newer** is required:
+
+```bash
+pip install --upgrade 'opensr-model==1.2.2'
+```
+
+This package release does not introduce a new sampler or new model weights;
+the DPM-Solver++ speedups were introduced in v1.2.0. See the
+[full comparison with v1.2.1](https://github.com/ESAOpenSR/opensr-model/compare/v1.2.1...v1.2.2).
+
 ## v1.2.1 — 2026-10-17
 
 This maintenance release improves the notebooks, documentation, test coverage,
