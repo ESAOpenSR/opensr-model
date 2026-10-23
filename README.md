@@ -260,6 +260,8 @@ Run the `demo.py` file to see how the package works. It super-resolves an exampl
 
 This repository itself exposes the **raw model** for tensor‑level inference. By default it performs **128→512** super‑resolution on 4‑channel tensors (B×4×128×128 → B×4×512×512). It **does not** handle geospatial IO, tiling, or metadata.
 
+Input tensors are automatically moved to the model weights' device before inference; outputs remain on that device.
+
 Each LR spatial dimension must be **100–128 pixels**, inclusive. Inputs below 128 in either dimension are reflect-padded to 128×128 with a printed message; padding is removed from the final SR output, giving 4× the original dimensions. A dimension below 100 or above 128 raises `ValueError`. The error points to `opensr-utils` for tiling larger scenes into 128×128 LR windows, overlap blending, and stitching (see below).
 
 For real‑world workflows on Sentinel‑2 data, please use **`opensr-utils`**:

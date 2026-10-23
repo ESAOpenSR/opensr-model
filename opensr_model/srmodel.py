@@ -86,8 +86,6 @@ class SRLatentDiffusion(torch.nn.Module):
             )
             # encode conditioning
             X_enc = self.model.first_stage_model.encode(X_int).sample()
-        # move to same device as the model
-        X_enc = X_enc.to(self.device)
         return X_enc
 
     def _tensor_decode(self, X_enc: torch.Tensor, spe_cor: bool = True):
@@ -233,6 +231,8 @@ class SRLatentDiffusion(torch.nn.Module):
                 accepted patches are reflect-padded with a printed message; final
                 outputs are cropped back to 4x the original size. Other sizes
                 raise ValueError. Tiling and stitching require opensr-utils.
+                Inputs are automatically moved to the model weights' device;
+                outputs remain on that device.
             sampling_steps (int, optional): Number of denoiser evaluations. Uses
                 denoiser_settings.sampling_steps when configured; otherwise defaults
                 to 3 for DPM-Solver++ and 100 for DDIM. Explicit arguments override
@@ -290,6 +290,19 @@ class SRLatentDiffusion(torch.nn.Module):
             if sampling_temperature is not None and sampling_temperature != 1.0:
                 raise ValueError("DPM-Solver++ requires sampling_temperature=1 or None")
             dpm_sampler = DPMSolverPlusPlusSampler(self.model, sampling_steps)
+
+        # Follow the actual weights, including moves made with model.to(...).
+        # Move before encoding and mask/reference creation so all inference
+        # tensors stay on the same device throughout postprocessing.
+        model_tensor = next(self.parameters(), None)
+        if model_tensor is None:
+            model_tensor = next(self.buffers(), None)
+        device = (
+            model_tensor.device
+            if model_tensor is not None
+            else getattr(self, "device", X.device)
+        )
+        X = X.to(device)
 
         # Set potentially problematic values to 0 to avoid issues in the model.
         X = torch.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)

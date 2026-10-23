@@ -442,3 +442,69 @@ def test_lightning_rejects_unsupported_patches_with_tiling_guidance(
         getattr(wrapper, entry_point)(torch.ones(1, 4, height, width))
     assert "tiling, overlap blending, and stitching" in str(exc_info.value)
     assert sampler.calls == []
+
+
+@pytest.mark.parametrize("encode_conditioning", [False, True])
+@pytest.mark.parametrize(
+    "device",
+    [
+        "cpu",
+        "meta",
+        pytest.param(
+            "cuda",
+            marks=pytest.mark.skipif(
+                not torch.cuda.is_available(), reason="CUDA is unavailable"
+            ),
+        ),
+    ],
+)
+def test_forward_moves_cpu_input_before_encoding_and_postprocessing(
+    device, encode_conditioning
+):
+    model, sampler = _stub_inference_model()
+    encoded_devices = []
+
+    class ConditioningEncoder(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv = torch.nn.Conv2d(4, 4, 1)
+
+        def encode(self, value):
+            encoded_devices.append(value.device.type)
+            # A real convolution reproduces the original CPU/CUDA failure if
+            # the input is not moved before conditioning is encoded.
+            latent = self.conv(torch.nn.functional.avg_pool2d(value, 4))
+            return SimpleNamespace(sample=lambda: latent)
+
+    model.model = torch.nn.Module()
+    model.model.first_stage_model = ConditioningEncoder()
+    model.to(device)
+    # Constructor device attributes can become stale after a later .to(...).
+    model.device = "meta" if device == "cpu" else "cpu"
+    model.encode_conditioning = encode_conditioning
+    model.linear_transform = lambda value, stage: value
+    model._tensor_encode = MethodType(SRLatentDiffusion._tensor_encode, model)
+    model._tensor_decode = MethodType(
+        lambda self, latent, spe_cor=False: torch.nn.functional.interpolate(
+            latent, scale_factor=4, mode="nearest"
+        ),
+        model,
+    )
+    reference_devices = []
+
+    def correct(self, output, reference, correction, options):
+        reference_devices.append(reference.device.type)
+        assert output.device == reference.device
+        return output
+
+    model._correct_output = MethodType(correct, model)
+    image = torch.ones(1, 4, 100, 100)
+    result = model(image, histogram_matching=False)
+
+    assert image.device.type == "cpu"
+    assert result.device.type == device
+    assert result.shape == (1, 4, 400, 400)
+    assert model._X.device.type == device
+    assert reference_devices == [device]
+    assert encoded_devices == ([device] if encode_conditioning else [])
+    assert all(call["x"].device.type == device for call in sampler.calls)
