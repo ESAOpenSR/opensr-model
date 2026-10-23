@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pytest
 import torch
 
 from opensr_model.utils import (
@@ -54,27 +55,73 @@ def test_six_band_normalization_round_trips_channel_last_values() -> None:
     assert torch.allclose(restored, image)
 
 
-def test_tensor_validation_sanitizes_pads_and_padding_is_reversible() -> None:
-    image = torch.ones(4, 64, 80)
+@pytest.mark.parametrize("height,width", [(100, 100), (100, 128), (127, 101)])
+def test_tensor_validation_sanitizes_pads_and_padding_is_reversible(
+    height, width, capsys
+) -> None:
+    image = torch.ones(4, height, width)
     image[0, 0, 0] = torch.nan
     image[1, 0, 0] = torch.inf
     prepared, padding = assert_tensor_validity(image)
 
     assert prepared.shape == (1, 4, 128, 128)
     assert torch.isfinite(prepared).all()
-    assert padding == (24, 24, 32, 32)
+    left, right, top, bottom = padding
+    assert left + right == 128 - width
+    assert top + bottom == 128 - height
     super_resolved = torch.arange(4 * 512 * 512).reshape(1, 4, 512, 512)
     reverted = revert_padding(super_resolved, padding)
-    assert reverted.shape == (1, 4, 256, 320)
-    assert torch.equal(reverted, super_resolved[:, :, 128:384, 96:416])
+    assert reverted.shape == (1, 4, height * 4, width * 4)
+    assert torch.equal(
+        reverted,
+        super_resolved[
+            :, :, top * 4 : (128 - bottom) * 4, left * 4 : (128 - right) * 4
+        ],
+    )
+    message = capsys.readouterr().out
+    assert f"reflect-padding {height}x{width} LR input to 128x128" in message
 
 
-def test_tensor_validation_accepts_channel_last_and_large_images() -> None:
-    channel_last = torch.ones(1, 128, 160, 4)
-    prepared, padding = assert_tensor_validity(channel_last)
+@pytest.mark.parametrize(
+    "shape", [(4, 128, 128), (2, 4, 128, 128), (128, 128, 4), (2, 128, 128, 4)]
+)
+def test_tensor_validation_accepts_exact_patches_without_message(shape, capsys) -> None:
+    prepared, padding = assert_tensor_validity(torch.ones(shape))
 
-    assert prepared.shape == (1, 4, 160, 128)
+    assert prepared.shape[-3:] == (4, 128, 128)
     assert padding == (0, 0, 0, 0)
+    assert capsys.readouterr().out == ""
+
+
+@pytest.mark.parametrize(
+    "height,width",
+    [
+        (99, 128),
+        (128, 99),
+        (99, 99),
+        (129, 128),
+        (128, 129),
+        (256, 256),
+        (100, 129),
+        (129, 100),
+        (1, 1),
+    ],
+)
+@pytest.mark.parametrize("channel_last", [False, True])
+def test_tensor_validation_rejects_unsupported_sizes(height, width, channel_last):
+    shape = (1, height, width, 4) if channel_last else (1, 4, height, width)
+    with pytest.raises(ValueError, match="between 100 and 128") as exc_info:
+        assert_tensor_validity(torch.ones(shape))
+    message = str(exc_info.value)
+    assert "opensr-utils" in message
+    assert "tiling, overlap blending, and stitching" in message
+    assert "128x128 LR windows" in message
+
+
+@pytest.mark.parametrize("shape", [(128, 128), (1, 1, 4, 128, 128)])
+def test_tensor_validation_rejects_invalid_rank(shape):
+    with pytest.raises(ValueError, match="dimensions"):
+        assert_tensor_validity(torch.ones(shape))
 
 
 def test_no_data_mask_is_nearest_neighbor_and_applies_per_band() -> None:

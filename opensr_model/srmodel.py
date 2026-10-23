@@ -227,9 +227,12 @@ class SRLatentDiffusion(torch.nn.Module):
 
         Args:
             X (torch.Tensor): If a Sentinel-2 L2A image with reflectance values
-                in the range [0, 1] and shape CxWxH, the super resolution of the image
-                is returned. If a batch of images with shape BxCxWxH is given, a batch
-                of super resolved images is returned.
+                in the range [0, 1] and shape CxHxW or BxCxHxW. Checkpoints
+                were trained on 128x128 LR patches for 512x512 SR. Each spatial
+                dimension must be between 100 and 128 pixels, inclusive. Smaller
+                accepted patches are reflect-padded with a printed message; final
+                outputs are cropped back to 4x the original size. Other sizes
+                raise ValueError. Tiling and stitching require opensr-utils.
             sampling_steps (int, optional): Number of denoiser evaluations. Uses
                 denoiser_settings.sampling_steps when configured; otherwise defaults
                 to 3 for DPM-Solver++ and 100 for DDIM. Explicit arguments override

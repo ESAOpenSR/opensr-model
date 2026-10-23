@@ -51,7 +51,7 @@ def model_stub():
 
 @pytest.mark.parametrize("sampler", ["ddim", "dpm_solver++"])
 @pytest.mark.parametrize("save_iterations", [False, True])
-@pytest.mark.parametrize("shape", [(2, 4, 64, 80), (1, 4, 128, 160)])
+@pytest.mark.parametrize("shape", [(2, 4, 100, 110), (1, 4, 128, 128)])
 def test_correction_in_actual_postprocessing_path(sampler, save_iterations, shape):
     if sampler == "dpm_solver++":
         pytest.importorskip("diffusers")
@@ -69,7 +69,7 @@ def test_correction_in_actual_postprocessing_path(sampler, save_iterations, shap
     frames = result if save_iterations else [result]
     clean = torch.nan_to_num(image)
     if save_iterations and shape[-2] < 128:
-        clean = F.pad(clean, (24, 24, 32, 32), mode="reflect")
+        clean = F.pad(clean, (9, 9, 14, 14), mode="reflect")
     for frame in frames:
         assert frame.shape == (
             *clean.shape[:2],
@@ -125,7 +125,7 @@ def test_default_call_uses_three_dpm_steps_and_back_projection(config_source):
     model._match_output_histograms = MethodType(
         lambda *args: pytest.fail("default inference used histogram matching"), model
     )
-    image = torch.linspace(0.05, 0.4, 4 * 64 * 80).reshape(1, 4, 64, 80)
+    image = torch.linspace(0.05, 0.4, 4 * 100 * 110).reshape(1, 4, 100, 110)
 
     torch.manual_seed(42)
     result = model(image)

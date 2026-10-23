@@ -384,3 +384,61 @@ def test_ddim_rejects_invalid_steps_when_switching_from_dpm(steps):
     model.model = SimpleNamespace(num_timesteps=10)
     with pytest.raises(ValueError, match="DDIM sampling_steps"):
         model._prepare_model(torch.zeros(1, 4, 8, 8), custom_steps=steps)
+
+
+@pytest.mark.parametrize("shape", [(1, 4, 99, 128), (1, 4, 128, 129), (4, 256, 256)])
+def test_forward_rejects_unsupported_patch_before_encoding(shape):
+    model, sampler = _stub_inference_model()
+    model._tensor_encode = MethodType(
+        lambda self, value: pytest.fail("encoded unsupported input"), model
+    )
+    with pytest.raises(ValueError, match="trained for 128x128 -> 512x512") as exc_info:
+        model(torch.ones(shape))
+    assert "opensr-utils" in str(exc_info.value)
+    assert sampler.calls == []
+
+
+@pytest.mark.parametrize(
+    "height,width", [(100, 100), (100, 128), (128, 100), (127, 101), (128, 128)]
+)
+def test_forward_pads_supported_patches_and_crops_final_output(height, width, capsys):
+    model, _ = _stub_inference_model()
+    encoded_shapes = []
+
+    def encode(self, value):
+        encoded_shapes.append(tuple(value.shape))
+        return value
+
+    model._tensor_encode = MethodType(encode, model)
+    model._tensor_decode = MethodType(
+        lambda self, latent, spe_cor=False: torch.nn.functional.interpolate(
+            latent, scale_factor=4, mode="nearest"
+        ),
+        model,
+    )
+    result = model(torch.ones(1, 4, height, width), histogram_matching=False)
+
+    assert encoded_shapes == [(1, 4, 128, 128)]
+    assert result.shape == (1, 4, height * 4, width * 4)
+    assert torch.equal(result, torch.full_like(result, 2.0))
+    message = capsys.readouterr().out
+    if height < 128 or width < 128:
+        assert f"reflect-padding {height}x{width} LR input to 128x128" in message
+    else:
+        assert message == ""
+
+
+@pytest.mark.parametrize("entry_point", ["forward", "predict_step"])
+@pytest.mark.parametrize("height,width", [(99, 128), (128, 129)])
+def test_lightning_rejects_unsupported_patches_with_tiling_guidance(
+    entry_point, height, width
+):
+    model, sampler = _stub_inference_model()
+    wrapper = SRLatentDiffusionLightning.__new__(SRLatentDiffusionLightning)
+    torch.nn.Module.__init__(wrapper)
+    wrapper.model = model.eval()
+
+    with pytest.raises(ValueError, match="opensr-utils") as exc_info:
+        getattr(wrapper, entry_point)(torch.ones(1, 4, height, width))
+    assert "tiling, overlap blending, and stitching" in str(exc_info.value)
+    assert sampler.calls == []

@@ -131,43 +131,53 @@ def linear_transform_6b(t_input, stage="norm"):
 
 
 def assert_tensor_validity(tensor):
+    """Prepare an LR patch for checkpoints trained on 128x128 -> 512x512 SR.
 
-    # ASSERT BATCH DIMENSION
-    # if unbatched, add batch dimension
-    if len(tensor.shape) == 3:
+    Accept CHW/BCHW and channel-last equivalents. Each spatial dimension must
+    be between 100 and 128 pixels, inclusive; smaller accepted patches are
+    reflect-padded to 128x128 and announced to the caller.
+    """
+    if not isinstance(tensor, torch.Tensor):
+        raise TypeError("OpenSR input must be a torch.Tensor")
+    if tensor.ndim not in (3, 4):
+        raise ValueError(
+            "OpenSR input must have 3 (CHW/HWC) or 4 (BCHW/BHWC) dimensions; "
+            f"got shape {tuple(tensor.shape)}"
+        )
+    if tensor.ndim == 3:
         tensor = tensor.unsqueeze(0)
 
-    # Turn NaNs to 0 and Infs to 1
-    tensor = torch.nan_to_num(tensor, nan=0.0, posinf=1.0, neginf=1.0)
-
-    # ASSERT BxCxHxW ORDER
-    # Check the size of the input tensor
+    # Retain support for channel-last inputs.
     if tensor.shape[-1] < 10:
-        tensor = rearrange(tensor, "b w h c -> b c h w")
+        tensor = rearrange(tensor, "b h w c -> b c h w")
 
-    height, width = tensor.shape[-2], tensor.shape[-1]
-    # Calculate how much padding is needed for height and width
-    if height < 128 or width < 128:
-        pad_height = max(0, 128 - height)  # Amount to pad on height
-        pad_width = max(0, 128 - width)  # Amount to pad on width
-
-        # Padding for height and width needs to be added to both sides of the dimension
-        # The pad has the format (left, right, top, bottom)
-        padding = (
-            pad_width // 2,
-            pad_width - pad_width // 2,
-            pad_height // 2,
-            pad_height - pad_height // 2,
+    height, width = tensor.shape[-2:]
+    if not (100 <= height <= 128 and 100 <= width <= 128):
+        raise ValueError(
+            f"Unsupported OpenSR input size {height}x{width}. Checkpoints were "
+            "trained for 128x128 -> 512x512 super-resolution. Each LR spatial "
+            "dimension must be between 100 and 128 pixels (inclusive); patches "
+            "below 128 are reflect-padded. The raw model does not tile or stitch "
+            "images. For larger images, use opensr-utils for tiling, overlap "
+            "blending, and stitching with 128x128 LR windows."
         )
-        padding = padding
 
-        # Apply symmetric padding
+    tensor = torch.nan_to_num(tensor, nan=0.0, posinf=1.0, neginf=1.0)
+    pad_height = 128 - height
+    pad_width = 128 - width
+    padding = (
+        pad_width // 2,
+        pad_width - pad_width // 2,
+        pad_height // 2,
+        pad_height - pad_height // 2,
+    )
+    if pad_height or pad_width:
+        print(
+            f"OpenSR: reflect-padding {height}x{width} LR input to 128x128 "
+            "for checkpoints trained on 128x128 -> 512x512 SR. "
+            "Padding is removed from the final SR output."
+        )
         tensor = torch.nn.functional.pad(tensor, padding, mode="reflect")
-
-    else:  # save padding with 0s
-        padding = (0, 0, 0, 0)
-        padding = padding
-
     return tensor, padding
 
 
