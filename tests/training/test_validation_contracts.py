@@ -162,20 +162,38 @@ def test_wandb_image_logging_packages_files_without_network(tmp_path, monkeypatc
     run.id = "run-id"
     api = SimpleNamespace(
         Artifact=Mock(return_value=artifact),
-        Image=Mock(side_effect=lambda p: ("image", p)),
+        Image=Mock(side_effect=lambda p, **kwargs: ("image", p)),
         Table=Mock(return_value="table"),
     )
     monkeypatch.setitem(__import__("sys").modules, "wandb", api)
     monkeypatch.setattr(images, "wandb_run", lambda trainer: run)
     (tmp_path / "sample.npz").write_bytes(b"array")
     (tmp_path / "metrics.json").write_text("{}")
-    images.log_outputs(
-        None, tmp_path, [["id", "site", "land", "image.png", None]], label="a/b", step=7
-    )
+    lr = np.linspace(0, 1, 4 * 16 * 16).reshape(4, 16, 16)
+    sr = np.repeat(np.repeat(lr, 4, -1), 4, -2)
+    rows = [
+        images.preview_row(tmp_path / "previews", {"id": name}, lr, sr)
+        for name in ("scene-a", "scene-b")
+    ]
+    images.log_outputs(None, tmp_path, rows, label="raw_s2_step00000007", step=7)
     assert artifact.add_file.call_count == 2
     run.log_artifact.assert_called_once_with(artifact)
     assert run.log.call_args.args[0]["optimizer_step"] == 7
-    assert api.Table.call_args.kwargs["data"][0][-1] is None
+    payload = run.log.call_args.args[0]
+    assert set(payload) == {
+        "optimizer_step",
+        "validation/raw_s2_RGB",
+        "validation/raw_s2_NIR",
+    }
+    assert len(payload["validation/raw_s2_RGB"]) == 2
+    assert api.Image.call_count == 4
+    api.Table.assert_not_called()
+    assert len(list((tmp_path / "figures").glob("*.png"))) == 4
+    run.reset_mock()
+    images.log_preview_figures(
+        run, tmp_path, rows, label="raw_s2_step00000500", step=500
+    )
+    assert set(run.log.call_args.args[0]) == set(payload)
 
 
 def test_masks_are_expanded_resized_and_channel_validated():
@@ -221,3 +239,44 @@ def test_plateau_scheduler_reduces_lr_to_configured_floor():
     for value in [1, 2, 2, 2, 2]:
         config["scheduler"].step(value)
     assert optimizer.param_groups[0]["lr"] == 0.02
+
+
+@pytest.mark.parametrize("paired", [False, True])
+def test_comparison_figure_includes_aligned_full_and_detail_panels(
+    tmp_path, monkeypatch, paired
+):
+    import matplotlib.pyplot as plt
+
+    lr = np.linspace(0, 0.3, 4 * 80 * 80).reshape(4, 80, 80)
+    sr = np.repeat(np.repeat(lr, 4, -1), 4, -2)
+    row = images.preview_row(
+        tmp_path / "previews",
+        {"id": "scene", "zoom_center_hr": [16, 309]},
+        lr,
+        sr,
+        sr if paired else None,
+    )
+    captured = []
+    original = plt.close
+    monkeypatch.setattr(
+        plt,
+        "close",
+        lambda fig: captured.append(fig) if hasattr(fig, "axes") else original(fig),
+    )
+    path = images.preview_figure(tmp_path / "figures", row, band="RGB")
+    figure = captured[-1]
+    try:
+        assert path.is_file()
+        columns = 3 if paired else 2
+        assert len(figure.axes) == 3 * columns
+        for index, size in enumerate((320, 256, 64)):
+            for axis in figure.axes[index * columns : (index + 1) * columns]:
+                assert axis.images[0].get_array().shape == (size, size, 3)
+        for axis in figure.axes[:columns]:
+            assert axis.patches[1].get_xy() == (255.5, -0.5)
+            assert axis.patches[1].get_width() == 64
+        assert [axis.get_title() for axis in figure.axes[:columns]] == (
+            ["LR", "SR", "HR"] if paired else ["LR", "SR"]
+        )
+    finally:
+        original(figure)
